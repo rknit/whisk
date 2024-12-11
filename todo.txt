@@ -1,0 +1,7 @@
+- literals as type
+- ast
+  - bounded ast
+- separate symbol table for ast and cfg
+- cfg
+  - ssa
+  - inst builder
