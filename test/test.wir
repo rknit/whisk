@@ -2,7 +2,6 @@ func main() int {
   bb_0: // entry
     %0 = int call fib(int 15)
     ret int %0
-
 }
 
 func fib(int %0) int {
@@ -12,6 +11,10 @@ func fib(int %0) int {
     %3 = bool or bool %1, bool %2
     branch bool %3, bb_1, bb_2
 
+  bb_1: // then
+    ret int %0
+    branch bb_2
+
   bb_2: // merge
     %4 = int sub int %0, int 1
     %5 = int call fib(int %4)
@@ -19,10 +22,5 @@ func fib(int %0) int {
     %7 = int call fib(int %6)
     %8 = int add int %5, int %7
     ret int %8
-
-  bb_1: // then
-    ret int %0
-    branch bb_2
-
 }
 

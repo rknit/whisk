@@ -16,7 +16,5 @@ impl DisplayCFG for (BasicBlockID, &BasicBlock) {
         for inst in self.1.get_insts() {
             inst.display(w, ctx);
         }
-
-        writeln!(w, "").unwrap();
     }
 }

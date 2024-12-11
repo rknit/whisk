@@ -54,11 +54,20 @@ impl DisplayCFG for Function {
         let entry = self.get_block(entry_id).unwrap();
         (entry_id, entry).display(w, ctx);
 
-        for (bb_id, bb) in self.get_blocks() {
+        let blocks = self.get_blocks();
+        let blocks_len = blocks.len();
+        if blocks_len != 1 {
+            writeln!(w, "").unwrap();
+        }
+
+        for (i, (bb_id, bb)) in blocks.enumerate() {
             if *bb_id == entry_id {
                 continue;
             }
             (*bb_id, bb).display(w, ctx);
+            if i != blocks_len - 1 {
+                writeln!(w, "").unwrap();
+            }
         }
 
         writeln!(w, "}}").unwrap();
