@@ -1,13 +1,4 @@
-#![allow(dead_code)]
-
-use module::Module;
-
-pub mod ast;
-pub mod ast_resolved;
-pub mod cfg;
-pub mod module;
-pub mod symbol_table;
-pub mod ty;
+use whiskc::module::Module;
 
 fn main() {
     let mut module = Module::new("test/test.wsk".into());

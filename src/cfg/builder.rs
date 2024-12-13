@@ -47,21 +47,8 @@ impl<'a> Builder<'a> {
         self.func.get_block(self.current).unwrap()
     }
 
-    fn get_current_block_mut(&mut self) -> &mut BasicBlock {
-        self.func.get_block_mut(self.current).unwrap()
-    }
-
     pub fn is_termiated(&self) -> bool {
         self.get_current_block().is_terminated()
-    }
-
-    /// Add a block to the function and link the current block to it.
-    /// This operation will set the current block to the inserted block.
-    fn insert_block(&mut self, block: BasicBlock) -> BasicBlockID {
-        let bb = self.func.add_block(block);
-        self.func.link_block(self.current, bb);
-        self.set_current_block(bb);
-        bb
     }
 
     /// Insert *inst* before *before_inst* at *bb* block.
@@ -150,13 +137,6 @@ impl<'a> BuildContext<'a> {
         self.func_sym_id = SymbolID::nil();
     }
 
-    pub fn get_func_symbol_id(&self) -> SymbolID {
-        if self.func_sym_id == SymbolID::nil() {
-            panic!("unset function symbol id");
-        }
-        self.func_sym_id
-    }
-
     pub fn push_local(&mut self, table_id: SymbolID) {
         self.local_tables.push(table_id);
     }
@@ -165,38 +145,6 @@ impl<'a> BuildContext<'a> {
         self.local_tables
             .pop()
             .expect("not pop empty local scope stack");
-    }
-
-    pub fn get_current_table_id(&self) -> Option<SymbolID> {
-        self.local_tables.last().copied()
-    }
-
-    pub fn get_current_table_mut(&mut self) -> &mut SymbolTable {
-        if let Some(local_table_id) = self.local_tables.last() {
-            self.get_table_mut(*local_table_id).unwrap()
-        } else {
-            self.global_table
-        }
-    }
-
-    pub fn get_symbol(&self, id: SymbolID) -> Option<&Symbol> {
-        for table_id in self.local_tables.iter().rev() {
-            let table = self.get_table(*table_id).unwrap();
-            if let Some(symbol) = table.get_symbol(id) {
-                return Some(symbol);
-            }
-        }
-        self.global_table.get_symbol(id)
-    }
-
-    pub fn get_symbol_id_by_name(&self, name: &str) -> Option<SymbolID> {
-        for table_id in self.local_tables.iter().rev() {
-            let table = self.get_table(*table_id).unwrap();
-            if let Some(id) = table.get_symbol_id_by_name(name) {
-                return Some(id);
-            }
-        }
-        self.global_table.get_symbol_id_by_name(name)
     }
 
     pub fn get_symbol_by_name(&self, name: &str) -> Option<&Symbol> {

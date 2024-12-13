@@ -25,7 +25,6 @@ pub enum TypeParseError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum BindingPower {
     Zero,
-    Array,
     Primary,
 }
 
