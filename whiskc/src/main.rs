@@ -1,4 +1,4 @@
-use whiskc::module::Module;
+use whiskc::Module;
 
 fn main() {
     let mut module = Module::new("test/test.wsk".into());

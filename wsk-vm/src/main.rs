@@ -1,9 +1,5 @@
-use inst::{Cmp, Inst, RunError};
-use vm::VM;
-
-pub mod inst;
-pub mod value;
-pub mod vm;
+use wsk_vm::VM;
+use wsk_vm::{Cmp, Inst, RunError};
 
 fn main() -> Result<(), RunError> {
     let mut vm = VM::new();

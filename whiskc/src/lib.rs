@@ -4,3 +4,5 @@ pub mod cfg;
 pub mod module;
 pub mod symbol_table;
 pub mod ty;
+
+pub use module::Module;
