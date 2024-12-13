@@ -7,6 +7,8 @@ use crate::{
 pub enum Inst {
     Push(Value),
     Pop,
+    Load(usize),
+    Store(usize),
 
     Add,
     Sub,
@@ -24,6 +26,15 @@ impl RunInst for Inst {
         Ok(match self {
             Inst::Push(v) => vm.push(v),
             Inst::Pop => vm.pop().map(|_| ())?,
+            Inst::Load(idx) => {
+                let v = vm.read_stack(idx)?;
+                vm.push(*v);
+            }
+            Inst::Store(idx) => {
+                let v = vm.read_stack(0)?;
+                vm.replace_stack(idx, *v)?;
+                vm.pop().map(|_| ())?;
+            }
 
             Inst::Add => impl_macros::binary_op!(vm, +),
             Inst::Sub => impl_macros::binary_op!(vm, -),

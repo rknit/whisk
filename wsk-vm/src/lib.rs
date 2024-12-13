@@ -1,4 +1,5 @@
 pub mod inst;
+pub mod inst_code;
 pub mod value;
 pub mod vm;
 

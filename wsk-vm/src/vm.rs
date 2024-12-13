@@ -23,9 +23,31 @@ impl VM {
     pub fn pop(&mut self) -> Result<Value, VMError> {
         self.stack.pop().ok_or(VMError::StackUnderflow)
     }
+
+    /// Read the n-th value from the top of the stack.
+    pub fn read_stack(&self, idx: usize) -> Result<&Value, VMError> {
+        if idx >= self.stack.len() {
+            Err(VMError::StackReadOutOfBound)
+        } else {
+            Ok(self.stack.get(self.stack.len() - 1 - idx).unwrap())
+        }
+    }
+
+    /// Replace the n-th value from the top of the stack with the provided value.
+    pub fn replace_stack(&mut self, idx: usize, value: Value) -> Result<(), VMError> {
+        if idx >= self.stack.len() {
+            Err(VMError::StackWriteOutOfBound)
+        } else {
+            let ridx = self.stack.len() - 1 - idx;
+            *self.stack.get_mut(ridx).unwrap() = value;
+            Ok(())
+        }
+    }
 }
 
 #[derive(Debug)]
 pub enum VMError {
     StackUnderflow,
+    StackReadOutOfBound,
+    StackWriteOutOfBound,
 }
