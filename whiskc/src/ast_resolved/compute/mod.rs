@@ -45,6 +45,19 @@ impl EvalConstant for BinaryExpr {
             (ExprKind::Bool(lhs), ExprKind::Bool(rhs)) => Some((*lhs, *rhs)),
             _ => None,
         };
+        let get_bools_laxed = || {
+            let lhs = if let ExprKind::Bool(lhs) = self.left.get_kind() {
+                Some(*lhs)
+            } else {
+                None
+            };
+            let rhs = if let ExprKind::Bool(rhs) = self.right.get_kind() {
+                Some(*rhs)
+            } else {
+                None
+            };
+            (lhs, rhs)
+        };
         Some(match self.op {
             Operator::Add => {
                 let (lhs, rhs) = get_ints()?;
@@ -55,12 +68,28 @@ impl EvalConstant for BinaryExpr {
                 ExprKind::Integer(lhs - rhs)
             }
             Operator::And => {
-                let (lhs, rhs) = get_bools()?;
-                ExprKind::Bool(lhs && rhs)
+                let (lhs, rhs) = get_bools_laxed();
+                if let Some(false) = lhs {
+                    false.into()
+                } else if let Some(false) = rhs {
+                    false.into()
+                } else if let (Some(lhs), Some(rhs)) = (lhs, rhs) {
+                    (lhs && rhs).into()
+                } else {
+                    return None;
+                }
             }
             Operator::Or => {
-                let (lhs, rhs) = get_bools()?;
-                ExprKind::Bool(lhs || rhs)
+                let (lhs, rhs) = get_bools_laxed();
+                if let Some(true) = lhs {
+                    true.into()
+                } else if let Some(true) = rhs {
+                    true.into()
+                } else if let (Some(lhs), Some(rhs)) = (lhs, rhs) {
+                    (lhs || rhs).into()
+                } else {
+                    return None;
+                }
             }
             Operator::Equal => ExprKind::Bool(if let Some((lhs, rhs)) = get_ints() {
                 lhs == rhs

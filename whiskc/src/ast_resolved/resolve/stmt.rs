@@ -5,7 +5,10 @@ use crate::{
     },
     ast_resolved::{
         errors::{IdentResolveError, TypeResolveError},
-        nodes::stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, ReturnStmt, Stmt},
+        nodes::{
+            expr::ExprKind,
+            stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, ReturnStmt, Stmt},
+        },
         ControlFlow, Resolve, ResolveContext,
     },
     symbol_table::{Symbol, VarSymbol},
@@ -31,7 +34,7 @@ impl Resolve<StmtResolve<Stmt>> for ast_stmt::Stmt {
             ast_stmt::Stmt::Let(stmt) => {
                 stmt.resolve(ctx).map(|v| (v.0.map(|u| Stmt::Let(u)), v.1))
             }
-            ast_stmt::Stmt::If(stmt) => stmt.resolve(ctx).map(|v| (v.0.map(|u| Stmt::If(u)), v.1)),
+            ast_stmt::Stmt::If(stmt) => stmt.resolve(ctx),
             ast_stmt::Stmt::Return(stmt) => stmt
                 .resolve(ctx)
                 .map(|v| (v.0.map(|u| Stmt::Return(u)), v.1)),
@@ -166,8 +169,8 @@ impl Resolve<StmtResolve<LetStmt>> for ast_stmt::LetStmt {
     }
 }
 
-impl Resolve<StmtResolve<IfStmt>> for ast_stmt::IfStmt {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<StmtResolve<IfStmt>> {
+impl Resolve<StmtResolve<Stmt>> for ast_stmt::IfStmt {
+    fn resolve(&self, ctx: &mut ResolveContext) -> Option<StmtResolve<Stmt>> {
         let cond = self.cond.resolve(ctx);
 
         if let Some(cond) = &cond {
@@ -179,6 +182,19 @@ impl Resolve<StmtResolve<IfStmt>> for ast_stmt::IfStmt {
                     ))
                     .into(),
                 );
+            }
+
+            // dont resolve If stmt when the condition is false
+            if matches!(cond.get_kind(), ExprKind::Bool(false)) {
+                return Some(if let Some(else_stmt) = &self.else_stmt {
+                    else_stmt
+                        .body
+                        .resolve(ctx)
+                        .map(|v| (v.0.map(|u| Stmt::Block(u)), v.1))
+                        .unwrap()
+                } else {
+                    (None, ControlFlow::Flow)
+                });
             }
         }
 
@@ -197,11 +213,11 @@ impl Resolve<StmtResolve<IfStmt>> for ast_stmt::IfStmt {
         };
 
         let stmt = if cond.is_some() && then_block.is_some() {
-            Some(IfStmt {
+            Some(Stmt::If(IfStmt {
                 cond: cond.unwrap(),
                 body: then_block.unwrap(),
                 else_body: else_block,
-            })
+            }))
         } else {
             None
         };
