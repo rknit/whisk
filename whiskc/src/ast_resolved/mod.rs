@@ -2,6 +2,7 @@ use errors::ResolveError;
 
 use crate::symbol_table::{Symbol, SymbolID, SymbolTable};
 
+mod compute;
 pub mod errors;
 pub mod nodes;
 mod resolve;

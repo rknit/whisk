@@ -91,11 +91,11 @@ impl Resolve<StmtResolve<AssignStmt>> for ast::nodes::stmt::AssignStmt {
             return Some((None, ControlFlow::Flow));
         };
 
-        if target.ty != value.ty {
+        if target.get_type() != value.get_type() {
             ctx.push_error(
                 TypeResolveError::AssignmentTypeMismatch {
-                    target_ty: Located(target.ty, self.target.get_location()),
-                    value_ty: Located(value.ty, self.target.get_location()),
+                    target_ty: Located(target.get_type(), self.target.get_location()),
+                    value_ty: Located(value.get_type(), self.target.get_location()),
                 }
                 .into(),
             );
@@ -111,18 +111,18 @@ impl Resolve<StmtResolve<LetStmt>> for ast_stmt::LetStmt {
 
         let value_ty = if let Some(value) = &value {
             if let Some(annotated_ty) = &self.ty {
-                if annotated_ty.0 != value.ty {
+                if annotated_ty.0 != value.get_type() {
                     ctx.push_error(
                         TypeResolveError::AssignmentTypeMismatch {
                             target_ty: annotated_ty.clone(),
-                            value_ty: Located(value.ty, self.value.get_location()),
+                            value_ty: Located(value.get_type(), self.value.get_location()),
                         }
                         .into(),
                     );
                 }
                 annotated_ty.0
             } else {
-                value.ty
+                value.get_type()
             }
         } else if let Some(ty) = &self.ty {
             ty.0
@@ -171,10 +171,13 @@ impl Resolve<StmtResolve<IfStmt>> for ast_stmt::IfStmt {
         let cond = self.cond.resolve(ctx);
 
         if let Some(cond) = &cond {
-            if cond.ty != PrimType::Bool.into() {
+            if cond.get_type() != PrimType::Bool.into() {
                 ctx.push_error(
-                    TypeResolveError::NonBoolInIfCond(Located(cond.ty, self.cond.get_location()))
-                        .into(),
+                    TypeResolveError::NonBoolInIfCond(Located(
+                        cond.get_type(),
+                        self.cond.get_location(),
+                    ))
+                    .into(),
                 );
             }
         }
@@ -224,7 +227,7 @@ impl Resolve<StmtResolve<ReturnStmt>> for ast_stmt::ReturnStmt {
         let (value, val_ty) = if let Some(expr) = &self.expr {
             let value = expr.resolve(ctx);
             let val_ty = if let Some(value) = &value {
-                value.ty
+                value.get_type()
             } else {
                 expect_ret_ty
             };
