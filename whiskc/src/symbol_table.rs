@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     ast::location::{Located, LocationRange},
-    cfg::nodes::value::Value,
+    //cfg::nodes::value::Value,
     ty::{FuncType, Type},
 };
 
@@ -239,7 +239,7 @@ pub struct VarSymbol {
     id: SymbolID,
     name: Located<String>,
     ty: Type,
-    value: Option<Value>,
+    //value: Option<Value>,
 }
 impl VarSymbol {
     pub fn new(name: Located<String>, ty: Type) -> Self {
@@ -247,7 +247,7 @@ impl VarSymbol {
             id: SymbolID::nil(),
             name,
             ty,
-            value: None,
+            //value: None,
         }
     }
 
@@ -271,13 +271,13 @@ impl VarSymbol {
         self.name.1
     }
 
-    pub fn set_value(&mut self, value: Value) {
-        self.value = Some(value);
-    }
-
-    pub fn get_value(&self) -> Option<Value> {
-        self.value
-    }
+    //pub fn set_value(&mut self, value: Value) {
+    //    self.value = Some(value);
+    //}
+    //
+    //pub fn get_value(&self) -> Option<Value> {
+    //    self.value
+    //}
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
