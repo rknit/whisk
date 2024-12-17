@@ -1,4 +1,5 @@
 use std::{
+    fmt::Display,
     mem::discriminant,
     ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Not, Sub},
 };
@@ -52,6 +53,15 @@ impl From<i64> for Value {
 impl From<bool> for Value {
     fn from(value: bool) -> Self {
         Self::Bool(value)
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Value::Int(v) => write!(f, "{}", v),
+            Value::Bool(v) => write!(f, "{}", v),
+        }
     }
 }
 

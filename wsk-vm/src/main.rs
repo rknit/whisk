@@ -13,6 +13,7 @@ fn main() -> Result<(), RunError> {
 
     let bytes = fs::read(args[1].clone()).unwrap();
     let program = Program::from_bytes(&bytes)?;
+    println!("{}", program);
 
     let mut vm = VM::new();
     vm.execute(program).map_err(|e| {

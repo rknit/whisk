@@ -1,6 +1,6 @@
-use std::{io::Read, mem::size_of};
+use std::{fmt::Display, io::Read, mem::size_of};
 
-use crate::Inst;
+use crate::{Cmp, Inst};
 
 #[derive(Debug, Clone)]
 pub struct Program {
@@ -78,6 +78,15 @@ impl Program {
         bytes
     }
 }
+impl Display for Program {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "entry: ${}\n", self.entry_point)?;
+        for (i, func) in self.funcs.iter().enumerate() {
+            writeln!(f, "func ${}:\n{}", i, func)?;
+        }
+        Ok(())
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -141,6 +150,43 @@ impl Function {
         for inst in &self.insts {
             inst.encode(out);
         }
+    }
+}
+impl Display for Function {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, inst) in self.insts.iter().enumerate() {
+            let inst_str = match inst {
+                Inst::Halt => "halt".to_owned(),
+                Inst::Push(value) => format!("push {}", value),
+                Inst::Pop => "pop".to_owned(),
+                Inst::Load(offset) => format!("load :{}", offset),
+                Inst::Store(offset) => format!("store :{}", offset),
+                Inst::Add => "add".to_owned(),
+                Inst::Sub => "sub".to_owned(),
+                Inst::Mul => "mul".to_owned(),
+                Inst::Div => "div".to_owned(),
+                Inst::And => "and".to_owned(),
+                Inst::Or => "or".to_owned(),
+                Inst::Cmp(cmp) => format!(
+                    "cmp {}",
+                    match cmp {
+                        Cmp::Equal => "equ",
+                        Cmp::Less => "lt",
+                        Cmp::Greater => "gt",
+                    }
+                ),
+                Inst::Neg => "neg".to_owned(),
+                Inst::Not => "not".to_owned(),
+                Inst::Jmp(offset) => format!("jmp {}", i.wrapping_add_signed(*offset)),
+                Inst::JmpTrue(offset) => format!("jtr {}", i.wrapping_add_signed(*offset)),
+                Inst::JmpFalse(offset) => format!("jfl {}", i.wrapping_add_signed(*offset)),
+                Inst::Call(fi) => format!("call ${}", fi),
+                Inst::Ret => "ret".to_owned(),
+            };
+
+            writeln!(f, "\t{}: {}", i, inst_str)?;
+        }
+        Ok(())
     }
 }
 

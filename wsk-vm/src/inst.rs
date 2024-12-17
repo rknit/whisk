@@ -92,14 +92,14 @@ impl RunInst for Cmp {
         Ok(match self {
             Cmp::Equal => {
                 let rhs = vm.pop()?;
-                let lhs = vm.read_stack(0)?;
-                vm.push((*lhs == rhs).into());
+                let lhs = vm.pop()?;
+                vm.push((lhs == rhs).into());
             }
             Cmp::Less | Cmp::Greater => {
                 let rhs = vm.pop()?;
-                let lhs = vm.read_stack(0)?;
+                let lhs = vm.pop()?;
                 let ord = match (lhs, rhs) {
-                    (Value::Int(lhs), Value::Int(rhs)) => PartialOrd::partial_cmp(lhs, &rhs),
+                    (Value::Int(lhs), Value::Int(rhs)) => PartialOrd::partial_cmp(&lhs, &rhs),
                     _ => return Err(OpError::InvalidTypeForOp.into()),
                 };
                 let yes = match self {
