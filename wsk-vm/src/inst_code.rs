@@ -1,7 +1,8 @@
-use std::{mem::size_of, ops::Deref};
+use std::{io::Read, mem::size_of};
 
 use crate::{
     inst::{Cmp, Inst},
+    program::ProgramParseError,
     value::Value,
 };
 
@@ -61,88 +62,73 @@ impl Inst {
         }
     }
 
-    fn next_bytes<T, const N: usize>(
-        it: &mut impl Iterator<Item: Deref<Target = T>>,
-    ) -> Option<[T; N]>
+    fn next_bytes<const N: usize>(it: &mut &[u8]) -> Result<[u8; N], ProgramParseError>
     where
-        [T; N]: Default,
-        T: ToOwned<Owned = T>,
+        [u8; N]: Default,
     {
-        let mut le_bytes: [T; N] = Default::default();
-        for i in 0..le_bytes.len() {
-            le_bytes[i] = (*it.next()?).to_owned();
-        }
-        Some(le_bytes)
+        let mut le_bytes: [u8; N] = Default::default();
+        it.read(&mut le_bytes)
+            .map_err(|_| ProgramParseError::InsufficientBytes)?;
+        Ok(le_bytes)
     }
 
-    pub fn decode(bytes: Vec<u8>) -> Option<Vec<Self>> {
+    pub fn decode(bytes: &mut &[u8]) -> Result<Self, ProgramParseError> {
         const USIZE_BYTES: usize = size_of::<usize>();
         const ISIZE_BYTES: usize = size_of::<isize>();
         const I64_BYTES: usize = size_of::<i64>();
 
-        let mut insts = Vec::new();
-
-        let mut it = bytes.iter();
-        while let Some(byte) = it.next() {
-            match byte {
-                0x00 => insts.push(Inst::Halt),
-                0x01 => {
-                    let int_bytes = Self::next_bytes::<u8, I64_BYTES>(&mut it)
-                        .expect("Not enough bytes to parse an integer");
-                    insts.push(Inst::Push(i64::from_le_bytes(int_bytes).into()));
-                }
-                0x02 => insts.push(Inst::Push(true.into())),
-                0x03 => insts.push(Inst::Push(false.into())),
-                0x04 => insts.push(Inst::Pop),
-                0x05 => {
-                    let index_bytes = Self::next_bytes::<u8, USIZE_BYTES>(&mut it)
-                        .expect("Not enough bytes to parse an index");
-                    insts.push(Inst::Load(usize::from_le_bytes(index_bytes).into()));
-                }
-                0x06 => {
-                    let index_bytes = Self::next_bytes::<u8, USIZE_BYTES>(&mut it)
-                        .expect("Not enough bytes to parse an index");
-                    insts.push(Inst::Store(usize::from_le_bytes(index_bytes).into()));
-                }
-                0x10 => insts.push(Inst::Add),
-                0x11 => insts.push(Inst::Sub),
-                0x12 => insts.push(Inst::Mul),
-                0x13 => insts.push(Inst::Div),
-                0x14 => insts.push(Inst::And),
-                0x15 => insts.push(Inst::Or),
-                0x16 => insts.push(Cmp::Equal.into()),
-                0x17 => insts.push(Cmp::Less.into()),
-                0x18 => insts.push(Cmp::Greater.into()),
-                0x20 => insts.push(Inst::Neg),
-                0x21 => insts.push(Inst::Not),
-                0x30 => {
-                    let index_bytes = Self::next_bytes::<u8, ISIZE_BYTES>(&mut it)
-                        .expect("Not enough bytes to parse an offset");
-                    insts.push(Inst::Jmp(isize::from_le_bytes(index_bytes).into()));
-                }
-                0x31 => {
-                    let index_bytes = Self::next_bytes::<u8, ISIZE_BYTES>(&mut it)
-                        .expect("Not enough bytes to parse an offset");
-                    insts.push(Inst::JmpTrue(isize::from_le_bytes(index_bytes).into()));
-                }
-                0x32 => {
-                    let index_bytes = Self::next_bytes::<u8, ISIZE_BYTES>(&mut it)
-                        .expect("Not enough bytes to parse an offset");
-                    insts.push(Inst::JmpFalse(isize::from_le_bytes(index_bytes).into()));
-                }
-                0x40 => {
-                    let index_bytes = Self::next_bytes::<u8, USIZE_BYTES>(&mut it)
-                        .expect("Not enough bytes to parse an index");
-                    insts.push(Inst::Call(usize::from_le_bytes(index_bytes).into()));
-                }
-                0x41 => insts.push(Inst::Ret),
-                _ => {
-                    debug_assert!(false, "unimplemented inst byte {:#04x}", byte);
-                    return None;
-                }
+        let mut byte: [u8; 1] = [0];
+        bytes
+            .read(&mut byte)
+            .map_err(|_| ProgramParseError::InsufficientBytes)?;
+        Ok(match byte[0] {
+            0x00 => Inst::Halt,
+            0x01 => {
+                let int_bytes = Self::next_bytes::<I64_BYTES>(bytes)?;
+                Inst::Push(i64::from_le_bytes(int_bytes).into())
             }
-        }
-
-        Some(insts)
+            0x02 => Inst::Push(true.into()),
+            0x03 => Inst::Push(false.into()),
+            0x04 => Inst::Pop,
+            0x05 => {
+                let index_bytes = Self::next_bytes::<USIZE_BYTES>(bytes)?;
+                Inst::Load(usize::from_le_bytes(index_bytes).into())
+            }
+            0x06 => {
+                let index_bytes = Self::next_bytes::<USIZE_BYTES>(bytes)?;
+                Inst::Store(usize::from_le_bytes(index_bytes).into())
+            }
+            0x10 => Inst::Add,
+            0x11 => Inst::Sub,
+            0x12 => Inst::Mul,
+            0x13 => Inst::Div,
+            0x14 => Inst::And,
+            0x15 => Inst::Or,
+            0x16 => Cmp::Equal.into(),
+            0x17 => Cmp::Less.into(),
+            0x18 => Cmp::Greater.into(),
+            0x20 => Inst::Neg,
+            0x21 => Inst::Not,
+            0x30 => {
+                let index_bytes = Self::next_bytes::<ISIZE_BYTES>(bytes)?;
+                Inst::Jmp(isize::from_le_bytes(index_bytes).into())
+            }
+            0x31 => {
+                let index_bytes = Self::next_bytes::<ISIZE_BYTES>(bytes)?;
+                Inst::JmpTrue(isize::from_le_bytes(index_bytes).into())
+            }
+            0x32 => {
+                let index_bytes = Self::next_bytes::<ISIZE_BYTES>(bytes)?;
+                Inst::JmpFalse(isize::from_le_bytes(index_bytes).into())
+            }
+            0x40 => {
+                let index_bytes = Self::next_bytes::<USIZE_BYTES>(bytes)?;
+                Inst::Call(usize::from_le_bytes(index_bytes).into())
+            }
+            0x41 => Inst::Ret,
+            _ => {
+                unimplemented!("unimplemented inst byte {:#04x}", byte[0]);
+            }
+        })
     }
 }

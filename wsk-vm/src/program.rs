@@ -1,3 +1,5 @@
+use std::{io::Read, mem::size_of};
+
 use crate::Inst;
 
 #[derive(Debug, Clone)]
@@ -11,6 +13,30 @@ impl Program {
             funcs: vec![],
             entry_point: 0,
         }
+    }
+
+    pub fn from_bytes(mut bytes: &[u8]) -> Result<Self, ProgramParseError> {
+        const U64_SIZE: usize = size_of::<u64>();
+        let (fn_cnt, entry_fi) = {
+            let mut header_bytes: [u8; U64_SIZE * 2] = Default::default();
+            bytes
+                .read(&mut header_bytes)
+                .map_err(|_| ProgramParseError::InsufficientBytes)?;
+            (
+                u64::from_le_bytes(header_bytes[0..U64_SIZE].try_into().unwrap()),
+                u64::from_le_bytes(header_bytes[U64_SIZE..].try_into().unwrap()),
+            )
+        };
+
+        let mut funcs = Vec::new();
+        for _ in 0..fn_cnt {
+            funcs.push(Function::from_bytes(&mut bytes)?);
+        }
+
+        Ok(Self {
+            funcs,
+            entry_point: entry_fi as usize,
+        })
     }
 
     pub fn set_entry_point(&mut self, index: usize) {
@@ -31,6 +57,22 @@ impl Program {
     pub fn get_entry_point(&self) -> usize {
         self.entry_point
     }
+
+    pub fn to_bin(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        // func count
+        bytes.extend((self.funcs.len() as u64).to_le_bytes());
+
+        // entry fi
+        bytes.extend((self.entry_point as u64).to_le_bytes());
+
+        for func in &self.funcs {
+            func.to_bin(&mut bytes);
+        }
+
+        bytes
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +90,26 @@ impl Function {
         }
     }
 
+    pub fn from_bytes(bytes: &mut &[u8]) -> Result<Self, ProgramParseError> {
+        const U64_SIZE: usize = size_of::<u64>();
+        let inst_cnt = {
+            let mut header_bytes: [u8; U64_SIZE] = Default::default();
+            bytes
+                .read(&mut header_bytes)
+                .map_err(|_| ProgramParseError::InsufficientBytes)?;
+            u64::from_le_bytes(header_bytes)
+        };
+
+        let mut insts = Vec::new();
+
+        for _ in 0..inst_cnt {
+            let inst = Inst::decode(bytes)?;
+            insts.push(inst);
+        }
+
+        Ok(Self { insts })
+    }
+
     pub fn push_inst(&mut self, inst: impl Into<Inst>) {
         self.insts.push(inst.into());
     }
@@ -59,4 +121,18 @@ impl Function {
     pub fn get(&self, index: usize) -> Option<&Inst> {
         self.insts.get(index)
     }
+
+    pub fn to_bin(&self, out: &mut Vec<u8>) {
+        // inst count
+        out.extend((self.insts.len() as u64).to_le_bytes());
+
+        for inst in &self.insts {
+            inst.encode(out);
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum ProgramParseError {
+    InsufficientBytes,
 }
