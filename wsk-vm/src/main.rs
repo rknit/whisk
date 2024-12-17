@@ -1,14 +1,22 @@
-use wsk_vm::VM;
+use wsk_vm::{Cmp, VM};
 use wsk_vm::{Inst, RunError};
 
 fn main() -> Result<(), RunError> {
     let mut vm = VM::new();
 
-    vm.execute(Inst::Push(9.into()))?;
-    vm.execute(Inst::Push(7.into()))?;
-    vm.execute(Inst::Push(2.into()))?;
-    vm.execute(Inst::Push(111.into()))?;
-    vm.execute(Inst::Load(0))?;
+    let program = vec![
+        Inst::Push(0.into()),
+        Inst::Push(1.into()),
+        Inst::Add,
+        Inst::Push(10.into()),
+        Cmp::Less.into(),
+        Inst::JmpTrue(-4),
+        Inst::Halt,
+    ];
+    vm.execute(program).map_err(|e| {
+        eprintln!("{:#?}", vm);
+        e
+    })?;
 
     dbg!(&vm);
 

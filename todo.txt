@@ -1,1 +1,2 @@
-- whiskc codegen wsk-vm
+- wsk-vm: function
+- whiskc: codegen wsk-vm

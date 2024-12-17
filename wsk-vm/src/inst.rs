@@ -5,6 +5,7 @@ use crate::{
 
 #[derive(Debug, Clone, Copy)]
 pub enum Inst {
+    Halt,
     Push(Value),
     Pop,
     Load(usize),
@@ -20,10 +21,15 @@ pub enum Inst {
 
     Neg,
     Not,
+
+    Jmp(isize),
+    JmpTrue(isize),
+    JmpFalse(isize),
 }
 impl RunInst for Inst {
     fn run(self, vm: &mut VM) -> Result<(), RunError> {
         Ok(match self {
+            Self::Halt => vm.halt(),
             Inst::Push(v) => vm.push(v),
             Inst::Pop => vm.pop().map(|_| ())?,
             Inst::Load(idx) => {
@@ -46,6 +52,24 @@ impl RunInst for Inst {
 
             Inst::Neg => impl_macros::unary_op!(vm, -),
             Inst::Not => impl_macros::unary_op!(vm, !),
+
+            Inst::Jmp(offset) => vm.jump(offset),
+            Inst::JmpTrue(offset) => {
+                let Value::Bool(cond) = vm.pop()? else {
+                    return Err(OpError::InvalidTypeForOp.into());
+                };
+                if cond {
+                    vm.jump(offset);
+                }
+            }
+            Inst::JmpFalse(offset) => {
+                let Value::Bool(cond) = vm.pop()? else {
+                    return Err(OpError::InvalidTypeForOp.into());
+                };
+                if !cond {
+                    vm.jump(offset);
+                }
+            }
         })
     }
 }
@@ -61,14 +85,14 @@ impl RunInst for Cmp {
         Ok(match self {
             Cmp::Equal => {
                 let rhs = vm.pop()?;
-                let lhs = vm.pop()?;
-                vm.push((lhs == rhs).into());
+                let lhs = vm.read_stack(0)?;
+                vm.push((*lhs == rhs).into());
             }
             Cmp::Less | Cmp::Greater => {
                 let rhs = vm.pop()?;
-                let lhs = vm.pop()?;
+                let lhs = vm.read_stack(0)?;
                 let ord = match (lhs, rhs) {
-                    (Value::Int(lhs), Value::Int(rhs)) => PartialOrd::partial_cmp(&lhs, &rhs),
+                    (Value::Int(lhs), Value::Int(rhs)) => PartialOrd::partial_cmp(lhs, &rhs),
                     _ => return Err(OpError::InvalidTypeForOp.into()),
                 };
                 let yes = match self {

@@ -6,14 +6,29 @@ use crate::{
 #[derive(Debug)]
 pub struct VM {
     stack: Vec<Value>,
+    pc: usize,
+    status: VMStatus,
 }
 impl VM {
     pub fn new() -> Self {
-        Self { stack: vec![] }
+        Self {
+            stack: vec![],
+            pc: 0,
+            status: VMStatus::default(),
+        }
     }
 
-    pub fn execute(&mut self, inst: impl Into<Inst>) -> Result<(), RunError> {
-        inst.into().run(self)
+    pub fn execute(&mut self, program: Vec<Inst>) -> Result<(), RunError> {
+        self.pc = 0;
+        self.status.halt = false;
+        while !self.is_halted() {
+            let Some(inst) = program.get(self.pc) else {
+                return Err(VMError::InstReadOutOfBound.into());
+            };
+            inst.run(self)?;
+            self.pc = self.pc.wrapping_add(1);
+        }
+        Ok(())
     }
 
     pub fn push(&mut self, value: Value) {
@@ -43,11 +58,30 @@ impl VM {
             Ok(())
         }
     }
+
+    pub fn halt(&mut self) {
+        self.status.halt = true;
+    }
+
+    pub fn is_halted(&self) -> bool {
+        self.status.halt
+    }
+
+    pub fn jump(&mut self, offset: isize) {
+        self.pc = self.pc.wrapping_add_signed(offset);
+        self.pc = self.pc.wrapping_sub(1);
+    }
 }
 
 #[derive(Debug)]
 pub enum VMError {
+    InstReadOutOfBound,
     StackUnderflow,
     StackReadOutOfBound,
     StackWriteOutOfBound,
+}
+
+#[derive(Debug, Default)]
+pub struct VMStatus {
+    halt: bool,
 }
