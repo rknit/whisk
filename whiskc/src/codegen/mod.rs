@@ -4,15 +4,16 @@ use wsk_vm::program::{Function, Program};
 
 use crate::{
     ast_resolved::{nodes::item::Item, ResolvedAST},
-    symbol_table::{Symbol, SymbolID, SymbolTable},
+    symbol_table::SymbolID,
 };
 
 mod expr;
 mod func;
 mod stmt;
 
-pub fn codegen_wsk_vm(ast: &ResolvedAST, sym_table: &SymbolTable) -> Result<Program, CodegenError> {
-    let mut ctx = Context::new(sym_table);
+pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
+    let mut ctx = Context::new();
+    let mut has_entry = false;
 
     for item in &ast.items {
         let Item::Function(func) = item else {
@@ -20,6 +21,11 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST, sym_table: &SymbolTable) -> Result<Prog
         };
         let fi = ctx.prog.add_func(Function::new());
         ctx.add_fi(func.sig.sym_id, fi);
+
+        if func.sig.name.0 == "main" {
+            ctx.prog.set_entry_point(fi);
+            has_entry = true;
+        }
     }
 
     for item in &ast.items {
@@ -30,21 +36,23 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST, sym_table: &SymbolTable) -> Result<Prog
         func.codegen(&mut ctx)?;
     }
 
-    Ok(ctx.prog)
+    if has_entry {
+        Ok(ctx.prog)
+    } else {
+        Err(CodegenError::NoMainFunction)
+    }
 }
 
-struct Context<'a> {
-    pub sym_table: &'a SymbolTable,
+struct Context {
     pub prog: Program,
     fis: HashMap<SymbolID, usize>,
     cur_fi: Option<usize>,
     locals: Vec<Option<SymbolID>>,
     stack_bounds: Vec<usize>,
 }
-impl<'a> Context<'a> {
-    pub fn new(sym_table: &'a SymbolTable) -> Self {
+impl Context {
+    pub fn new() -> Self {
         Self {
-            sym_table,
             prog: Program::new(),
             fis: HashMap::new(),
             cur_fi: None,
@@ -65,10 +73,6 @@ impl<'a> Context<'a> {
     pub fn get_current_fi_mut(&mut self) -> &mut Function {
         let fi = self.cur_fi.expect("within function context");
         self.prog.get_mut(fi).unwrap()
-    }
-
-    pub fn get_symbol(&self, table_id: SymbolID, sym_id: SymbolID) -> Option<&Symbol> {
-        self.sym_table.get_table(table_id)?.get_symbol(sym_id)
     }
 
     pub fn push_bound(&mut self) {
@@ -117,6 +121,7 @@ impl<'a> Context<'a> {
 #[derive(Debug)]
 pub enum CodegenError {
     UnsupportedItem,
+    NoMainFunction,
 }
 
 trait Codegen {

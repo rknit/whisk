@@ -1,4 +1,5 @@
 use crate::{
+    program::ProgramParseError,
     value::{OpError, Value},
     vm::{VMError, VM},
 };
@@ -116,6 +117,8 @@ impl RunInst for Cmp {
 pub enum RunError {
     VMError(VMError),
     OpError(OpError),
+    ParseError(ProgramParseError),
+    MissingSourcefile,
 }
 
 pub trait RunInst {
@@ -136,6 +139,11 @@ impl From<VMError> for RunError {
 impl From<OpError> for RunError {
     fn from(value: OpError) -> Self {
         Self::OpError(value)
+    }
+}
+impl From<ProgramParseError> for RunError {
+    fn from(value: ProgramParseError) -> Self {
+        Self::ParseError(value)
     }
 }
 

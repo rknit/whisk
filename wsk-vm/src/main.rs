@@ -1,21 +1,20 @@
-use wsk_vm::program::{Function, Program};
+use std::env;
+use std::fs;
+
+use wsk_vm::program::Program;
+use wsk_vm::RunError;
 use wsk_vm::VM;
-use wsk_vm::{Inst, RunError};
 
 fn main() -> Result<(), RunError> {
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        return Err(RunError::MissingSourcefile);
+    }
+
+    let bytes = fs::read(args[1].clone()).unwrap();
+    let program = Program::from_bytes(&bytes)?;
+
     let mut vm = VM::new();
-    let mut program = Program::new();
-
-    let entry = program.add_func(Function::from_insts([
-        Inst::Push(2.into()),
-        Inst::Push(3.into()),
-        Inst::Call(1),
-        Inst::Halt,
-    ]));
-    program.set_entry_point(entry);
-
-    program.add_func(Function::from_insts([Inst::Add, Inst::Ret]));
-
     vm.execute(program).map_err(|e| {
         eprintln!("{:#?}", vm);
         e

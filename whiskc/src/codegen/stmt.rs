@@ -83,8 +83,10 @@ impl Codegen for IfStmt {
 
         let func = ctx.get_current_fi_mut();
 
-        let jmp_dist = func.len() - merge_insert_point + 1;
-        func.insert_inst(merge_insert_point, Inst::Jmp(jmp_dist as isize));
+        if !matches!(self.body.stmts[..], [.., Stmt::Return(_)]) {
+            let jmp_dist = func.len() - merge_insert_point + 1;
+            func.insert_inst(merge_insert_point, Inst::Jmp(jmp_dist as isize));
+        }
 
         let jmp_dist = func.len() - then_insert_point + 1;
         func.insert_inst(then_insert_point, Inst::JmpFalse(jmp_dist as isize));

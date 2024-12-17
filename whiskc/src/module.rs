@@ -1,12 +1,13 @@
 use std::{
     //fs::{self},
+    fs,
     path::PathBuf,
 };
 
 use crate::{
     ast::{self, AST},
     ast_resolved::{self, ResolvedAST},
-    //cfg::{display::display_cfg, CFG},
+    codegen::codegen_wsk_vm,
     symbol_table::SymbolTable,
 };
 
@@ -59,6 +60,28 @@ impl Module {
             }
         };
         self.resolved_ast.as_ref()
+    }
+
+    pub fn codegen(&self) {
+        let Some(ast) = &self.resolved_ast else {
+            return;
+        };
+
+        let prog = match codegen_wsk_vm(ast) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("{:?}", e);
+                return;
+            }
+        };
+        dbg!(&prog);
+
+        let mut bin_path = self.path.clone();
+        bin_path.set_extension("wc");
+
+        println!("wrote binary to {}", bin_path.display());
+        let bin = prog.to_bin();
+        fs::write(bin_path, bin).unwrap();
     }
 
     //pub fn gen_cfg(&mut self) -> Option<&CFG> {
