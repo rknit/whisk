@@ -54,6 +54,10 @@ impl Program {
         self.funcs.get(index)
     }
 
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut Function> {
+        self.funcs.get_mut(index)
+    }
+
     pub fn get_entry_point(&self) -> usize {
         self.entry_point
     }
