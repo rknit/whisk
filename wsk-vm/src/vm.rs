@@ -7,30 +7,34 @@ use crate::{
 #[derive(Debug)]
 pub struct VM {
     stack: Vec<Value>,
-    pc: usize,
-    fi: usize,
+    frames: Vec<(usize, usize)>,
     status: VMStatus,
 }
 impl VM {
     pub fn new() -> Self {
         Self {
             stack: vec![],
-            pc: 0,
-            fi: 0,
+            frames: vec![(0, 0)],
             status: VMStatus::default(),
         }
     }
 
-    pub fn execute(&mut self, program: Program) -> Result<(), RunError> {
-        self.pc = 0;
-        self.fi = program.get_entry_point();
+    pub fn reset(&mut self) {
+        self.stack.clear();
+        self.frames.clear();
+        self.push_frame(0);
         self.status = VMStatus::default();
+    }
+
+    pub fn execute(&mut self, program: Program) -> Result<(), RunError> {
+        self.reset();
 
         while !self.is_halted() {
-            let Some(func) = program.get(self.fi) else {
+            let (fi, pc) = self.get_frame();
+            let Some(func) = program.get(fi) else {
                 return Err(VMError::InvalidFunctionIndex.into());
             };
-            let Some(inst) = func.get(self.pc) else {
+            let Some(inst) = func.get(pc) else {
                 return Err(VMError::InstReadOutOfBound.into());
             };
 
@@ -39,11 +43,31 @@ impl VM {
             if self.is_skipped() {
                 self.status.skip = false;
             } else {
-                self.pc = self.pc.wrapping_add(1);
+                let (_, pc) = self.get_frame_mut();
+                *pc = pc.wrapping_add(1);
             }
         }
 
         Ok(())
+    }
+
+    pub fn push_frame(&mut self, fi: usize) {
+        self.frames.push((fi, 0));
+    }
+
+    pub fn pop_frame(&mut self) -> Result<(), VMError> {
+        match self.frames.pop() {
+            Some(_) => Ok(()),
+            None => Err(VMError::StackFrameUnderflow),
+        }
+    }
+
+    pub fn get_frame(&self) -> (usize, usize) {
+        *self.frames.last().unwrap()
+    }
+
+    fn get_frame_mut(&mut self) -> &mut (usize, usize) {
+        self.frames.last_mut().unwrap()
     }
 
     pub fn push(&mut self, value: Value) {
@@ -91,8 +115,19 @@ impl VM {
     }
 
     pub fn jump(&mut self, offset: isize) {
-        self.pc = self.pc.wrapping_add_signed(offset);
+        let (_, pc) = self.get_frame_mut();
+        *pc = pc.wrapping_add_signed(offset);
         self.skip();
+    }
+
+    pub fn call(&mut self, fi: usize) {
+        self.push_frame(fi);
+        self.skip();
+    }
+
+    pub fn ret(&mut self) -> Result<(), RunError> {
+        self.pop_frame()?;
+        Ok(())
     }
 }
 
@@ -100,6 +135,7 @@ impl VM {
 pub enum VMError {
     InvalidFunctionIndex,
     InstReadOutOfBound,
+    StackFrameUnderflow,
     StackUnderflow,
     StackReadOutOfBound,
     StackWriteOutOfBound,

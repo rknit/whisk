@@ -25,6 +25,9 @@ pub enum Inst {
     Jmp(isize),
     JmpTrue(isize),
     JmpFalse(isize),
+
+    Call(usize),
+    Ret,
 }
 impl RunInst for Inst {
     fn run(self, vm: &mut VM) -> Result<(), RunError> {
@@ -70,6 +73,9 @@ impl RunInst for Inst {
                     vm.jump(offset);
                 }
             }
+
+            Inst::Call(fi) => vm.call(fi),
+            Inst::Ret => vm.ret()?,
         })
     }
 }

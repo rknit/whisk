@@ -1,5 +1,5 @@
 use wsk_vm::program::{Function, Program};
-use wsk_vm::{Cmp, VM};
+use wsk_vm::VM;
 use wsk_vm::{Inst, RunError};
 
 fn main() -> Result<(), RunError> {
@@ -7,17 +7,18 @@ fn main() -> Result<(), RunError> {
 
     let mut func = Function::new();
     func.push_insts([
-        Inst::Push(0.into()),
-        Inst::Push(1.into()),
-        Inst::Add,
-        Inst::Push(10.into()),
-        Cmp::Less.into(),
-        Inst::JmpTrue(-4),
+        Inst::Push(2.into()),
+        Inst::Push(3.into()),
+        Inst::Call(1),
         Inst::Halt,
     ]);
 
+    let mut add_func = Function::new();
+    add_func.push_insts([Inst::Add, Inst::Ret]);
+
     let mut program = Program::new();
     program.push_func(func);
+    program.push_func(add_func);
 
     vm.execute(program).map_err(|e| {
         eprintln!("{:#?}", vm);

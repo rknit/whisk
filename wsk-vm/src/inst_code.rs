@@ -53,6 +53,11 @@ impl Inst {
                 out.push(0x32);
                 out.extend(offset.to_le_bytes());
             }
+            Inst::Call(fi) => {
+                out.push(0x40);
+                out.extend(fi.to_le_bytes());
+            }
+            Inst::Ret => out.push(0x41),
         }
     }
 
@@ -125,6 +130,12 @@ impl Inst {
                         .expect("Not enough bytes to parse an offset");
                     insts.push(Inst::JmpFalse(isize::from_le_bytes(index_bytes).into()));
                 }
+                0x40 => {
+                    let index_bytes = Self::next_bytes::<u8, USIZE_BYTES>(&mut it)
+                        .expect("Not enough bytes to parse an index");
+                    insts.push(Inst::Call(usize::from_le_bytes(index_bytes).into()));
+                }
+                0x41 => insts.push(Inst::Ret),
                 _ => {
                     debug_assert!(false, "unimplemented inst byte {:#04x}", byte);
                     return None;
