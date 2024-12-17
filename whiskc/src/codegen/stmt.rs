@@ -1,4 +1,9 @@
-use crate::ast_resolved::nodes::stmt::{Block, Stmt};
+use wsk_vm::Inst;
+
+use crate::ast_resolved::nodes::{
+    expr::{ExprKind, IdentExpr},
+    stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, ReturnStmt, Stmt},
+};
 
 use super::Codegen;
 
@@ -6,11 +11,11 @@ impl Codegen for Stmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
         match self {
             Stmt::Block(stmt) => stmt.codegen(ctx),
-            Stmt::Expr(stmt) => todo!(),
-            Stmt::Assign(stmt) => todo!(),
-            Stmt::Let(stmt) => todo!(),
-            Stmt::If(stmt) => todo!(),
-            Stmt::Return(stmt) => todo!(),
+            Stmt::Expr(stmt) => stmt.codegen(ctx),
+            Stmt::Assign(stmt) => stmt.codegen(ctx),
+            Stmt::Let(stmt) => stmt.codegen(ctx),
+            Stmt::If(stmt) => stmt.codegen(ctx),
+            Stmt::Return(stmt) => stmt.codegen(ctx),
         }
     }
 }
@@ -24,6 +29,76 @@ impl Codegen for Block {
         }
 
         ctx.pop_bound();
+        Ok(())
+    }
+}
+
+impl Codegen for ExprStmt {
+    fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
+        self.expr.codegen(ctx)
+    }
+}
+
+impl Codegen for AssignStmt {
+    fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
+        self.value.codegen(ctx)?;
+
+        // dont evaluate identifier
+        // self.target.codegen(ctx)?;
+
+        if let ExprKind::Identifier(IdentExpr { sym_id, .. }) = self.target.get_kind() {
+            let offset = ctx.get_local(*sym_id).expect("valid offset");
+            ctx.get_current_fi_mut().push_inst(Inst::Store(offset));
+            Ok(())
+        } else {
+            unimplemented!("unsupported assignment type")
+        }
+    }
+}
+
+impl Codegen for LetStmt {
+    fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
+        self.value.codegen(ctx)?;
+
+        ctx.pop_local();
+        ctx.push_local(Some(self.sym_id));
+
+        Ok(())
+    }
+}
+
+impl Codegen for IfStmt {
+    fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
+        self.cond.codegen(ctx)?;
+
+        let then_insert_point = ctx.get_current_fi_mut().len();
+
+        self.body.codegen(ctx)?;
+
+        let merge_insert_point = ctx.get_current_fi_mut().len();
+
+        if let Some(body) = &self.else_body {
+            body.codegen(ctx)?;
+        }
+
+        let func = ctx.get_current_fi_mut();
+
+        let jmp_dist = func.len() - merge_insert_point + 1;
+        func.insert_inst(merge_insert_point, Inst::Jmp(jmp_dist as isize));
+
+        let jmp_dist = func.len() - then_insert_point + 1;
+        func.insert_inst(then_insert_point, Inst::JmpFalse(jmp_dist as isize));
+
+        Ok(())
+    }
+}
+
+impl Codegen for ReturnStmt {
+    fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
+        if let Some(expr) = &self.expr {
+            expr.codegen(ctx)?;
+        }
+        ctx.get_current_fi_mut().push_inst(Inst::Ret);
         Ok(())
     }
 }

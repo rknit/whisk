@@ -122,6 +122,14 @@ impl Function {
         self.insts.extend(insts);
     }
 
+    pub fn insert_inst(&mut self, idx: usize, inst: impl Into<Inst>) {
+        self.insts.insert(idx, inst.into());
+    }
+
+    pub fn len(&self) -> usize {
+        self.insts.len()
+    }
+
     pub fn get(&self, index: usize) -> Option<&Inst> {
         self.insts.get(index)
     }
