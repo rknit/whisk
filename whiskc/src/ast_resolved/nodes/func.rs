@@ -16,6 +16,12 @@ pub struct ExternFunction(pub FunctionSig);
 pub struct FunctionSig {
     pub sym_id: SymbolID,
     pub name: Located<String>,
-    pub params: Vec<(Located<String>, Type)>,
+    pub params: Vec<Param>,
     pub ret_ty: Type,
+}
+
+#[derive(Debug, Clone)]
+pub struct Param {
+    pub sym_id: SymbolID,
+    pub name: String,
 }

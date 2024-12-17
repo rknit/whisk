@@ -2,10 +2,10 @@ use crate::{
     ast::{self, location::Located, nodes::func::LocatedParam},
     ast_resolved::{
         errors::{ControlFlowError, IdentResolveError},
-        nodes::func::{ExternFunction, Function, FunctionSig},
+        nodes::func::{ExternFunction, Function, FunctionSig, Param},
         ControlFlow, Resolve, ResolveContext,
     },
-    symbol_table::{FuncSymbol, SymbolAttribute, SymbolKind, VarSymbol},
+    symbol_table::{FuncSymbol, SymbolAttribute, SymbolID, SymbolKind, VarSymbol},
     ty::PrimType,
 };
 
@@ -18,9 +18,11 @@ impl Resolve<Function> for ast::nodes::func::Function {
         ctx.set_func_symbol_id(func_sym_id);
         let table_id = ctx.push_local();
 
+        let mut params = Vec::new();
         for LocatedParam(param_name, Located(param_ty, _)) in &self.sig.params.items {
             let symbol = VarSymbol::new(param_name.clone(), *param_ty);
-            if ctx.new_symbol(&param_name.0, symbol.into()).is_none() {
+            let sym_id = ctx.new_symbol(&param_name.0, symbol.into());
+            if sym_id.is_none() {
                 let first_origin = {
                     let dup_symbol = ctx
                         .get_current_table_mut()
@@ -36,7 +38,11 @@ impl Resolve<Function> for ast::nodes::func::Function {
                     }
                     .into(),
                 );
-            }
+            };
+            params.push(Param {
+                sym_id: sym_id.unwrap_or_else(|| SymbolID::nil()),
+                name: param_name.0.clone(),
+            });
         }
 
         let (body, flow) = self.body.resolve(ctx).unwrap();
@@ -52,13 +58,7 @@ impl Resolve<Function> for ast::nodes::func::Function {
             sig: FunctionSig {
                 sym_id: func_sym_id,
                 name: self.sig.name.clone(),
-                params: self
-                    .sig
-                    .params
-                    .items
-                    .iter()
-                    .map(|v| (v.0.clone(), v.1 .0))
-                    .collect(),
+                params,
                 ret_ty: self.sig.ret_ty.0,
             },
             body: body?,
@@ -79,15 +79,18 @@ impl Resolve<ExternFunction> for ast::nodes::func::ExternFunction {
                 .params
                 .items
                 .iter()
-                .map(|v| (v.0.clone(), v.1 .0))
+                .map(|p| Param {
+                    sym_id: SymbolID::nil(),
+                    name: p.0 .0.clone(),
+                })
                 .collect(),
             ret_ty: self.sig.ret_ty.0,
         }))
     }
 }
 
-impl Resolve<FunctionSig> for ast::nodes::func::FunctionSig {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<FunctionSig> {
+impl Resolve<()> for ast::nodes::func::FunctionSig {
+    fn resolve(&self, ctx: &mut ResolveContext) -> Option<()> {
         let params = self
             .params
             .items
@@ -100,7 +103,7 @@ impl Resolve<FunctionSig> for ast::nodes::func::FunctionSig {
         let attributes = self.attributes.resolve(ctx, &[SymbolAttribute::Public]);
         func_sym.add_attributes(attributes);
 
-        let Some(sym_id) = ctx.new_symbol(&self.name.0, func_sym.into()) else {
+        if ctx.new_symbol(&self.name.0, func_sym.into()).is_none() {
             let first_origin = {
                 let dup_symbol = ctx
                     .get_current_table_mut()
@@ -119,11 +122,6 @@ impl Resolve<FunctionSig> for ast::nodes::func::FunctionSig {
             return None;
         };
 
-        Some(FunctionSig {
-            sym_id,
-            name: self.name.clone(),
-            params,
-            ret_ty: self.ret_ty.0,
-        })
+        Some(())
     }
 }
