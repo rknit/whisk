@@ -18,7 +18,7 @@ impl Program {
         self.entry_point = index;
     }
 
-    pub fn push_func(&mut self, func: Function) -> usize {
+    pub fn add_func(&mut self, func: Function) -> usize {
         let id = self.funcs.len();
         self.funcs.push(func);
         id
@@ -40,6 +40,12 @@ pub struct Function {
 impl Function {
     pub fn new() -> Self {
         Self { insts: vec![] }
+    }
+
+    pub fn from_insts(insts: impl IntoIterator<Item = Inst>) -> Self {
+        Self {
+            insts: Vec::from_iter(insts),
+        }
     }
 
     pub fn push_inst(&mut self, inst: impl Into<Inst>) {

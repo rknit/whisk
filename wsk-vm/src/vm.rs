@@ -19,15 +19,15 @@ impl VM {
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn reset(&mut self, entry_point: usize) {
         self.stack.clear();
         self.frames.clear();
-        self.push_frame(0);
+        self.push_frame(entry_point);
         self.status = VMStatus::default();
     }
 
     pub fn execute(&mut self, program: Program) -> Result<(), RunError> {
-        self.reset();
+        self.reset(program.get_entry_point());
 
         while !self.is_halted() {
             let (fi, pc) = self.get_frame();
@@ -56,10 +56,11 @@ impl VM {
     }
 
     pub fn pop_frame(&mut self) -> Result<(), VMError> {
-        match self.frames.pop() {
-            Some(_) => Ok(()),
-            None => Err(VMError::StackFrameUnderflow),
+        if self.frames.len() <= 1 {
+            return Err(VMError::StackFrameUnderflow);
         }
+        self.frames.pop();
+        Ok(())
     }
 
     pub fn get_frame(&self) -> (usize, usize) {
