@@ -5,7 +5,7 @@ use crate::{
     },
     ast_resolved::{
         errors::{IdentResolveError, TypeResolveError, ValueResolveError},
-        nodes::expr::{BinaryExpr, CallExpr, Expr, UnaryExpr},
+        nodes::expr::{BinaryExpr, CallExpr, Expr, IdentExpr, UnaryExpr},
         Resolve, ResolveContext,
     },
     symbol_table::Symbol,
@@ -47,7 +47,13 @@ impl Resolve<Expr> for Located<String> {
             ctx.push_error(IdentResolveError::UnknownIdentifier(self.clone()).into());
             return None;
         };
-        Some(Expr::new(self.0.clone(), symbol.get_type()))
+        Some(Expr::new(
+            IdentExpr {
+                sym_id: symbol.get_id(),
+                ident: self.0.clone(),
+            },
+            symbol.get_type(),
+        ))
     }
 }
 

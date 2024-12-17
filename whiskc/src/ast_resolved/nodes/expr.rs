@@ -1,4 +1,7 @@
-use crate::{ast::parsing::token::Operator, ast_resolved::compute::EvalConstant, ty::Type};
+use crate::{
+    ast::parsing::token::Operator, ast_resolved::compute::EvalConstant, symbol_table::SymbolID,
+    ty::Type,
+};
 
 #[derive(Debug, Clone)]
 pub struct Expr {
@@ -32,10 +35,16 @@ impl Expr {
 pub enum ExprKind {
     Integer(i64),
     Bool(bool),
-    Identifier(String),
+    Identifier(IdentExpr),
     Unary(UnaryExpr),
     Binary(BinaryExpr),
     Call(CallExpr),
+}
+
+#[derive(Debug, Clone)]
+pub struct IdentExpr {
+    pub sym_id: SymbolID,
+    pub ident: String,
 }
 
 #[derive(Debug, Clone)]
@@ -67,8 +76,8 @@ impl From<bool> for ExprKind {
         Self::Bool(value)
     }
 }
-impl From<String> for ExprKind {
-    fn from(value: String) -> Self {
+impl From<IdentExpr> for ExprKind {
+    fn from(value: IdentExpr) -> Self {
         Self::Identifier(value)
     }
 }
