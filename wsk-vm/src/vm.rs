@@ -1,5 +1,6 @@
 use crate::{
-    inst::{Inst, RunError, RunInst},
+    inst::{RunError, RunInst},
+    program::Program,
     value::Value,
 };
 
@@ -7,6 +8,7 @@ use crate::{
 pub struct VM {
     stack: Vec<Value>,
     pc: usize,
+    fi: usize,
     status: VMStatus,
 }
 impl VM {
@@ -14,20 +16,33 @@ impl VM {
         Self {
             stack: vec![],
             pc: 0,
+            fi: 0,
             status: VMStatus::default(),
         }
     }
 
-    pub fn execute(&mut self, program: Vec<Inst>) -> Result<(), RunError> {
+    pub fn execute(&mut self, program: Program) -> Result<(), RunError> {
         self.pc = 0;
-        self.status.halt = false;
+        self.fi = program.get_entry_point();
+        self.status = VMStatus::default();
+
         while !self.is_halted() {
-            let Some(inst) = program.get(self.pc) else {
+            let Some(func) = program.get(self.fi) else {
+                return Err(VMError::InvalidFunctionIndex.into());
+            };
+            let Some(inst) = func.get(self.pc) else {
                 return Err(VMError::InstReadOutOfBound.into());
             };
+
             inst.run(self)?;
-            self.pc = self.pc.wrapping_add(1);
+
+            if self.is_skipped() {
+                self.status.skip = false;
+            } else {
+                self.pc = self.pc.wrapping_add(1);
+            }
         }
+
         Ok(())
     }
 
@@ -67,14 +82,23 @@ impl VM {
         self.status.halt
     }
 
+    pub fn skip(&mut self) {
+        self.status.skip = true;
+    }
+
+    pub fn is_skipped(&self) -> bool {
+        self.status.skip
+    }
+
     pub fn jump(&mut self, offset: isize) {
         self.pc = self.pc.wrapping_add_signed(offset);
-        self.pc = self.pc.wrapping_sub(1);
+        self.skip();
     }
 }
 
 #[derive(Debug)]
 pub enum VMError {
+    InvalidFunctionIndex,
     InstReadOutOfBound,
     StackUnderflow,
     StackReadOutOfBound,
@@ -84,4 +108,5 @@ pub enum VMError {
 #[derive(Debug, Default)]
 pub struct VMStatus {
     halt: bool,
+    skip: bool,
 }
