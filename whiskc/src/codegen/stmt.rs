@@ -1,11 +1,8 @@
 use wsk_vm::Inst;
 
-use crate::{
-    ast_resolved::nodes::{
-        expr::{ExprKind, IdentExpr},
-        stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, ReturnStmt, Stmt},
-    },
-    ty::PrimType,
+use crate::ast_resolved::nodes::{
+    expr::{ExprKind, IdentExpr},
+    stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, ReturnStmt, Stmt},
 };
 
 use super::Codegen;
@@ -38,11 +35,7 @@ impl Codegen for Block {
 
 impl Codegen for ExprStmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
-        self.expr.codegen(ctx)?;
-        if self.expr.get_type() != PrimType::Unit.into() {
-            ctx.pop_local();
-        }
-        Ok(())
+        self.expr.codegen(ctx)
     }
 }
 
@@ -54,8 +47,8 @@ impl Codegen for AssignStmt {
         // self.target.codegen(ctx)?;
 
         if let ExprKind::Identifier(IdentExpr { sym_id, .. }) = self.target.get_kind() {
-            let offset = ctx.get_local(*sym_id).expect("valid offset");
-            ctx.get_current_fi_mut().push_inst(Inst::Store(offset));
+            let id = ctx.get_local(*sym_id);
+            ctx.get_current_fi_mut().push_inst(Inst::Store(id));
             Ok(())
         } else {
             unimplemented!("unsupported assignment type")
@@ -67,8 +60,8 @@ impl Codegen for LetStmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
         self.value.codegen(ctx)?;
 
-        ctx.pop_local();
-        ctx.push_local(Some(self.sym_id));
+        let id = ctx.get_local(self.sym_id);
+        ctx.get_current_fi_mut().push_inst(Inst::Store(id));
 
         Ok(())
     }
@@ -79,8 +72,6 @@ impl Codegen for IfStmt {
         self.cond.codegen(ctx)?;
 
         let then_insert_point = ctx.get_current_fi_mut().len();
-        // pop for jmp false (will be inserted here later)
-        ctx.pop_local();
 
         self.body.codegen(ctx)?;
 

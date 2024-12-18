@@ -25,7 +25,6 @@ impl ExprCodegen for i64 {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
         ctx.get_current_fi_mut()
             .push_inst(Inst::Push((*self).into()));
-        ctx.push_local(None);
         Ok(())
     }
 }
@@ -34,7 +33,6 @@ impl ExprCodegen for bool {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
         ctx.get_current_fi_mut()
             .push_inst(Inst::Push((*self).into()));
-        ctx.push_local(None);
         Ok(())
     }
 }
@@ -44,9 +42,8 @@ impl ExprCodegen for IdentExpr {
         if ctx.get_fi(self.sym_id).is_some() {
             return Ok(());
         }
-        let offset = ctx.get_local(self.sym_id).expect("valid offset");
-        ctx.get_current_fi_mut().push_inst(Inst::Load(offset));
-        ctx.push_local(None);
+        let id = ctx.get_local(self.sym_id);
+        ctx.get_current_fi_mut().push_inst(Inst::Load(id));
         Ok(())
     }
 }
@@ -85,8 +82,6 @@ impl ExprCodegen for BinaryExpr {
             Operator::GreaterEqual => func.push_insts([Cmp::Less.into(), Inst::Not]),
             _ => unimplemented!("codegen binary op {}", self.op),
         };
-
-        ctx.pop_local();
 
         Ok(())
     }

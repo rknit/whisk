@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 
-use wsk_vm::{
-    program::{Function, Program},
-    Inst,
-};
+use wsk_vm::program::{Function, Program};
 
 use crate::{
     ast_resolved::{nodes::item::Item, ResolvedAST},
     symbol_table::SymbolID,
+    ty::PrimType,
 };
 
 mod expr;
@@ -28,6 +26,10 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
         if func.sig.name.0 == "main" {
             ctx.prog.set_entry_point(fi);
             has_entry = true;
+
+            if !func.sig.params.is_empty() || func.sig.ret_ty != PrimType::Unit.into() {
+                return Err(CodegenError::UnsupportedMainFunctionSig);
+            }
         }
     }
 
@@ -40,9 +42,6 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
     }
 
     if has_entry {
-        let start_func = Function::from_insts([Inst::Call(ctx.prog.get_entry_point()), Inst::Halt]);
-        let start_fi = ctx.prog.add_func(start_func);
-        ctx.prog.set_entry_point(start_fi);
         Ok(ctx.prog)
     } else {
         Err(CodegenError::NoMainFunction)
@@ -53,8 +52,9 @@ struct Context {
     pub prog: Program,
     fis: HashMap<SymbolID, usize>,
     cur_fi: Option<usize>,
-    locals: Vec<Option<SymbolID>>,
-    stack_bounds: Vec<usize>,
+    locals: HashMap<SymbolID, usize>,
+    local_cnts: Vec<usize>,
+    active_local_cnt: usize,
 }
 impl Context {
     pub fn new() -> Self {
@@ -62,8 +62,9 @@ impl Context {
             prog: Program::new(),
             fis: HashMap::new(),
             cur_fi: None,
-            locals: vec![],
-            stack_bounds: vec![],
+            locals: HashMap::new(),
+            local_cnts: vec![],
+            active_local_cnt: 0,
         }
     }
 
@@ -81,39 +82,6 @@ impl Context {
         self.prog.get_mut(fi).unwrap()
     }
 
-    pub fn push_bound(&mut self) {
-        self.stack_bounds.push(self.locals.len());
-    }
-
-    pub fn pop_bound(&mut self) {
-        let [.., bound] = self.stack_bounds[..] else {
-            return;
-        };
-        while self.locals.len() != bound {
-            self.locals.pop();
-        }
-    }
-
-    pub fn push_local(&mut self, sym_id: Option<SymbolID>) {
-        self.locals.push(sym_id);
-    }
-
-    pub fn pop_local(&mut self) {
-        self.locals.pop().expect("local to pop");
-    }
-
-    pub fn get_local(&self, sym_id: SymbolID) -> Option<usize> {
-        let index = self
-            .locals
-            .iter()
-            .position(|v| matches!(v, Some(v) if *v == sym_id))?;
-        Some(self.locals.len() - 1 - index)
-    }
-
-    pub fn clear_locals(&mut self) {
-        self.locals.clear();
-    }
-
     pub fn add_fi(&mut self, sym_id: SymbolID, fi: usize) {
         assert!(!self.fis.contains_key(&sym_id), "duplicate symbols to fi");
         self.fis.insert(sym_id, fi);
@@ -122,12 +90,38 @@ impl Context {
     pub fn get_fi(&self, sym_id: SymbolID) -> Option<usize> {
         self.fis.get(&sym_id).copied()
     }
+
+    pub fn clear_locals(&mut self) {
+        self.locals.clear();
+        self.local_cnts.clear();
+        self.active_local_cnt = 0;
+    }
+
+    pub fn get_local(&mut self, sym_id: SymbolID) -> usize {
+        if let Some(id) = self.locals.get(&sym_id) {
+            return *id;
+        }
+        let id = self.active_local_cnt;
+        self.active_local_cnt += 1;
+        self.locals.insert(sym_id, id);
+        id
+    }
+
+    pub fn push_bound(&mut self) {
+        self.local_cnts.push(self.active_local_cnt);
+    }
+
+    pub fn pop_bound(&mut self) {
+        let new_active = self.local_cnts.pop().expect("no bound to pop");
+        self.active_local_cnt = new_active;
+    }
 }
 
 #[derive(Debug)]
 pub enum CodegenError {
     UnsupportedItem,
     NoMainFunction,
+    UnsupportedMainFunctionSig,
 }
 
 trait Codegen {

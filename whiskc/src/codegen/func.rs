@@ -9,7 +9,8 @@ impl Codegen for ast::func::Function {
         ctx.set_current_fi(self.sig.sym_id);
 
         for param in &self.sig.params {
-            ctx.push_local(Some(param.sym_id));
+            let id = ctx.get_local(param.sym_id);
+            ctx.get_current_fi_mut().push_inst(Inst::Store(id));
         }
 
         self.body.codegen(ctx)?;
