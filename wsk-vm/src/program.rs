@@ -143,6 +143,10 @@ impl Function {
         self.insts.get(index)
     }
 
+    pub fn get_insts(&self) -> &Vec<Inst> {
+        &self.insts
+    }
+
     pub fn to_bin(&self, out: &mut Vec<u8>) {
         // inst count
         out.extend((self.insts.len() as u64).to_le_bytes());

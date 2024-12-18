@@ -43,10 +43,11 @@ impl Resolve<Expr> for Located<bool> {
 
 impl Resolve<Expr> for Located<String> {
     fn resolve(&self, ctx: &mut ResolveContext) -> Option<Expr> {
-        let Some(symbol) = ctx.get_symbol_by_name(&self.0) else {
+        let Some(symbol) = ctx.get_symbol_by_name_mut(&self.0) else {
             ctx.push_error(IdentResolveError::UnknownIdentifier(self.clone()).into());
             return None;
         };
+        symbol.push_ref(self.1);
         Some(Expr::new(
             IdentExpr {
                 sym_id: symbol.get_id(),

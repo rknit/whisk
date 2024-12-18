@@ -112,7 +112,7 @@ impl<'a> ResolveContext<'a> {
         self.global_table.get_symbol_id_by_name(name)
     }
 
-    pub fn get_symbol_by_name(&self, name: &str) -> Option<&Symbol> {
+    pub fn _get_symbol_by_name(&self, name: &str) -> Option<&Symbol> {
         for table_id in self.local_tables.iter().rev() {
             let table = self.get_table(*table_id).unwrap();
             if let Some(symbol) = table.get_symbol_by_name(name) {
@@ -120,6 +120,24 @@ impl<'a> ResolveContext<'a> {
             }
         }
         self.global_table.get_symbol_by_name(name)
+    }
+
+    pub fn get_symbol_by_name_mut(&mut self, name: &str) -> Option<&mut Symbol> {
+        let mut sym_table_id = SymbolID::nil();
+        for table_id in self.local_tables.iter().rev() {
+            let table = self.get_table(*table_id).unwrap();
+            if table.get_symbol_by_name(name).is_some() {
+                sym_table_id = *table_id;
+                break;
+            }
+        }
+        if sym_table_id == SymbolID::nil() {
+            self.global_table.get_symbol_by_name_mut(name)
+        } else {
+            self.get_table_mut(sym_table_id)
+                .unwrap()
+                .get_symbol_by_name_mut(name)
+        }
     }
 
     fn get_table(&self, table_id: SymbolID) -> Option<&SymbolTable> {

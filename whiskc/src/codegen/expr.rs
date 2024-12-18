@@ -86,6 +86,8 @@ impl ExprCodegen for BinaryExpr {
             _ => unimplemented!("codegen binary op {}", self.op),
         };
 
+        ctx.pop_local();
+
         Ok(())
     }
 }
@@ -101,10 +103,11 @@ impl ExprCodegen for CallExpr {
         if let Type::Function(func_ty) = self.callee.get_type() {
             let fi = ctx.get_fi(func_ty.0).expect("codegen fi");
             ctx.get_current_fi_mut().push_inst(Inst::Call(fi));
-            Ok(())
         } else {
             unimplemented!("unsupported function call type")
         }
+
+        Ok(())
     }
 }
 

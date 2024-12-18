@@ -222,6 +222,20 @@ impl Symbol {
             Symbol::Function(symbol) => symbol.get_origin(),
         }
     }
+
+    pub fn push_ref(&mut self, loc: LocationRange) {
+        match self {
+            Symbol::Variable(symbol) => symbol.push_ref(loc),
+            Symbol::Function(symbol) => symbol.push_ref(loc),
+        }
+    }
+
+    pub fn get_refs(&self) -> &Vec<LocationRange> {
+        match self {
+            Symbol::Variable(symbol) => symbol.get_refs(),
+            Symbol::Function(symbol) => symbol.get_refs(),
+        }
+    }
 }
 impl From<VarSymbol> for Symbol {
     fn from(value: VarSymbol) -> Self {
@@ -240,6 +254,7 @@ pub struct VarSymbol {
     name: Located<String>,
     ty: Type,
     //value: Option<Value>,
+    refs: Vec<LocationRange>,
 }
 impl VarSymbol {
     pub fn new(name: Located<String>, ty: Type) -> Self {
@@ -248,6 +263,7 @@ impl VarSymbol {
             name,
             ty,
             //value: None,
+            refs: vec![],
         }
     }
 
@@ -271,6 +287,22 @@ impl VarSymbol {
         self.name.1
     }
 
+    pub fn push_ref(&mut self, loc: LocationRange) {
+        if let [.., last] = self.refs[..] {
+            if last > loc {
+                panic!("reference location out of order");
+            }
+            if last == loc {
+                panic!("duplicate reference location");
+            }
+        }
+        self.refs.push(loc);
+    }
+
+    pub fn get_refs(&self) -> &Vec<LocationRange> {
+        &self.refs
+    }
+
     //pub fn set_value(&mut self, value: Value) {
     //    self.value = Some(value);
     //}
@@ -292,6 +324,7 @@ pub struct FuncSymbol {
     params: Vec<(Located<String>, Type)>,
     ret_ty: Type,
     attributes: HashSet<SymbolAttribute>,
+    refs: Vec<LocationRange>,
 }
 impl FuncSymbol {
     pub fn new(name: Located<String>, params: Vec<(Located<String>, Type)>, ret_ty: Type) -> Self {
@@ -301,6 +334,7 @@ impl FuncSymbol {
             params,
             ret_ty,
             attributes: HashSet::new(),
+            refs: vec![],
         }
     }
 
@@ -334,5 +368,21 @@ impl FuncSymbol {
 
     pub fn get_origin(&self) -> LocationRange {
         self.name.1
+    }
+
+    pub fn push_ref(&mut self, loc: LocationRange) {
+        if let [.., last] = self.refs[..] {
+            if last > loc {
+                panic!("reference location out of order");
+            }
+            if last == loc {
+                panic!("duplicate reference location");
+            }
+        }
+        self.refs.push(loc);
+    }
+
+    pub fn get_refs(&self) -> &Vec<LocationRange> {
+        &self.refs
     }
 }

@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use wsk_vm::program::{Function, Program};
+use wsk_vm::{
+    program::{Function, Program},
+    Inst,
+};
 
 use crate::{
     ast_resolved::{nodes::item::Item, ResolvedAST},
@@ -37,6 +40,9 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
     }
 
     if has_entry {
+        let start_func = Function::from_insts([Inst::Call(ctx.prog.get_entry_point()), Inst::Halt]);
+        let start_fi = ctx.prog.add_func(start_func);
+        ctx.prog.set_entry_point(start_fi);
         Ok(ctx.prog)
     } else {
         Err(CodegenError::NoMainFunction)
