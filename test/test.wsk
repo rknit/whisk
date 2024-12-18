@@ -1,5 +1,5 @@
-func main() {
-  let x = fib(15);
+func main() int {
+  return fib(15);
 }
 
 func fib(n int) int {

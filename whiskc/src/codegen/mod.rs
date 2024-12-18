@@ -1,6 +1,9 @@
 use std::collections::HashMap;
 
-use wsk_vm::program::{Function, Program};
+use wsk_vm::{
+    program::{Function, Program},
+    Inst,
+};
 
 use crate::{
     ast_resolved::{nodes::item::Item, ResolvedAST},
@@ -27,7 +30,7 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
             ctx.prog.set_entry_point(fi);
             has_entry = true;
 
-            if !func.sig.params.is_empty() || func.sig.ret_ty != PrimType::Unit.into() {
+            if !func.sig.params.is_empty() || func.sig.ret_ty != PrimType::Integer.into() {
                 return Err(CodegenError::UnsupportedMainFunctionSig);
             }
         }
@@ -42,6 +45,11 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
     }
 
     if has_entry {
+        // attach runtime entry
+        let rtfunc = Function::from_insts([Inst::Call(ctx.prog.get_entry_point()), Inst::Halt]);
+        let rtid = ctx.prog.add_func(rtfunc);
+        ctx.prog.set_entry_point(rtid);
+
         Ok(ctx.prog)
     } else {
         Err(CodegenError::NoMainFunction)
