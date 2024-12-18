@@ -21,7 +21,7 @@ fn main() -> Result<(), RunError> {
         e
     })?;
 
-    dbg!(&vm);
+    println!("{:#?}", vm);
 
     Ok(())
 }

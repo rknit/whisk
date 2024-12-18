@@ -1,7 +1,15 @@
+use std::env;
+
 use whiskc::Module;
 
 fn main() {
-    let mut module = Module::new("test/test.wsk".into());
+    let args: Vec<String> = env::args().collect();
+    if args.len() < 2 {
+        eprintln!("whiskc: expected path to .wsk sourcefile.");
+        return;
+    }
+
+    let mut module = Module::new(args[1].clone().into());
     module.parse_ast();
     let Some(ast) = module.resolve_ast() else {
         return;
