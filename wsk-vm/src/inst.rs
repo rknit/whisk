@@ -37,13 +37,12 @@ impl RunInst for Inst {
             Inst::Push(v) => vm.push(v),
             Inst::Pop => vm.pop().map(|_| ())?,
             Inst::Load(idx) => {
-                let v = vm.read_stack(idx)?;
-                vm.push(*v);
+                let v = vm.load(idx)?;
+                vm.push(v);
             }
             Inst::Store(idx) => {
-                let v = vm.read_stack(0)?;
-                vm.replace_stack(idx, *v)?;
-                vm.pop().map(|_| ())?;
+                let v = vm.pop()?;
+                vm.store(idx, v);
             }
 
             Inst::Add => impl_macros::binary_op!(vm, +),

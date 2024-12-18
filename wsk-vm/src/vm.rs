@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::{
     inst::{RunError, RunInst},
     program::Program,
@@ -7,14 +9,14 @@ use crate::{
 #[derive(Debug)]
 pub struct VM {
     stack: Vec<Value>,
-    frames: Vec<(usize, usize)>,
+    frames: Vec<Frame>,
     status: VMStatus,
 }
 impl VM {
     pub fn new() -> Self {
         Self {
             stack: vec![],
-            frames: vec![(0, 0)],
+            frames: vec![],
             status: VMStatus::default(),
         }
     }
@@ -30,11 +32,11 @@ impl VM {
         self.reset(program.get_entry_point());
 
         while !self.is_halted() {
-            let (fi, pc) = self.get_frame();
-            let Some(func) = program.get(fi) else {
+            let Frame { fi, pc, .. } = self.get_frame();
+            let Some(func) = program.get(*fi) else {
                 return Err(VMError::InvalidFunctionIndex.into());
             };
-            let Some(inst) = func.get(pc) else {
+            let Some(inst) = func.get(*pc) else {
                 return Err(VMError::InstReadOutOfBound.into());
             };
 
@@ -43,8 +45,7 @@ impl VM {
             if self.is_skipped() {
                 self.status.skip = false;
             } else {
-                let (_, pc) = self.get_frame_mut();
-                *pc = pc.wrapping_add(1);
+                self.get_frame_mut().advance();
             }
         }
 
@@ -52,7 +53,7 @@ impl VM {
     }
 
     pub fn push_frame(&mut self, fi: usize) {
-        self.frames.push((fi, 0));
+        self.frames.push(Frame::new(fi));
     }
 
     pub fn pop_frame(&mut self) -> Result<(), VMError> {
@@ -63,11 +64,11 @@ impl VM {
         Ok(())
     }
 
-    pub fn get_frame(&self) -> (usize, usize) {
-        *self.frames.last().unwrap()
+    pub fn get_frame(&self) -> &Frame {
+        self.frames.last().unwrap()
     }
 
-    fn get_frame_mut(&mut self) -> &mut (usize, usize) {
+    fn get_frame_mut(&mut self) -> &mut Frame {
         self.frames.last_mut().unwrap()
     }
 
@@ -79,24 +80,27 @@ impl VM {
         self.stack.pop().ok_or(VMError::StackUnderflow)
     }
 
-    /// Read the n-th value from the top of the stack.
-    pub fn read_stack(&self, idx: usize) -> Result<&Value, VMError> {
-        if idx >= self.stack.len() {
-            Err(VMError::StackReadOutOfBound)
-        } else {
-            Ok(self.stack.get(self.stack.len() - 1 - idx).unwrap())
-        }
+    pub fn store(&mut self, key: usize, value: Value) {
+        self.get_frame_mut().store(key, value);
     }
 
-    /// Replace the n-th value from the top of the stack with the provided value.
-    pub fn replace_stack(&mut self, idx: usize, value: Value) -> Result<(), VMError> {
-        if idx >= self.stack.len() {
-            Err(VMError::StackWriteOutOfBound)
-        } else {
-            let ridx = self.stack.len() - 1 - idx;
-            *self.stack.get_mut(ridx).unwrap() = value;
-            Ok(())
-        }
+    pub fn load(&self, key: usize) -> Result<Value, VMError> {
+        self.get_frame().load(key)
+    }
+
+    pub fn jump(&mut self, offset: isize) {
+        self.get_frame_mut().jump(offset);
+        self.skip();
+    }
+
+    pub fn call(&mut self, fi: usize) {
+        self.push_frame(fi);
+        self.skip();
+    }
+
+    pub fn ret(&mut self) -> Result<(), RunError> {
+        self.pop_frame()?;
+        Ok(())
     }
 
     pub fn halt(&mut self) {
@@ -114,22 +118,6 @@ impl VM {
     pub fn is_skipped(&self) -> bool {
         self.status.skip
     }
-
-    pub fn jump(&mut self, offset: isize) {
-        let (_, pc) = self.get_frame_mut();
-        *pc = pc.wrapping_add_signed(offset);
-        self.skip();
-    }
-
-    pub fn call(&mut self, fi: usize) {
-        self.push_frame(fi);
-        self.skip();
-    }
-
-    pub fn ret(&mut self) -> Result<(), RunError> {
-        self.pop_frame()?;
-        Ok(())
-    }
 }
 
 #[derive(Debug)]
@@ -140,10 +128,50 @@ pub enum VMError {
     StackUnderflow,
     StackReadOutOfBound,
     StackWriteOutOfBound,
+    InvalidLocalId,
 }
 
 #[derive(Debug, Default)]
 pub struct VMStatus {
     halt: bool,
     skip: bool,
+}
+
+#[derive(Debug)]
+pub struct Frame {
+    fi: usize,
+    pc: usize,
+    locals: HashMap<usize, Value>,
+}
+impl Frame {
+    pub fn new(fi: usize) -> Self {
+        Self {
+            fi,
+            pc: 0,
+            locals: HashMap::new(),
+        }
+    }
+
+    pub fn store(&mut self, key: usize, value: Value) {
+        if let Some(v) = self.locals.get_mut(&key) {
+            *v = value;
+        } else {
+            self.locals.insert(key, value);
+        }
+    }
+
+    pub fn load(&self, key: usize) -> Result<Value, VMError> {
+        self.locals
+            .get(&key)
+            .copied()
+            .ok_or(VMError::InvalidLocalId)
+    }
+
+    pub fn advance(&mut self) {
+        self.pc = self.pc.wrapping_add(1);
+    }
+
+    pub fn jump(&mut self, offset: isize) {
+        self.pc = self.pc.wrapping_add_signed(offset);
+    }
 }
