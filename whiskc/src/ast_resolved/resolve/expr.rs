@@ -5,7 +5,7 @@ use crate::{
     },
     ast_resolved::{
         errors::{IdentResolveError, TypeResolveError, ValueResolveError},
-        nodes::expr::{BinaryExpr, CallExpr, Expr, IdentExpr, UnaryExpr},
+        nodes::expr::{BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, UnaryExpr},
         ControlFlow, ResolveContext,
     },
     symbol_table::Symbol,
@@ -13,6 +13,8 @@ use crate::{
 };
 
 use ast::nodes::expr as ast_expr;
+
+use super::stmt::StmtResolve;
 
 pub type ResolvedExpr = (Option<Expr>, ControlFlow);
 
@@ -335,6 +337,48 @@ impl ExprResolve for ast_expr::CallExpr {
 
 impl ExprResolve for ast_expr::BlockExpr {
     fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
-        todo!()
+        let mut stmts = Vec::new();
+        let table_id = ctx.push_local();
+
+        for ast_stmt in &self.stmts {
+            let (stmt, flow) = ast_stmt.resolve(ctx);
+            if let Some(stmt) = stmt {
+                stmts.push(stmt);
+            }
+            match flow {
+                ControlFlow::Flow => (),
+                ControlFlow::Return => {
+                    ctx.pop_local();
+                    return (None, ControlFlow::Return);
+                }
+            };
+        }
+
+        let eval_expr = if let Some(eval_expr) = &self.eval_expr {
+            let (expr, flow) = eval_expr.resolve(ctx);
+            if expr.is_none() || flow == ControlFlow::Return {
+                return (expr, flow);
+            }
+            Some(Box::new(expr.unwrap()))
+        } else {
+            None
+        };
+        let eval_ty = eval_expr
+            .as_ref()
+            .map(|v| v.get_type())
+            .unwrap_or(PrimType::Unit.into());
+
+        ctx.pop_local();
+        (
+            Some(Expr::new(
+                BlockExpr {
+                    table_id,
+                    stmts,
+                    eval_expr,
+                },
+                eval_ty,
+            )),
+            ControlFlow::Flow,
+        )
     }
 }
