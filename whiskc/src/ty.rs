@@ -1,4 +1,5 @@
 use core::fmt;
+use std::mem::discriminant;
 
 use crate::symbol_table::{Symbol, SymbolID, SymbolTable};
 
@@ -42,11 +43,24 @@ impl fmt::Debug for Type {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Eq)]
 pub enum PrimType {
+    Never,
     Unit,
     Bool,
     Integer, // i64
+}
+impl PartialEq for PrimType {
+    fn eq(&self, other: &Self) -> bool {
+        let self_d = discriminant(self);
+        let other_d = discriminant(other);
+        let never_d = discriminant(&Self::Never);
+        if self_d == never_d || other_d == never_d {
+            true
+        } else {
+            self_d == other_d
+        }
+    }
 }
 impl fmt::Display for PrimType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -54,6 +68,7 @@ impl fmt::Display for PrimType {
             f,
             "{}",
             match self {
+                PrimType::Never => "never",
                 PrimType::Unit => "()",
                 PrimType::Bool => "bool",
                 PrimType::Integer => "int",

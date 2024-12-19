@@ -10,14 +10,14 @@ fn main() {
     }
 
     let mut module = Module::new(args[1].clone().into());
-    let Some(ast) = module.parse_ast() else {
+    let Some(_ast) = module.parse_ast() else {
         return;
     };
-    dbg!(&ast);
-    let Some(ast) = module.resolve_ast() else {
+    //dbg!(&ast);
+    let Some(_ast) = module.resolve_ast() else {
         return;
     };
-    dbg!(&ast);
+    //dbg!(&ast);
     //module.gen_cfg();
     //module.display_cfg();
     module.codegen();

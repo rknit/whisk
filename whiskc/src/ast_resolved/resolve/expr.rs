@@ -341,17 +341,27 @@ impl ExprResolve for ast_expr::BlockExpr {
         let table_id = ctx.push_local();
 
         for ast_stmt in &self.stmts {
-            let (stmt, flow) = ast_stmt.resolve(ctx);
+            let (stmt, _flow) = ast_stmt.resolve(ctx);
             if let Some(stmt) = stmt {
                 stmts.push(stmt);
             }
-            match flow {
-                ControlFlow::Flow => (),
-                ControlFlow::Return => {
-                    ctx.pop_local();
-                    return (None, ControlFlow::Return);
-                }
-            };
+            //match flow {
+            //    ControlFlow::Flow => (),
+            //    ControlFlow::Return => {
+            //        ctx.pop_local();
+            //        return (
+            //            Some(Expr::new(
+            //                BlockExpr {
+            //                    table_id,
+            //                    stmts,
+            //                    eval_expr: None,
+            //                },
+            //                PrimType::Unit.into(),
+            //            )),
+            //            ControlFlow::Return,
+            //        );
+            //    }
+            //};
         }
 
         let eval_expr = if let Some(eval_expr) = &self.eval_expr {

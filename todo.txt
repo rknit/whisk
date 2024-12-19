@@ -1,1 +1,1 @@
-- whiskc: block as expr
+- whiskc: never type

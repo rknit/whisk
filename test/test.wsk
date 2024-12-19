@@ -1,5 +1,6 @@
 func main() int {
-  return 1 + {
+  return {
     return 8;
-  } - 6;
+    1
+  };
 }
