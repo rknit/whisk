@@ -257,7 +257,7 @@ impl StmtResolve<ReturnStmt> for ast_stmt::ReturnStmt {
 
         let (value, val_ty) = if let Some(expr) = &self.expr {
             let (value, flow) = expr.resolve(ctx);
-            if flow == ControlFlow::Flow {
+            if flow == ControlFlow::Return {
                 return (None, flow);
             }
 

@@ -2,7 +2,9 @@ use wsk_vm::{Cmp, Inst};
 
 use crate::{
     ast::parsing::token::Operator,
-    ast_resolved::nodes::expr::{BinaryExpr, CallExpr, Expr, ExprKind, IdentExpr, UnaryExpr},
+    ast_resolved::nodes::expr::{
+        BinaryExpr, BlockExpr, CallExpr, Expr, ExprKind, IdentExpr, UnaryExpr,
+    },
     ty::Type,
 };
 
@@ -17,7 +19,7 @@ impl Codegen for Expr {
             ExprKind::Unary(v) => v.codegen(ctx),
             ExprKind::Binary(v) => v.codegen(ctx),
             ExprKind::Call(v) => v.codegen(ctx),
-            ExprKind::Block(_) => todo!(),
+            ExprKind::Block(v) => v.codegen(ctx),
         }
     }
 }
@@ -101,6 +103,20 @@ impl ExprCodegen for CallExpr {
             ctx.get_current_fi_mut().push_inst(Inst::Call(fi));
         } else {
             unimplemented!("unsupported function call type")
+        }
+
+        Ok(())
+    }
+}
+
+impl ExprCodegen for BlockExpr {
+    fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
+        for stmt in &self.stmts {
+            stmt.codegen(ctx)?;
+        }
+
+        if let Some(expr) = &self.eval_expr {
+            expr.codegen(ctx)?;
         }
 
         Ok(())

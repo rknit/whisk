@@ -15,7 +15,10 @@ impl EvalConstant for ExprKind {
             | ExprKind::Call(_) => None,
             ExprKind::Unary(expr) => expr.eval_constant(),
             ExprKind::Binary(expr) => expr.eval_constant(),
-            ExprKind::Block(_) => todo!(),
+            ExprKind::Block(_) => {
+                eprintln!("todo: eval_constant block expr");
+                None
+            }
         }
     }
 }
