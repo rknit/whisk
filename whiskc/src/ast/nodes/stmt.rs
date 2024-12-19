@@ -18,6 +18,7 @@ pub enum Stmt {
     Let(LetStmt),
     If(IfStmt),
     Return(ReturnStmt),
+    Loop(LoopStmt),
 }
 impl fmt::Debug for Stmt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -28,6 +29,7 @@ impl fmt::Debug for Stmt {
             Stmt::Let(v) => write!(f, "{:#?}", v),
             Stmt::If(v) => write!(f, "{:#?}", v),
             Stmt::Return(v) => write!(f, "{:#?}", v),
+            Stmt::Loop(v) => write!(f, "{:#?}", v),
         }
     }
 }
@@ -82,4 +84,10 @@ pub struct ReturnStmt {
     pub return_tok: Located<Keyword>,
     pub expr: Option<Expr>,
     pub semi_tok: Located<Delimiter>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LoopStmt {
+    pub loop_tok: Located<Keyword>,
+    pub block: Block,
 }

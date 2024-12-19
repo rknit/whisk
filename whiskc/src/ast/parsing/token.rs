@@ -152,6 +152,7 @@ pub enum Keyword {
     Else,
     Return,
     As,
+    Loop,
 }
 impl fmt::Display for Keyword {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -167,6 +168,7 @@ impl fmt::Display for Keyword {
                 Self::Else => "else",
                 Self::Return => "return",
                 Self::As => "as",
+                Self::Loop => "loop",
             }
         )
     }

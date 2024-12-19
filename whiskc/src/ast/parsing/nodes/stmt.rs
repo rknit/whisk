@@ -7,7 +7,7 @@ use crate::{
         parsing::{
             parsers::lookup_parser::{self, LookUpParseError, LookUpParser},
             token::{Delimiter, Keyword, Operator, TokenKind},
-            Parse, ParseError, TryParse,
+            Parse, ParseContext, ParseError, ParseResult, TryParse,
         },
     },
     ty::Type,
@@ -39,13 +39,15 @@ impl lookup_parser::Handlers<Stmt> for StmtHandlers {
         handler(TokenKind::Keyword(Keyword::Return), |_, parser| {
             ReturnStmt::parse(parser).map(|v| Stmt::Return(v))
         });
+
+        handler(TokenKind::Keyword(Keyword::Loop), |_, parser| {
+            LoopStmt::parse(parser).map(|v| Stmt::Loop(v))
+        });
     }
 }
 
 impl Parse for Block {
-    fn parse(
-        parser: &mut crate::ast::parsing::ParseContext,
-    ) -> crate::ast::parsing::ParseResult<Block> {
+    fn parse(parser: &mut ParseContext) -> ParseResult<Block> {
         let brace_open_tok = match_delimiter!(parser, Delimiter::BraceOpen =>);
 
         let mut stmts = Vec::new();
@@ -89,9 +91,7 @@ impl Parse for Block {
     }
 }
 
-fn parse_expr_stmt_or_assign_stmt(
-    parser: &mut crate::ast::parsing::ParseContext,
-) -> crate::ast::parsing::ParseResult<Stmt> {
+fn parse_expr_stmt_or_assign_stmt(parser: &mut ParseContext) -> ParseResult<Stmt> {
     let expr = Expr::parse(parser)?;
     Some(
         if let Ok(assign_tok) = match_operator!(parser, Operator::Assign) {
@@ -114,9 +114,7 @@ fn parse_expr_stmt_or_assign_stmt(
 }
 
 impl Parse for LetStmt {
-    fn parse(
-        parser: &mut crate::ast::parsing::ParseContext,
-    ) -> crate::ast::parsing::ParseResult<Self> {
+    fn parse(parser: &mut ParseContext) -> ParseResult<Self> {
         let let_tok = match_keyword!(parser, Keyword::Let =>);
         let name = match_identifier!(parser, "let declaration's name".to_owned() =>)?;
         let ty = Located::<Type>::try_parse(parser);
@@ -136,9 +134,7 @@ impl Parse for LetStmt {
 }
 
 impl Parse for IfStmt {
-    fn parse(
-        parser: &mut crate::ast::parsing::ParseContext,
-    ) -> crate::ast::parsing::ParseResult<Self> {
+    fn parse(parser: &mut ParseContext) -> ParseResult<Self> {
         let if_tok = match_keyword!(parser, Keyword::If =>);
         let cond = Expr::parse(parser)?;
         let block = Block::parse(parser)?;
@@ -158,9 +154,7 @@ impl Parse for IfStmt {
 }
 
 impl Parse for ElseStmt {
-    fn parse(
-        ctx: &mut crate::ast::parsing::ParseContext,
-    ) -> crate::ast::parsing::ParseResult<Self> {
+    fn parse(ctx: &mut ParseContext) -> ParseResult<Self> {
         let else_tok = match_keyword!(ctx, Keyword::Else =>);
         let block = Block::parse(ctx)?;
         Some(Self {
@@ -171,9 +165,7 @@ impl Parse for ElseStmt {
 }
 
 impl Parse for ReturnStmt {
-    fn parse(
-        parser: &mut crate::ast::parsing::ParseContext,
-    ) -> crate::ast::parsing::ParseResult<Self> {
+    fn parse(parser: &mut ParseContext) -> ParseResult<Self> {
         let return_tok = match_keyword!(parser, Keyword::Return =>);
         Some(
             if let Ok(semi_tok) = match_delimiter!(parser, Delimiter::Semicolon) {
@@ -195,10 +187,16 @@ impl Parse for ReturnStmt {
     }
 }
 
+impl Parse for LoopStmt {
+    fn parse(ctx: &mut ParseContext) -> ParseResult<Self> {
+        let loop_tok = match_keyword!(ctx, Keyword::Loop =>);
+        let block = Block::parse(ctx)?;
+        Some(Self { loop_tok, block })
+    }
+}
+
 impl Parse for Stmt {
-    fn parse(
-        parser: &mut crate::ast::parsing::ParseContext,
-    ) -> crate::ast::parsing::ParseResult<Stmt> {
+    fn parse(parser: &mut ParseContext) -> ParseResult<Stmt> {
         static PARSER: Lazy<LookUpParser<Stmt>> =
             Lazy::new(|| LookUpParser::<Stmt>::new(&StmtHandlers));
 
