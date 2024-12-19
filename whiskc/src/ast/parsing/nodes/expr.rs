@@ -3,7 +3,11 @@ use once_cell::sync::Lazy;
 use crate::{
     ast::{
         location::Located,
-        nodes::{expr::*, punctuate::Puntuated},
+        nodes::{
+            expr::*,
+            punctuate::Puntuated,
+            stmt::{ExprStmt, Stmt},
+        },
         parsing::{
             parsers::pratt_parser::{self, PrattParseError, PrattParseResult, PrattParser},
             token::{
@@ -62,6 +66,8 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
             TokenKind::Delimiter(Delimiter::BracketOpen),
             parse_array_expr,
         );
+
+        nud(TokenKind::Delimiter(Delimiter::BraceOpen), parse_block_expr);
     }
 
     fn leds<F>(&self, mut led: F)
@@ -234,6 +240,63 @@ fn parse_array_index_expr(
         bracket_open_tok: bracket_open_tok.into(),
         index: Box::new(index),
         bracket_close_tok: bracket_close_tok.into(),
+    }))
+}
+
+fn parse_block_expr(
+    _pratt_parser: &PrattParser<Expr, BindingPower>,
+    parser: &mut ParseContext,
+) -> ParseResult<Expr> {
+    let brace_open_tok = match_delimiter!(parser, Delimiter::BraceOpen =>);
+
+    let mut stmts = Vec::new();
+    let mut eval_expr = None;
+    let brace_close_tok = loop {
+        if let Ok(b) = match_delimiter!(parser, Delimiter::BraceClose) {
+            break b;
+        }
+        if match_token_kind!(parser, TokenKind::EndOfFile).is_some() {
+            break match_delimiter!(parser, Delimiter::BraceClose =>);
+        }
+
+        let stmt = Stmt::parse(parser);
+        if let Some(stmt) = stmt {
+            if let Stmt::Expr(ExprStmt {
+                expr,
+                semi_tok: None,
+            }) = stmt
+            {
+                eval_expr = Some(Box::new(expr));
+                break match_delimiter!(parser, Delimiter::BraceClose =>);
+            }
+
+            stmts.push(stmt);
+            continue;
+        }
+
+        // panic mode: skip until next semicolon or brace_close or EOF
+        while !matches!(
+            parser.lexer.peek_token_kind(0),
+            TokenKind::EndOfFile
+                | TokenKind::Delimiter(Delimiter::Semicolon | Delimiter::BraceClose)
+        ) {
+            parser.lexer.next_token();
+        }
+
+        // panic mode: found semicolon, proceed to next stmt
+        if matches!(
+            parser.lexer.peek_token_kind(0),
+            TokenKind::Delimiter(Delimiter::Semicolon)
+        ) {
+            parser.lexer.next_token();
+        }
+    };
+
+    Some(Expr::Block(BlockExpr {
+        brace_open_tok,
+        stmts,
+        eval_expr,
+        brace_close_tok,
     }))
 }
 

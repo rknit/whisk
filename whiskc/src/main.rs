@@ -10,7 +10,10 @@ fn main() {
     }
 
     let mut module = Module::new(args[1].clone().into());
-    module.parse_ast();
+    let Some(ast) = module.parse_ast() else {
+        return;
+    };
+    dbg!(&ast);
     let Some(ast) = module.resolve_ast() else {
         return;
     };

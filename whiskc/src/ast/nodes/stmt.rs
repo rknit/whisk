@@ -44,7 +44,7 @@ pub struct BlockStmt {
 #[derive(Debug, Clone)]
 pub struct ExprStmt {
     pub expr: Expr,
-    pub semi_tok: Located<Delimiter>,
+    pub semi_tok: Option<Located<Delimiter>>,
 }
 
 #[derive(Debug, Clone)]

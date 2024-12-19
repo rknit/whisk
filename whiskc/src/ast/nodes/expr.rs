@@ -1,5 +1,3 @@
-use core::fmt;
-
 use crate::{
     ast::{
         location::{Locatable, Located, LocationRange},
@@ -8,9 +6,9 @@ use crate::{
     ty::Type,
 };
 
-use super::punctuate::Puntuated;
+use super::{punctuate::Puntuated, stmt::Stmt};
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     Integer(Located<i64>),
     Bool(Located<bool>),
@@ -22,6 +20,7 @@ pub enum Expr {
     Array(ArrayExpr),
     ArrayIndex(ArrayIndexExpr),
     Cast(CastExpr),
+    Block(BlockExpr),
 }
 impl Locatable for Expr {
     fn get_location(&self) -> LocationRange {
@@ -36,35 +35,15 @@ impl Locatable for Expr {
             Expr::Array(array_expr) => array_expr.get_location(),
             Expr::ArrayIndex(array_index_expr) => array_index_expr.get_location(),
             Expr::Cast(cast_expr) => cast_expr.get_location(),
-        }
-    }
-}
-impl fmt::Debug for Expr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Expr::Integer(v) => write!(f, "{:?}", v),
-            Expr::Bool(v) => write!(f, "{:?}", v),
-            Expr::Identifier(v) => write!(f, "{:?}", v),
-            Expr::Unary(v) => write!(f, "{:?}", v),
-            Expr::Binary(v) => write!(f, "{:?}", v),
-            Expr::Grouped(v) => write!(f, "{:?}", v),
-            Expr::Call(v) => write!(f, "{:?}", v),
-            Expr::Array(v) => write!(f, "{:?}", v),
-            Expr::ArrayIndex(v) => write!(f, "{:?}", v),
-            Expr::Cast(v) => write!(f, "{:?}", v),
+            Expr::Block(expr) => expr.get_location(),
         }
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct UnaryExpr {
     pub op: Located<Operator>,
     pub expr: Box<Expr>,
-}
-impl fmt::Debug for UnaryExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<{:?} {:?}>", self.op, self.expr)
-    }
 }
 impl Locatable for UnaryExpr {
     fn get_location(&self) -> LocationRange {
@@ -72,16 +51,11 @@ impl Locatable for UnaryExpr {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct BinaryExpr {
     pub op: Located<Operator>,
     pub left: Box<Expr>,
     pub right: Box<Expr>,
-}
-impl fmt::Debug for BinaryExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<{:?} {:?} {:?}>", self.op, self.left, self.right)
-    }
 }
 impl Locatable for BinaryExpr {
     fn get_location(&self) -> LocationRange {
@@ -89,16 +63,11 @@ impl Locatable for BinaryExpr {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct GroupedExpr {
     pub paren_open_tok: Located<Delimiter>,
     pub expr: Box<Expr>,
     pub paren_close_tok: Located<Delimiter>,
-}
-impl fmt::Debug for GroupedExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "({:?})", self.expr)
-    }
 }
 impl Locatable for GroupedExpr {
     fn get_location(&self) -> LocationRange {
@@ -106,27 +75,12 @@ impl Locatable for GroupedExpr {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct CallExpr {
     pub callee: Box<Expr>,
     pub paren_open_tok: Located<Delimiter>,
     pub args: Puntuated<Expr>,
     pub paren_close_tok: Located<Delimiter>,
-}
-impl fmt::Debug for CallExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{:?}({})",
-            self.callee,
-            self.args
-                .items
-                .iter()
-                .map(|v| format!("{:?}", v))
-                .collect::<Vec<String>>()
-                .join(", ")
-        )
-    }
 }
 impl Locatable for CallExpr {
     fn get_location(&self) -> LocationRange {
@@ -134,25 +88,11 @@ impl Locatable for CallExpr {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ArrayExpr {
     pub bracket_open_tok: Located<Delimiter>,
     pub elements: Puntuated<Expr>,
     pub bracket_close_tok: Located<Delimiter>,
-}
-impl fmt::Debug for ArrayExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "[{}]",
-            self.elements
-                .items
-                .iter()
-                .map(|v| format!("{:?}", v))
-                .collect::<Vec<String>>()
-                .join(", ")
-        )
-    }
 }
 impl Locatable for ArrayExpr {
     fn get_location(&self) -> LocationRange {
@@ -160,17 +100,12 @@ impl Locatable for ArrayExpr {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct ArrayIndexExpr {
     pub expr: Box<Expr>,
     pub bracket_open_tok: Located<Delimiter>,
     pub index: Box<Expr>,
     pub bracket_close_tok: Located<Delimiter>,
-}
-impl fmt::Debug for ArrayIndexExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}[{:?}]", self.expr, self.index)
-    }
 }
 impl Locatable for ArrayIndexExpr {
     fn get_location(&self) -> LocationRange {
@@ -178,19 +113,27 @@ impl Locatable for ArrayIndexExpr {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct CastExpr {
     pub expr: Box<Expr>,
     pub as_tok: Located<Keyword>,
     pub ty: Located<Type>,
 }
-impl fmt::Debug for CastExpr {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "<{:?} {:?} {:?}>", self.as_tok, self.ty, self.expr)
-    }
-}
 impl Locatable for CastExpr {
     fn get_location(&self) -> LocationRange {
         LocationRange::combine(self.expr.get_location(), self.ty.1)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct BlockExpr {
+    pub brace_open_tok: Located<Delimiter>,
+    pub stmts: Vec<Stmt>,
+    pub eval_expr: Option<Box<Expr>>,
+    pub brace_close_tok: Located<Delimiter>,
+}
+impl Locatable for BlockExpr {
+    fn get_location(&self) -> LocationRange {
+        LocationRange::combine(self.brace_open_tok.1, self.brace_close_tok.1)
     }
 }

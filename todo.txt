@@ -1,1 +1,1 @@
-- whiskc: codegen wsk-vm
+- whiskc: block as expr

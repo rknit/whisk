@@ -1,6 +1,7 @@
 func main() int {
-  1;
-  4;
-  100;
-  return 0;
+  return {
+    let x = 1;
+    let y = 5;
+    x + y
+  };
 }

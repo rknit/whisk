@@ -99,16 +99,13 @@ fn parse_expr_stmt_or_assign_stmt(parser: &mut ParseContext) -> ParseResult<Stmt
             let semi_tok = match_delimiter!(parser, Delimiter::Semicolon =>);
             Stmt::Assign(AssignStmt {
                 target: expr,
-                assign_tok: assign_tok.into(),
+                assign_tok,
                 value,
-                semi_tok: semi_tok.into(),
+                semi_tok,
             })
         } else {
-            let semi_tok = match_delimiter!(parser, Delimiter::Semicolon =>);
-            Stmt::Expr(ExprStmt {
-                expr,
-                semi_tok: semi_tok.into(),
-            })
+            let semi_tok = match_delimiter!(parser, Delimiter::Semicolon).ok();
+            Stmt::Expr(ExprStmt { expr, semi_tok })
         },
     )
 }
