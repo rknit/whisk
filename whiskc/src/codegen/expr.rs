@@ -40,7 +40,7 @@ impl ExprCodegen for bool {
 impl ExprCodegen for IdentExpr {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
         if ctx.get_fi(self.sym_id).is_some() {
-            return Ok(());
+            unimplemented!("function ref codegen")
         }
         let id = ctx.get_local(self.sym_id);
         ctx.get_current_fi_mut().push_inst(Inst::Load(id));

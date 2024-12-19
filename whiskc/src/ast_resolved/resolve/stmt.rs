@@ -72,7 +72,11 @@ impl StmtResolve<ExprStmt> for ast_stmt::ExprStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<ExprStmt>, ControlFlow) {
         let expr = self.expr.resolve(ctx);
         let stmt = if let Some(expr) = expr {
-            Some(ExprStmt { expr })
+            if expr.get_kind().is_constant() {
+                None
+            } else {
+                Some(ExprStmt { expr })
+            }
         } else {
             None
         };

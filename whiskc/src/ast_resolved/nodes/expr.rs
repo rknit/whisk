@@ -40,6 +40,11 @@ pub enum ExprKind {
     Binary(BinaryExpr),
     Call(CallExpr),
 }
+impl ExprKind {
+    pub fn is_constant(&self) -> bool {
+        matches!(self, Self::Integer(_) | Self::Bool(_))
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct IdentExpr {

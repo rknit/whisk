@@ -1,8 +1,11 @@
 use wsk_vm::Inst;
 
-use crate::ast_resolved::nodes::{
-    expr::{ExprKind, IdentExpr},
-    stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, LoopStmt, ReturnStmt, Stmt},
+use crate::{
+    ast_resolved::nodes::{
+        expr::{ExprKind, IdentExpr},
+        stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, LoopStmt, ReturnStmt, Stmt},
+    },
+    ty::PrimType,
 };
 
 use super::Codegen;
@@ -36,7 +39,11 @@ impl Codegen for Block {
 
 impl Codegen for ExprStmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
-        self.expr.codegen(ctx)
+        self.expr.codegen(ctx)?;
+        if self.expr.get_type() != PrimType::Unit.into() {
+            ctx.get_current_fi_mut().push_inst(Inst::Pop);
+        }
+        Ok(())
     }
 }
 

@@ -1,16 +1,6 @@
 func main() int {
-  let x = 0;
-  let y = 0;
-  let z = 1;
-  let n = 15 - 1;
-
-  loop {
-    if n == 0 {
-      return z;
-    }
-    x = y;
-    y = z;
-    z = x + y;
-    n = n - 1;
-  }
+  1;
+  4;
+  100;
+  return 0;
 }
