@@ -2,7 +2,7 @@ use wsk_vm::Inst;
 
 use crate::ast_resolved::nodes::{
     expr::{ExprKind, IdentExpr},
-    stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, ReturnStmt, Stmt},
+    stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, LoopStmt, ReturnStmt, Stmt},
 };
 
 use super::Codegen;
@@ -16,7 +16,7 @@ impl Codegen for Stmt {
             Stmt::Let(stmt) => stmt.codegen(ctx),
             Stmt::If(stmt) => stmt.codegen(ctx),
             Stmt::Return(stmt) => stmt.codegen(ctx),
-            Stmt::Loop(_) => todo!(),
+            Stmt::Loop(stmt) => stmt.codegen(ctx),
         }
     }
 }
@@ -102,6 +102,17 @@ impl Codegen for ReturnStmt {
             expr.codegen(ctx)?;
         }
         ctx.get_current_fi_mut().push_inst(Inst::Ret);
+        Ok(())
+    }
+}
+
+impl Codegen for LoopStmt {
+    fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
+        let jmp_dest = ctx.get_current_fi_mut().len();
+        self.block.codegen(ctx)?;
+        let func = ctx.get_current_fi_mut();
+        let jmp_src = func.len();
+        func.push_inst(Inst::Jmp(jmp_dest as isize - jmp_src as isize));
         Ok(())
     }
 }

@@ -2,7 +2,7 @@ func main() int {
   let x = 0;
   let y = 0;
   let z = 1;
-  let n = 15;
+  let n = 15 - 1;
 
   loop {
     if n == 0 {
@@ -13,6 +13,4 @@ func main() int {
     z = x + y;
     n = n - 1;
   }
-
-  return 0;
 }
