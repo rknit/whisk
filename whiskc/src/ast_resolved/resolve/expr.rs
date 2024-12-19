@@ -6,7 +6,7 @@ use crate::{
     ast_resolved::{
         errors::{IdentResolveError, TypeResolveError, ValueResolveError},
         nodes::expr::{BinaryExpr, CallExpr, Expr, IdentExpr, UnaryExpr},
-        Resolve, ResolveContext,
+        ControlFlow, ResolveContext,
     },
     symbol_table::Symbol,
     ty::{FuncType, PrimType, Type},
@@ -14,8 +14,14 @@ use crate::{
 
 use ast::nodes::expr as ast_expr;
 
-impl Resolve<Expr> for ast_expr::Expr {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<Expr> {
+pub type ResolvedExpr = (Option<Expr>, ControlFlow);
+
+pub trait ExprResolve {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr;
+}
+
+impl ExprResolve for ast_expr::Expr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
         match self {
             ast_expr::Expr::Integer(expr) => expr.resolve(ctx),
             ast_expr::Expr::Bool(expr) => expr.resolve(ctx),
@@ -24,43 +30,57 @@ impl Resolve<Expr> for ast_expr::Expr {
             ast_expr::Expr::Binary(expr) => expr.resolve(ctx),
             ast_expr::Expr::Grouped(expr) => expr.expr.resolve(ctx),
             ast_expr::Expr::Call(expr) => expr.resolve(ctx),
+            ast_expr::Expr::Block(expr) => expr.resolve(ctx),
             _ => unimplemented!("expr resolve"),
         }
     }
 }
 
-impl Resolve<Expr> for Located<i64> {
-    fn resolve(&self, _ctx: &mut ResolveContext) -> Option<Expr> {
-        Some(Expr::new(self.0, PrimType::Integer.into()))
+impl ExprResolve for Located<i64> {
+    fn resolve(&self, _ctx: &mut ResolveContext) -> ResolvedExpr {
+        (
+            Some(Expr::new(self.0, PrimType::Integer.into())),
+            ControlFlow::Flow,
+        )
     }
 }
 
-impl Resolve<Expr> for Located<bool> {
-    fn resolve(&self, _ctx: &mut ResolveContext) -> Option<Expr> {
-        Some(Expr::new(self.0, PrimType::Bool.into()))
+impl ExprResolve for Located<bool> {
+    fn resolve(&self, _ctx: &mut ResolveContext) -> ResolvedExpr {
+        (
+            Some(Expr::new(self.0, PrimType::Bool.into())),
+            ControlFlow::Flow,
+        )
     }
 }
 
-impl Resolve<Expr> for Located<String> {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<Expr> {
+impl ExprResolve for Located<String> {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
         let Some(symbol) = ctx.get_symbol_by_name_mut(&self.0) else {
             ctx.push_error(IdentResolveError::UnknownIdentifier(self.clone()).into());
-            return None;
+            return (None, ControlFlow::Flow);
         };
         symbol.push_ref(self.1);
-        Some(Expr::new(
-            IdentExpr {
-                sym_id: symbol.get_id(),
-                ident: self.0.clone(),
-            },
-            symbol.get_type(),
-        ))
+        (
+            Some(Expr::new(
+                IdentExpr {
+                    sym_id: symbol.get_id(),
+                    ident: self.0.clone(),
+                },
+                symbol.get_type(),
+            )),
+            ControlFlow::Flow,
+        )
     }
 }
 
-impl Resolve<Expr> for ast_expr::UnaryExpr {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<Expr> {
-        let expr = self.expr.resolve(ctx)?;
+impl ExprResolve for ast_expr::UnaryExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
+        let (expr, flow) = self.expr.resolve(ctx);
+        if expr.is_none() || flow == ControlFlow::Return {
+            return (expr, flow);
+        }
+        let expr = expr.unwrap();
 
         use crate::ast::parsing::token::Operator;
         let ty = match self.op.0 {
@@ -73,7 +93,7 @@ impl Resolve<Expr> for ast_expr::UnaryExpr {
                         )
                         .into(),
                     );
-                    return None;
+                    return (None, ControlFlow::Flow);
                 }
                 expr.get_type()
             }
@@ -92,20 +112,32 @@ impl Resolve<Expr> for ast_expr::UnaryExpr {
             _ => unimplemented!("unary op '{}'", self.op.0),
         };
 
-        Some(Expr::new(
-            UnaryExpr {
-                op: self.op.0,
-                expr: Box::new(expr),
-            },
-            ty,
-        ))
+        (
+            Some(Expr::new(
+                UnaryExpr {
+                    op: self.op.0,
+                    expr: Box::new(expr),
+                },
+                ty,
+            )),
+            ControlFlow::Flow,
+        )
     }
 }
 
-impl Resolve<Expr> for ast_expr::BinaryExpr {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<Expr> {
-        let left = self.left.resolve(ctx)?;
-        let right = self.right.resolve(ctx)?;
+impl ExprResolve for ast_expr::BinaryExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
+        let (left, flow) = self.left.resolve(ctx);
+        if left.is_none() || flow == ControlFlow::Return {
+            return (left, flow);
+        }
+        let left = left.unwrap();
+
+        let (right, flow) = self.right.resolve(ctx);
+        if right.is_none() || flow == ControlFlow::Return {
+            return (right, flow);
+        }
+        let right = right.unwrap();
 
         let check_type_mismatch = |ctx: &mut ResolveContext| {
             if left.get_type() == right.get_type() {
@@ -134,7 +166,7 @@ impl Resolve<Expr> for ast_expr::BinaryExpr {
                         }
                         .into(),
                     );
-                    return None;
+                    return (None, ControlFlow::Flow);
                 }
                 if !right.get_type().is_numeric_ty() {
                     ctx.push_error(
@@ -144,11 +176,11 @@ impl Resolve<Expr> for ast_expr::BinaryExpr {
                         }
                         .into(),
                     );
-                    return None;
+                    return (None, ControlFlow::Flow);
                 }
 
                 if !check_type_mismatch(ctx) {
-                    return None;
+                    return (None, ControlFlow::Flow);
                 }
                 left.get_type()
             }
@@ -205,20 +237,28 @@ impl Resolve<Expr> for ast_expr::BinaryExpr {
             _ => unimplemented!("binary op '{}'", self.op.0),
         };
 
-        Some(Expr::new(
-            BinaryExpr {
-                op: self.op.0,
-                left: Box::new(left),
-                right: Box::new(right),
-            },
-            ty,
-        ))
+        (
+            Some(Expr::new(
+                BinaryExpr {
+                    op: self.op.0,
+                    left: Box::new(left),
+                    right: Box::new(right),
+                },
+                ty,
+            )),
+            ControlFlow::Flow,
+        )
     }
 }
 
-impl Resolve<Expr> for ast_expr::CallExpr {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<Expr> {
-        let callee = self.callee.resolve(ctx)?;
+impl ExprResolve for ast_expr::CallExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
+        let (callee, flow) = self.callee.resolve(ctx);
+        if callee.is_none() || flow == ControlFlow::Return {
+            return (callee, flow);
+        }
+        let callee = callee.unwrap();
+
         let Type::Function(FuncType(func_sym_id)) = callee.get_type() else {
             ctx.push_error(
                 TypeResolveError::CallOnNonFunctionType(Located(
@@ -227,7 +267,7 @@ impl Resolve<Expr> for ast_expr::CallExpr {
                 ))
                 .into(),
             );
-            return None;
+            return (None, ControlFlow::Flow);
         };
 
         let (expect_params, ret_ty) = {
@@ -256,7 +296,11 @@ impl Resolve<Expr> for ast_expr::CallExpr {
         let mut args = Vec::new();
 
         for ((i, expect_param), ast_arg) in expect_params.iter().enumerate().zip(&self.args.items) {
-            let Some(arg) = ast_arg.resolve(ctx) else {
+            let (arg, flow) = ast_arg.resolve(ctx);
+            if flow == ControlFlow::Return {
+                return (arg, flow);
+            }
+            let Some(arg) = arg else {
                 continue;
             };
 
@@ -276,12 +320,21 @@ impl Resolve<Expr> for ast_expr::CallExpr {
             );
         }
 
-        Some(Expr::new(
-            CallExpr {
-                callee: Box::new(callee),
-                args,
-            },
-            ret_ty,
-        ))
+        (
+            Some(Expr::new(
+                CallExpr {
+                    callee: Box::new(callee),
+                    args,
+                },
+                ret_ty,
+            )),
+            ControlFlow::Flow,
+        )
+    }
+}
+
+impl ExprResolve for ast_expr::BlockExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
+        todo!()
     }
 }

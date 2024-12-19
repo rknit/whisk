@@ -9,7 +9,7 @@ use crate::{
             expr::ExprKind,
             stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, LoopStmt, ReturnStmt, Stmt},
         },
-        ControlFlow, Resolve, ResolveContext,
+        ControlFlow, ResolveContext,
     },
     symbol_table::{Symbol, VarSymbol},
     ty::PrimType,

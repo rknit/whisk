@@ -3,6 +3,8 @@ use crate::{
     ty::Type,
 };
 
+use super::stmt::Stmt;
+
 #[derive(Debug, Clone)]
 pub struct Expr {
     kind: ExprKind,
@@ -39,6 +41,7 @@ pub enum ExprKind {
     Unary(UnaryExpr),
     Binary(BinaryExpr),
     Call(CallExpr),
+    Block(BlockExpr),
 }
 impl ExprKind {
     pub fn is_constant(&self) -> bool {
@@ -71,6 +74,13 @@ pub struct CallExpr {
     pub args: Vec<Expr>,
 }
 
+#[derive(Debug, Clone)]
+pub struct BlockExpr {
+    pub table_id: SymbolID,
+    pub stmts: Vec<Stmt>,
+    pub eval_expr: Option<Box<Expr>>,
+}
+
 impl From<i64> for ExprKind {
     fn from(value: i64) -> Self {
         Self::Integer(value)
@@ -99,5 +109,10 @@ impl From<BinaryExpr> for ExprKind {
 impl From<CallExpr> for ExprKind {
     fn from(value: CallExpr) -> Self {
         Self::Call(value)
+    }
+}
+impl From<BlockExpr> for ExprKind {
+    fn from(value: BlockExpr) -> Self {
+        Self::Block(value)
     }
 }
