@@ -17,6 +17,8 @@ use crate::{
 
 use ast::nodes::stmt as ast_stmt;
 
+use super::expr::ExprResolve;
+
 pub trait StmtResolve<T> {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<T>, ControlFlow);
 }
@@ -70,7 +72,11 @@ impl StmtResolve<Block> for ast_stmt::BlockStmt {
 
 impl StmtResolve<ExprStmt> for ast_stmt::ExprStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<ExprStmt>, ControlFlow) {
-        let expr = self.expr.resolve(ctx);
+        let (expr, flow) = self.expr.resolve(ctx);
+        if flow == ControlFlow::Return {
+            return (None, flow);
+        }
+
         let stmt = if let Some(expr) = expr {
             if expr.get_kind().is_constant() {
                 None
@@ -86,15 +92,19 @@ impl StmtResolve<ExprStmt> for ast_stmt::ExprStmt {
 
 impl StmtResolve<AssignStmt> for ast_stmt::AssignStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<AssignStmt>, ControlFlow) {
-        let Some(target) = self.target.resolve(ctx) else {
-            return (None, ControlFlow::Flow);
-        };
+        let (target, flow) = self.target.resolve(ctx);
+        if target.is_none() || flow == ControlFlow::Return {
+            return (None, flow);
+        }
+        let target = target.unwrap();
 
         eprintln!("TODO: verify expr is assignable");
 
-        let Some(value) = self.value.resolve(ctx) else {
-            return (None, ControlFlow::Flow);
-        };
+        let (value, flow) = self.value.resolve(ctx);
+        if value.is_none() || flow == ControlFlow::Return {
+            return (None, flow);
+        }
+        let value = value.unwrap();
 
         if target.get_type() != value.get_type() {
             ctx.push_error(
@@ -112,7 +122,10 @@ impl StmtResolve<AssignStmt> for ast_stmt::AssignStmt {
 
 impl StmtResolve<LetStmt> for ast_stmt::LetStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<LetStmt>, ControlFlow) {
-        let value = self.value.resolve(ctx);
+        let (value, flow) = self.value.resolve(ctx);
+        if flow == ControlFlow::Return {
+            return (None, flow);
+        }
 
         let value_ty = if let Some(value) = &value {
             if let Some(annotated_ty) = &self.ty {
@@ -173,7 +186,10 @@ impl StmtResolve<LetStmt> for ast_stmt::LetStmt {
 
 impl StmtResolve<Stmt> for ast_stmt::IfStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<Stmt>, ControlFlow) {
-        let cond = self.cond.resolve(ctx);
+        let (cond, flow) = self.cond.resolve(ctx);
+        if flow == ControlFlow::Flow {
+            return (None, flow);
+        }
 
         if let Some(cond) = &cond {
             if cond.get_type() != PrimType::Bool.into() {
@@ -240,7 +256,11 @@ impl StmtResolve<ReturnStmt> for ast_stmt::ReturnStmt {
         };
 
         let (value, val_ty) = if let Some(expr) = &self.expr {
-            let value = expr.resolve(ctx);
+            let (value, flow) = expr.resolve(ctx);
+            if flow == ControlFlow::Flow {
+                return (None, flow);
+            }
+
             let val_ty = if let Some(value) = &value {
                 value.get_type()
             } else {

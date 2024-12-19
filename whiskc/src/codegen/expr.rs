@@ -17,6 +17,7 @@ impl Codegen for Expr {
             ExprKind::Unary(v) => v.codegen(ctx),
             ExprKind::Binary(v) => v.codegen(ctx),
             ExprKind::Call(v) => v.codegen(ctx),
+            ExprKind::Block(_) => todo!(),
         }
     }
 }
