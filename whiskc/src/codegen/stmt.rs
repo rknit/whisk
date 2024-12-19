@@ -16,6 +16,7 @@ impl Codegen for Stmt {
             Stmt::Let(stmt) => stmt.codegen(ctx),
             Stmt::If(stmt) => stmt.codegen(ctx),
             Stmt::Return(stmt) => stmt.codegen(ctx),
+            Stmt::Loop(_) => todo!(),
         }
     }
 }

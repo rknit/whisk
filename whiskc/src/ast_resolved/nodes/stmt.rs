@@ -52,6 +52,5 @@ pub struct ReturnStmt {
 
 #[derive(Debug, Clone)]
 pub struct LoopStmt {
-    pub cond: Expr,
     pub block: Block,
 }

@@ -267,6 +267,7 @@ impl StmtResolve<ReturnStmt> for ast_stmt::ReturnStmt {
 
 impl StmtResolve<LoopStmt> for ast_stmt::LoopStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<LoopStmt>, ControlFlow) {
-        todo!()
+        let (body, flow) = self.block.resolve(ctx);
+        (body.map(|v| LoopStmt { block: v }), flow)
     }
 }
