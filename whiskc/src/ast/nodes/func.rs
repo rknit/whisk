@@ -8,12 +8,12 @@ use crate::{
     ty::Type,
 };
 
-use super::{attributes::Attributes, punctuate::Puntuated, stmt::Block};
+use super::{attributes::Attributes, punctuate::Puntuated, stmt::BlockStmt};
 
 #[derive(Debug, Clone)]
 pub struct Function {
     pub sig: FunctionSig,
-    pub body: Block,
+    pub body: BlockStmt,
 }
 
 #[derive(Debug, Clone)]

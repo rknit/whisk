@@ -5,7 +5,7 @@ use crate::{
             attributes::Attributes,
             func::{ExternFunction, Function, FunctionSig, LocatedParam},
             punctuate::Puntuated,
-            stmt::Block,
+            stmt::BlockStmt,
         },
         parsing::{
             token::{Delimiter, Keyword, TokenKind},
@@ -18,7 +18,7 @@ use crate::{
 impl Parse for Function {
     fn parse(ctx: &mut ParseContext) -> ParseResult<Self> {
         let sig = FunctionSig::parse(ctx)?;
-        let body = Block::parse(ctx)?;
+        let body = BlockStmt::parse(ctx)?;
         Some(Self { sig, body })
     }
 }

@@ -7,7 +7,7 @@ use crate::{
         errors::{IdentResolveError, TypeResolveError},
         nodes::{
             expr::ExprKind,
-            stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, ReturnStmt, Stmt},
+            stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, LoopStmt, ReturnStmt, Stmt},
         },
         ControlFlow, Resolve, ResolveContext,
     },
@@ -17,40 +17,38 @@ use crate::{
 
 use ast::nodes::stmt as ast_stmt;
 
-type StmtResolve<T> = (Option<T>, ControlFlow);
+pub trait StmtResolve<T> {
+    fn resolve(&self, ctx: &mut ResolveContext) -> (Option<T>, ControlFlow);
+}
 
-impl Resolve<StmtResolve<Stmt>> for ast_stmt::Stmt {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<StmtResolve<Stmt>> {
+macro_rules! remap {
+    ($ctx:expr, $v:expr, $t:ident) => {{
+        let (v, flow) = $v.resolve($ctx);
+        (v.map(|v| Stmt::$t(v)), flow)
+    }};
+}
+
+impl StmtResolve<Stmt> for ast_stmt::Stmt {
+    fn resolve(&self, ctx: &mut ResolveContext) -> (Option<Stmt>, ControlFlow) {
         match self {
-            ast_stmt::Stmt::Block(stmt) => stmt
-                .resolve(ctx)
-                .map(|v| (v.0.map(|u| Stmt::Block(u)), v.1)),
-            ast_stmt::Stmt::Expr(stmt) => {
-                stmt.resolve(ctx).map(|v| (v.0.map(|u| Stmt::Expr(u)), v.1))
-            }
-            ast_stmt::Stmt::Assign(stmt) => stmt
-                .resolve(ctx)
-                .map(|v| (v.0.map(|u| Stmt::Assign(u)), v.1)),
-            ast_stmt::Stmt::Let(stmt) => {
-                stmt.resolve(ctx).map(|v| (v.0.map(|u| Stmt::Let(u)), v.1))
-            }
+            ast_stmt::Stmt::Block(stmt) => remap!(ctx, stmt, Block),
+            ast_stmt::Stmt::Expr(stmt) => remap!(ctx, stmt, Expr),
+            ast_stmt::Stmt::Assign(stmt) => remap!(ctx, stmt, Assign),
+            ast_stmt::Stmt::Let(stmt) => remap!(ctx, stmt, Let),
             ast_stmt::Stmt::If(stmt) => stmt.resolve(ctx),
-            ast_stmt::Stmt::Return(stmt) => stmt
-                .resolve(ctx)
-                .map(|v| (v.0.map(|u| Stmt::Return(u)), v.1)),
+            ast_stmt::Stmt::Return(stmt) => remap!(ctx, stmt, Return),
+            ast_stmt::Stmt::Loop(stmt) => remap!(ctx, stmt, Loop),
         }
     }
 }
 
-impl Resolve<StmtResolve<Block>> for ast_stmt::Block {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<StmtResolve<Block>> {
+impl StmtResolve<Block> for ast_stmt::BlockStmt {
+    fn resolve(&self, ctx: &mut ResolveContext) -> (Option<Block>, ControlFlow) {
         let mut stmts = Vec::new();
         let table_id = ctx.push_local();
 
         for ast_stmt in &self.stmts {
-            let Some((stmt, flow)) = ast_stmt.resolve(ctx) else {
-                continue;
-            };
+            let (stmt, flow) = ast_stmt.resolve(ctx);
             if let Some(stmt) = stmt {
                 stmts.push(stmt);
             }
@@ -59,39 +57,39 @@ impl Resolve<StmtResolve<Block>> for ast_stmt::Block {
                 ControlFlow::Return => {
                     ctx.pop_local();
                     let block = Block { table_id, stmts };
-                    return Some((Some(block), ControlFlow::Return));
+                    return (Some(block), ControlFlow::Return);
                 }
             };
         }
 
         ctx.pop_local();
         let block = Block { table_id, stmts };
-        Some((Some(block), ControlFlow::Flow))
+        (Some(block), ControlFlow::Flow)
     }
 }
 
-impl Resolve<StmtResolve<ExprStmt>> for ast_stmt::ExprStmt {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<StmtResolve<ExprStmt>> {
+impl StmtResolve<ExprStmt> for ast_stmt::ExprStmt {
+    fn resolve(&self, ctx: &mut ResolveContext) -> (Option<ExprStmt>, ControlFlow) {
         let expr = self.expr.resolve(ctx);
         let stmt = if let Some(expr) = expr {
             Some(ExprStmt { expr })
         } else {
             None
         };
-        Some((stmt, ControlFlow::Flow))
+        (stmt, ControlFlow::Flow)
     }
 }
 
-impl Resolve<StmtResolve<AssignStmt>> for ast::nodes::stmt::AssignStmt {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<StmtResolve<AssignStmt>> {
+impl StmtResolve<AssignStmt> for ast_stmt::AssignStmt {
+    fn resolve(&self, ctx: &mut ResolveContext) -> (Option<AssignStmt>, ControlFlow) {
         let Some(target) = self.target.resolve(ctx) else {
-            return Some((None, ControlFlow::Flow));
+            return (None, ControlFlow::Flow);
         };
 
         eprintln!("TODO: verify expr is assignable");
 
         let Some(value) = self.value.resolve(ctx) else {
-            return Some((None, ControlFlow::Flow));
+            return (None, ControlFlow::Flow);
         };
 
         if target.get_type() != value.get_type() {
@@ -104,12 +102,12 @@ impl Resolve<StmtResolve<AssignStmt>> for ast::nodes::stmt::AssignStmt {
             );
         }
 
-        Some((Some(AssignStmt { target, value }), ControlFlow::Flow))
+        (Some(AssignStmt { target, value }), ControlFlow::Flow)
     }
 }
 
-impl Resolve<StmtResolve<LetStmt>> for ast_stmt::LetStmt {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<StmtResolve<LetStmt>> {
+impl StmtResolve<LetStmt> for ast_stmt::LetStmt {
+    fn resolve(&self, ctx: &mut ResolveContext) -> (Option<LetStmt>, ControlFlow) {
         let value = self.value.resolve(ctx);
 
         let value_ty = if let Some(value) = &value {
@@ -130,7 +128,7 @@ impl Resolve<StmtResolve<LetStmt>> for ast_stmt::LetStmt {
         } else if let Some(ty) = &self.ty {
             ty.0
         } else {
-            return Some((None, ControlFlow::Flow));
+            return (None, ControlFlow::Flow);
         };
 
         let var_sym = VarSymbol::new(self.name.to_owned(), value_ty);
@@ -150,11 +148,11 @@ impl Resolve<StmtResolve<LetStmt>> for ast_stmt::LetStmt {
                 }
                 .into(),
             );
-            return Some((None, ControlFlow::Flow));
+            return (None, ControlFlow::Flow);
         };
 
         if let Some(value) = value {
-            Some((
+            (
                 Some(LetStmt {
                     sym_id,
                     name: self.name.clone(),
@@ -162,15 +160,15 @@ impl Resolve<StmtResolve<LetStmt>> for ast_stmt::LetStmt {
                     value,
                 }),
                 ControlFlow::Flow,
-            ))
+            )
         } else {
-            Some((None, ControlFlow::Flow))
+            (None, ControlFlow::Flow)
         }
     }
 }
 
-impl Resolve<StmtResolve<Stmt>> for ast_stmt::IfStmt {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<StmtResolve<Stmt>> {
+impl StmtResolve<Stmt> for ast_stmt::IfStmt {
+    fn resolve(&self, ctx: &mut ResolveContext) -> (Option<Stmt>, ControlFlow) {
         let cond = self.cond.resolve(ctx);
 
         if let Some(cond) = &cond {
@@ -186,22 +184,19 @@ impl Resolve<StmtResolve<Stmt>> for ast_stmt::IfStmt {
 
             // dont resolve If stmt when the condition is false
             if matches!(cond.get_kind(), ExprKind::Bool(false)) {
-                return Some(if let Some(else_stmt) = &self.else_stmt {
-                    else_stmt
-                        .body
-                        .resolve(ctx)
-                        .map(|v| (v.0.map(|u| Stmt::Block(u)), v.1))
-                        .unwrap()
+                return if let Some(else_stmt) = &self.else_stmt {
+                    let (body, flow) = else_stmt.body.resolve(ctx);
+                    (body.map(|v| Stmt::Block(v)), flow)
                 } else {
                     (None, ControlFlow::Flow)
-                });
+                };
             }
         }
 
-        let (then_block, then_flow) = self.body.resolve(ctx).unwrap();
+        let (then_block, then_flow) = self.body.resolve(ctx);
 
         let (else_block, else_flow) = if let Some(else_stmt) = &self.else_stmt {
-            else_stmt.body.resolve(ctx).unwrap()
+            else_stmt.body.resolve(ctx)
         } else {
             (None, ControlFlow::Flow)
         };
@@ -222,12 +217,12 @@ impl Resolve<StmtResolve<Stmt>> for ast_stmt::IfStmt {
             None
         };
 
-        Some((stmt, result_flow))
+        (stmt, result_flow)
     }
 }
 
-impl Resolve<StmtResolve<ReturnStmt>> for ast_stmt::ReturnStmt {
-    fn resolve(&self, ctx: &mut ResolveContext) -> Option<StmtResolve<ReturnStmt>> {
+impl StmtResolve<ReturnStmt> for ast_stmt::ReturnStmt {
+    fn resolve(&self, ctx: &mut ResolveContext) -> (Option<ReturnStmt>, ControlFlow) {
         let (func_name, expect_ret_ty) = {
             let func_sym_id = ctx.get_func_symbol_id();
             let Symbol::Function(func) = ctx
@@ -266,6 +261,12 @@ impl Resolve<StmtResolve<ReturnStmt>> for ast_stmt::ReturnStmt {
             );
         }
 
-        Some((Some(ReturnStmt { expr: value }), ControlFlow::Return))
+        (Some(ReturnStmt { expr: value }), ControlFlow::Return)
+    }
+}
+
+impl StmtResolve<LoopStmt> for ast_stmt::LoopStmt {
+    fn resolve(&self, ctx: &mut ResolveContext) -> (Option<LoopStmt>, ControlFlow) {
+        todo!()
     }
 }

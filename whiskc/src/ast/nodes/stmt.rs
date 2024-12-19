@@ -12,7 +12,7 @@ use super::expr::Expr;
 
 #[derive(Clone)]
 pub enum Stmt {
-    Block(Block),
+    Block(BlockStmt),
     Expr(ExprStmt),
     Assign(AssignStmt),
     Let(LetStmt),
@@ -35,7 +35,7 @@ impl fmt::Debug for Stmt {
 }
 
 #[derive(Debug, Clone)]
-pub struct Block {
+pub struct BlockStmt {
     pub brace_open_tok: Located<Delimiter>,
     pub stmts: Vec<Stmt>,
     pub brace_close_tok: Located<Delimiter>,
@@ -69,14 +69,14 @@ pub struct LetStmt {
 pub struct IfStmt {
     pub if_tok: Located<Keyword>,
     pub cond: Expr,
-    pub body: Block,
+    pub body: BlockStmt,
     pub else_stmt: Option<ElseStmt>,
 }
 
 #[derive(Debug, Clone)]
 pub struct ElseStmt {
     pub else_tok: Located<Keyword>,
-    pub body: Block,
+    pub body: BlockStmt,
 }
 
 #[derive(Debug, Clone)]
@@ -89,5 +89,5 @@ pub struct ReturnStmt {
 #[derive(Debug, Clone)]
 pub struct LoopStmt {
     pub loop_tok: Located<Keyword>,
-    pub block: Block,
+    pub block: BlockStmt,
 }

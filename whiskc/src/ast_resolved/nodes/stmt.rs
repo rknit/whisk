@@ -10,6 +10,7 @@ pub enum Stmt {
     Let(LetStmt),
     If(IfStmt),
     Return(ReturnStmt),
+    Loop(LoopStmt),
 }
 
 #[derive(Debug, Clone)]
@@ -47,4 +48,10 @@ pub struct IfStmt {
 #[derive(Debug, Clone)]
 pub struct ReturnStmt {
     pub expr: Option<Expr>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LoopStmt {
+    pub cond: Expr,
+    pub block: Block,
 }

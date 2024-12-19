@@ -9,6 +9,8 @@ use crate::{
     ty::PrimType,
 };
 
+use super::stmt::StmtResolve;
+
 impl Resolve<Function> for ast::nodes::func::Function {
     fn resolve(&self, ctx: &mut ResolveContext) -> Option<Function> {
         let func_sym_id = ctx
@@ -45,7 +47,7 @@ impl Resolve<Function> for ast::nodes::func::Function {
             });
         }
 
-        let (body, flow) = self.body.resolve(ctx).unwrap();
+        let (body, flow) = self.body.resolve(ctx);
         if flow != ControlFlow::Return && self.sig.ret_ty.0 != PrimType::Unit.into() {
             ctx.push_error(ControlFlowError::NotAllFuncPathReturned(self.sig.name.clone()).into());
         }

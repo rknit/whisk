@@ -25,7 +25,7 @@ impl lookup_parser::Handlers<Stmt> for StmtHandlers {
         F: FnMut(TokenKind, lookup_parser::Handler<Stmt>),
     {
         handler(TokenKind::Delimiter(Delimiter::BraceOpen), |_, parser| {
-            Block::parse(parser).map(|v| Stmt::Block(v))
+            BlockStmt::parse(parser).map(|v| Stmt::Block(v))
         });
 
         handler(TokenKind::Keyword(Keyword::Let), |_, parser| {
@@ -46,8 +46,8 @@ impl lookup_parser::Handlers<Stmt> for StmtHandlers {
     }
 }
 
-impl Parse for Block {
-    fn parse(parser: &mut ParseContext) -> ParseResult<Block> {
+impl Parse for BlockStmt {
+    fn parse(parser: &mut ParseContext) -> ParseResult<BlockStmt> {
         let brace_open_tok = match_delimiter!(parser, Delimiter::BraceOpen =>);
 
         let mut stmts = Vec::new();
@@ -137,7 +137,7 @@ impl Parse for IfStmt {
     fn parse(parser: &mut ParseContext) -> ParseResult<Self> {
         let if_tok = match_keyword!(parser, Keyword::If =>);
         let cond = Expr::parse(parser)?;
-        let block = Block::parse(parser)?;
+        let block = BlockStmt::parse(parser)?;
         let else_stmt = if matches!(parser.lexer.peek_token_kind(0), TokenKind::Keyword(kw) if *kw == Keyword::Else)
         {
             ElseStmt::parse(parser)
@@ -156,7 +156,7 @@ impl Parse for IfStmt {
 impl Parse for ElseStmt {
     fn parse(ctx: &mut ParseContext) -> ParseResult<Self> {
         let else_tok = match_keyword!(ctx, Keyword::Else =>);
-        let block = Block::parse(ctx)?;
+        let block = BlockStmt::parse(ctx)?;
         Some(Self {
             else_tok,
             body: block,
@@ -190,7 +190,7 @@ impl Parse for ReturnStmt {
 impl Parse for LoopStmt {
     fn parse(ctx: &mut ParseContext) -> ParseResult<Self> {
         let loop_tok = match_keyword!(ctx, Keyword::Loop =>);
-        let block = Block::parse(ctx)?;
+        let block = BlockStmt::parse(ctx)?;
         Some(Self { loop_tok, block })
     }
 }
