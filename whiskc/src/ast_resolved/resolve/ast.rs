@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub fn resolve(ast: &AST) -> Result<(ResolvedAST, SymbolTable), Vec<ResolveError>> {
-    let mut global_table = SymbolTable::new();
+    let mut global_table = SymbolTable::default();
     let mut ctx = ResolveContext::new(&mut global_table);
 
     for item in &ast.items {

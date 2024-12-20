@@ -1,5 +1,3 @@
-use core::fmt;
-
 use crate::{
     ast::{
         location::Located,
@@ -8,12 +6,12 @@ use crate::{
     ty::Type,
 };
 
-use super::{attributes::Attributes, punctuate::Puntuated, stmt::BlockStmt};
+use super::{attributes::Attributes, expr::BlockExpr, punctuate::Puntuated};
 
 #[derive(Debug, Clone)]
 pub struct Function {
     pub sig: FunctionSig,
-    pub body: BlockStmt,
+    pub body: BlockExpr,
 }
 
 #[derive(Debug, Clone)]
@@ -23,13 +21,8 @@ pub struct ExternFunction {
     pub semi_tok: Located<Delimiter>,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct LocatedParam(pub Located<String>, pub Located<Type>);
-impl fmt::Debug for LocatedParam {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}: {:?}", self.0, self.1)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct FunctionSig {

@@ -16,15 +16,16 @@ pub struct SymbolTable {
     interned_id: HashMap<String, SymbolID>,
     entries: HashMap<SymbolID, TaggedSymbolTableEntry>,
 }
-impl SymbolTable {
-    pub fn new() -> Self {
+impl Default for SymbolTable {
+    fn default() -> Self {
         Self {
             id: SymbolID::nil(),
             interned_id: HashMap::new(),
             entries: HashMap::new(),
         }
     }
-
+}
+impl SymbolTable {
     pub fn new_entry(&mut self, parent_id: SymbolID, mut entry: SymbolTableEntry) -> SymbolID {
         let id = self.new_id();
         entry.set_id(id);

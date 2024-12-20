@@ -28,6 +28,7 @@ pub enum ExprParseError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 enum BindingPower {
     Zero = 0,
+    Assign,
     LogicalAdditive,
     LogicalMultiplicative,
     Comparative,
@@ -68,6 +69,10 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
         );
 
         nud(TokenKind::Delimiter(Delimiter::BraceOpen), parse_block_expr);
+
+        nud(TokenKind::Keyword(Keyword::Return), parse_return_expr);
+        nud(TokenKind::Keyword(Keyword::If), parse_if_expr);
+        nud(TokenKind::Keyword(Keyword::Loop), parse_loop_expr);
     }
 
     fn leds<F>(&self, mut led: F)
@@ -89,6 +94,7 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
                     Operator::GreaterEqual,
                 ],
             ),
+            (BindingPower::Assign, vec![Operator::Assign]),
         ];
         for (bp, ops) in bin_ops {
             for op in ops {
@@ -310,8 +316,82 @@ fn parse_cast_expr(
     let ty = Located::<Type>::parse(parser)?;
     Some(Expr::Cast(CastExpr {
         expr: Box::new(left),
-        as_tok: as_tok.into(),
+        as_tok,
         ty,
+    }))
+}
+
+fn parse_return_expr(
+    _pratt_parser: &PrattParser<Expr, BindingPower>,
+    parser: &mut ParseContext,
+) -> ParseResult<Expr> {
+    let return_tok = match_keyword!(parser, Keyword::Return =>);
+    let expr = if matches!(
+        parser.lexer.peek_token_kind(0),
+        TokenKind::Delimiter(
+            Delimiter::Semicolon
+                | Delimiter::ParenClose
+                | Delimiter::BraceClose
+                | Delimiter::BracketClose
+                | Delimiter::Comma
+        )
+    ) {
+        None
+    } else {
+        Some(Box::new(Expr::parse(parser)?))
+    };
+
+    Some(Expr::Return(ReturnExpr { return_tok, expr }))
+}
+
+fn parse_if_expr(
+    pratt_parser: &PrattParser<Expr, BindingPower>,
+    parser: &mut ParseContext,
+) -> ParseResult<Expr> {
+    let if_tok = match_keyword!(parser, Keyword::If =>);
+    let cond = Expr::parse(parser)?;
+    let Expr::Block(block) = parse_block_expr(pratt_parser, parser)? else {
+        unreachable!();
+    };
+    let else_expr = if matches!(parser.lexer.peek_token_kind(0), TokenKind::Keyword(kw) if *kw == Keyword::Else)
+    {
+        parse_else_expr(pratt_parser, parser)
+    } else {
+        None
+    };
+    Some(Expr::If(IfExpr {
+        if_tok,
+        cond: Box::new(cond),
+        then: block,
+        else_expr,
+    }))
+}
+
+fn parse_else_expr(
+    pratt_parser: &PrattParser<Expr, BindingPower>,
+    parser: &mut ParseContext,
+) -> ParseResult<ElseExpr> {
+    let else_tok = match_keyword!(parser, Keyword::Else =>);
+    let Expr::Block(block) = parse_block_expr(pratt_parser, parser)? else {
+        unreachable!()
+    };
+    Some(ElseExpr {
+        else_tok,
+        body: block,
+    })
+}
+
+fn parse_loop_expr(
+    pratt_parser: &PrattParser<Expr, BindingPower>,
+    parser: &mut ParseContext,
+) -> ParseResult<Expr> {
+    let loop_tok = match_keyword!(parser, Keyword::Loop =>);
+    let Expr::Block(block) = parse_block_expr(pratt_parser, parser)? else {
+        unreachable!()
+    };
+    Some(Expr::Loop(LoopExpr {
+        loop_tok,
+        body: block,
     }))
 }
 

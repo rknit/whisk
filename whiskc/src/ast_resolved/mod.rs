@@ -53,7 +53,7 @@ impl<'a> ResolveContext<'a> {
         self.func_sym_id = SymbolID::nil();
     }
 
-    pub fn get_func_symbol_id(&self) -> SymbolID {
+    pub fn _get_func_symbol_id(&self) -> SymbolID {
         if self.func_sym_id == SymbolID::nil() {
             panic!("unset function symbol id");
         }
@@ -61,7 +61,7 @@ impl<'a> ResolveContext<'a> {
     }
 
     pub fn push_local(&mut self) -> SymbolID {
-        let table = SymbolTable::new();
+        let table = SymbolTable::default();
         let current_id = self.get_current_table_id().unwrap_or(SymbolID::nil());
         let table_id = self.global_table.new_entry(current_id, table.into());
         self.local_tables.push(table_id);

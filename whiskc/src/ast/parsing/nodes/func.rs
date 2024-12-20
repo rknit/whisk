@@ -3,13 +3,13 @@ use crate::{
         location::Located,
         nodes::{
             attributes::Attributes,
+            expr::Expr,
             func::{ExternFunction, Function, FunctionSig, LocatedParam},
             punctuate::Puntuated,
-            stmt::BlockStmt,
         },
         parsing::{
             token::{Delimiter, Keyword, TokenKind},
-            Parse, ParseContext, ParseResult,
+            Parse, ParseContext, ParseError, ParseResult,
         },
     },
     ty::{PrimType, Type},
@@ -18,7 +18,15 @@ use crate::{
 impl Parse for Function {
     fn parse(ctx: &mut ParseContext) -> ParseResult<Self> {
         let sig = FunctionSig::parse(ctx)?;
-        let body = BlockStmt::parse(ctx)?;
+        let Expr::Block(body) = Expr::parse(ctx)? else {
+            ctx.push_error(Located(
+                ParseError::FuncParseError(FunctionParseError::MissingFunctionBody {
+                    func_name: sig.name.0.clone(),
+                }),
+                sig.name.1,
+            ));
+            return None;
+        };
         Some(Self { sig, body })
     }
 }
@@ -69,4 +77,9 @@ impl Parse for FunctionSig {
             ret_ty,
         })
     }
+}
+
+#[derive(Debug, Clone)]
+pub enum FunctionParseError {
+    MissingFunctionBody { func_name: String },
 }

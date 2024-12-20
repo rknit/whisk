@@ -71,8 +71,16 @@ impl PartialOrd for LocationRange {
         })
     }
 }
+impl From<Location> for LocationRange {
+    fn from(value: Location) -> Self {
+        Self {
+            start: value,
+            end: value,
+        }
+    }
+}
 
-#[derive(Default, Clone, Copy, PartialEq, Eq, Ord)]
+#[derive(Default, Clone, Copy, PartialEq, Eq)]
 pub struct Location {
     pub line: u32,
     pub col: u32,
@@ -92,14 +100,6 @@ impl Location {
         }
     }
 }
-impl Into<LocationRange> for Location {
-    fn into(self) -> LocationRange {
-        LocationRange {
-            start: self,
-            end: self,
-        }
-    }
-}
 impl fmt::Debug for Location {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.line == 0 || self.col == 0 {
@@ -111,7 +111,12 @@ impl fmt::Debug for Location {
 }
 impl PartialOrd for Location {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(if self.line < other.line {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for Location {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        if self.line < other.line {
             std::cmp::Ordering::Less
         } else if self.line > other.line {
             std::cmp::Ordering::Greater
@@ -121,6 +126,6 @@ impl PartialOrd for Location {
             std::cmp::Ordering::Greater
         } else {
             std::cmp::Ordering::Equal
-        })
+        }
     }
 }

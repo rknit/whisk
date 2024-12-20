@@ -21,6 +21,9 @@ pub enum Expr {
     ArrayIndex(ArrayIndexExpr),
     Cast(CastExpr),
     Block(BlockExpr),
+    Return(ReturnExpr),
+    If(IfExpr),
+    Loop(LoopExpr),
 }
 impl Locatable for Expr {
     fn get_location(&self) -> LocationRange {
@@ -36,6 +39,9 @@ impl Locatable for Expr {
             Expr::ArrayIndex(array_index_expr) => array_index_expr.get_location(),
             Expr::Cast(cast_expr) => cast_expr.get_location(),
             Expr::Block(expr) => expr.get_location(),
+            Expr::Return(expr) => expr.get_location(),
+            Expr::If(expr) => expr.get_location(),
+            Expr::Loop(expr) => expr.get_location(),
         }
     }
 }
@@ -135,5 +141,60 @@ pub struct BlockExpr {
 impl Locatable for BlockExpr {
     fn get_location(&self) -> LocationRange {
         LocationRange::combine(self.brace_open_tok.1, self.brace_close_tok.1)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ReturnExpr {
+    pub return_tok: Located<Keyword>,
+    pub expr: Option<Box<Expr>>,
+}
+impl Locatable for ReturnExpr {
+    fn get_location(&self) -> LocationRange {
+        let end_loc = if let Some(expr) = &self.expr {
+            expr.get_location()
+        } else {
+            self.return_tok.1
+        };
+        LocationRange::combine(self.return_tok.1, end_loc)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct IfExpr {
+    pub if_tok: Located<Keyword>,
+    pub cond: Box<Expr>,
+    pub then: BlockExpr,
+    pub else_expr: Option<ElseExpr>,
+}
+impl Locatable for IfExpr {
+    fn get_location(&self) -> LocationRange {
+        if let Some(else_expr) = &self.else_expr {
+            LocationRange::combine(self.if_tok.1, else_expr.get_location())
+        } else {
+            LocationRange::combine(self.if_tok.1, self.then.get_location())
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ElseExpr {
+    pub else_tok: Located<Keyword>,
+    pub body: BlockExpr,
+}
+impl Locatable for ElseExpr {
+    fn get_location(&self) -> LocationRange {
+        LocationRange::combine(self.else_tok.1, self.body.get_location())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct LoopExpr {
+    pub loop_tok: Located<Keyword>,
+    pub body: BlockExpr,
+}
+impl Locatable for LoopExpr {
+    fn get_location(&self) -> LocationRange {
+        LocationRange::combine(self.loop_tok.1, self.body.get_location())
     }
 }

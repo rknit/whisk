@@ -1,3 +1,5 @@
+use nodes::func::FunctionParseError;
+
 use crate::ast::parsing::nodes::ty::TypeParseError;
 
 use super::{
@@ -68,6 +70,7 @@ pub enum ParseError {
     MissingIdentifier(String),
     MissingOperator(Operator),
     ItemParseError(ItemParseError),
+    FuncParseError(FunctionParseError),
     TypeParseError(TypeParseError),
     StmtParseError(StmtParseError),
     ExprParseError(ExprParseError),

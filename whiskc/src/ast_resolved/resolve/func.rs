@@ -9,7 +9,7 @@ use crate::{
     ty::PrimType,
 };
 
-use super::stmt::StmtResolve;
+use super::expr::ExprResolve;
 
 impl Resolve<Function> for ast::nodes::func::Function {
     fn resolve(&self, ctx: &mut ResolveContext) -> Option<Function> {
@@ -63,7 +63,7 @@ impl Resolve<Function> for ast::nodes::func::Function {
                 params,
                 ret_ty: self.sig.ret_ty.0,
             },
-            body: body?,
+            body: todo!(),
         })
     }
 }

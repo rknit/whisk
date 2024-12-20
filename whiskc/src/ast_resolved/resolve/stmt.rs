@@ -1,21 +1,14 @@
 use crate::{
-    ast::{
-        self,
-        location::{Locatable, Located, LocationRange},
-    },
+    ast::location::{Locatable, Located},
     ast_resolved::{
         errors::{IdentResolveError, TypeResolveError},
-        nodes::{
-            expr::ExprKind,
-            stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, LoopStmt, ReturnStmt, Stmt},
-        },
+        nodes::stmt::{ExprStmt, LetStmt, Stmt},
         ControlFlow, ResolveContext,
     },
-    symbol_table::{Symbol, VarSymbol},
-    ty::PrimType,
+    symbol_table::VarSymbol,
 };
 
-use ast::nodes::stmt as ast_stmt;
+use crate::ast::nodes::stmt as ast_stmt;
 
 use super::expr::ExprResolve;
 
@@ -33,17 +26,13 @@ macro_rules! remap {
 impl StmtResolve<Stmt> for ast_stmt::Stmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<Stmt>, ControlFlow) {
         match self {
-            ast_stmt::Stmt::Block(stmt) => remap!(ctx, stmt, Block),
             ast_stmt::Stmt::Expr(stmt) => remap!(ctx, stmt, Expr),
-            ast_stmt::Stmt::Assign(stmt) => remap!(ctx, stmt, Assign),
             ast_stmt::Stmt::Let(stmt) => remap!(ctx, stmt, Let),
-            ast_stmt::Stmt::If(stmt) => stmt.resolve(ctx),
-            ast_stmt::Stmt::Return(stmt) => remap!(ctx, stmt, Return),
-            ast_stmt::Stmt::Loop(stmt) => remap!(ctx, stmt, Loop),
         }
     }
 }
 
+/*
 impl StmtResolve<Block> for ast_stmt::BlockStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<Block>, ControlFlow) {
         let mut stmts = Vec::new();
@@ -69,6 +58,7 @@ impl StmtResolve<Block> for ast_stmt::BlockStmt {
         (Some(block), ControlFlow::Flow)
     }
 }
+*/
 
 impl StmtResolve<ExprStmt> for ast_stmt::ExprStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<ExprStmt>, ControlFlow) {
@@ -90,6 +80,7 @@ impl StmtResolve<ExprStmt> for ast_stmt::ExprStmt {
     }
 }
 
+/*
 impl StmtResolve<AssignStmt> for ast_stmt::AssignStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<AssignStmt>, ControlFlow) {
         let (target, flow) = self.target.resolve(ctx);
@@ -119,6 +110,7 @@ impl StmtResolve<AssignStmt> for ast_stmt::AssignStmt {
         (Some(AssignStmt { target, value }), ControlFlow::Flow)
     }
 }
+*/
 
 impl StmtResolve<LetStmt> for ast_stmt::LetStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<LetStmt>, ControlFlow) {
@@ -184,6 +176,7 @@ impl StmtResolve<LetStmt> for ast_stmt::LetStmt {
     }
 }
 
+/*
 impl StmtResolve<Stmt> for ast_stmt::IfStmt {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<Stmt>, ControlFlow) {
         let (cond, flow) = self.cond.resolve(ctx);
@@ -292,3 +285,4 @@ impl StmtResolve<LoopStmt> for ast_stmt::LoopStmt {
         (body.map(|v| LoopStmt { block: v }), flow)
     }
 }
+*/
