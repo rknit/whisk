@@ -54,7 +54,7 @@ impl Parse for FunctionSig {
         let params = Puntuated::parse(ctx, Delimiter::Comma, Delimiter::ParenClose, move |ctx| {
             let param_name = match_identifier!(ctx, "parameter name".to_owned() =>)?;
             let param_ty = Located::<Type>::parse(ctx)?;
-            Some(LocatedParam(param_name.into(), param_ty))
+            Some(LocatedParam(param_name, param_ty))
         })?;
         let paren_close_tok = match_delimiter!(ctx, Delimiter::ParenClose =>);
 

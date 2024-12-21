@@ -164,7 +164,7 @@ fn parse_ident_type(parser: &mut ParseContext) -> ParseResult<Located<Type>> {
         panic!("token should be a type keyword");
     };
 
-    if ['u', 'i'].contains(&ident.chars().nth(0).unwrap_or('\0'))
+    if ['u', 'i'].contains(&ident.chars().next().unwrap_or('\0'))
         && ident.chars().skip(1).all(char::is_numeric)
     {
         return parse_prim_int_type(parser, ident, loc);

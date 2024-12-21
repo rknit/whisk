@@ -51,7 +51,7 @@ impl Lexer {
             self.tokens.push(token);
             self.skip_comment_and_whitespace();
         }
-        return &self.tokens[0];
+        &self.tokens[0]
     }
 
     pub fn next_token(&mut self) -> Token {

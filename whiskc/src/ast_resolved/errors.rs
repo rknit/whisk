@@ -9,20 +9,35 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub enum ResolveError {
-    LiteralResolveError(ValueResolveError),
+    ValueResolveError(ValueResolveError),
     IdentResolveError(IdentResolveError),
     TypeResolveError(TypeResolveError),
     ControlFlowError(ControlFlowError),
+}
+impl From<ControlFlowError> for ResolveError {
+    fn from(value: ControlFlowError) -> Self {
+        Self::ControlFlowError(value)
+    }
+}
+impl From<ValueResolveError> for ResolveError {
+    fn from(value: ValueResolveError) -> Self {
+        Self::ValueResolveError(value)
+    }
+}
+impl From<IdentResolveError> for ResolveError {
+    fn from(value: IdentResolveError) -> Self {
+        Self::IdentResolveError(value)
+    }
+}
+impl From<TypeResolveError> for ResolveError {
+    fn from(value: TypeResolveError) -> Self {
+        Self::TypeResolveError(value)
+    }
 }
 
 #[derive(Debug, Clone)]
 pub enum ControlFlowError {
     NotAllFuncPathReturned(Located<String>),
-}
-impl Into<ResolveError> for ControlFlowError {
-    fn into(self) -> ResolveError {
-        ResolveError::ControlFlowError(self)
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -43,11 +58,6 @@ pub enum ValueResolveError {
         actual_count: usize,
     },
 }
-impl Into<ResolveError> for ValueResolveError {
-    fn into(self) -> ResolveError {
-        ResolveError::LiteralResolveError(self)
-    }
-}
 
 #[derive(Debug, Clone)]
 pub enum IdentResolveError {
@@ -66,11 +76,6 @@ pub enum IdentResolveError {
         attribute: Located<SymbolAttribute>,
         allowed_attributes: Vec<SymbolAttribute>,
     },
-}
-impl Into<ResolveError> for IdentResolveError {
-    fn into(self) -> ResolveError {
-        ResolveError::IdentResolveError(self)
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -130,9 +135,4 @@ pub enum TypeResolveError {
         from_ty: Type,
         to_ty: Type,
     },
-}
-impl Into<ResolveError> for TypeResolveError {
-    fn into(self) -> ResolveError {
-        ResolveError::TypeResolveError(self)
-    }
 }

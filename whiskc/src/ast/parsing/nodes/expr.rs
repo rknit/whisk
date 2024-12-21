@@ -207,9 +207,9 @@ fn parse_call_expr(
     let paren_close_tok = match_delimiter!(parser, Delimiter::ParenClose =>);
     Some(Expr::Call(CallExpr {
         callee: Box::new(left),
-        paren_open_tok: paren_open_tok.into(),
+        paren_open_tok,
         args,
-        paren_close_tok: paren_close_tok.into(),
+        paren_close_tok,
     }))
 }
 
@@ -226,9 +226,9 @@ fn parse_array_expr(
     )?;
     let bracket_close_tok = match_delimiter!(parser, Delimiter::BracketClose =>);
     Some(Expr::Array(ArrayExpr {
-        bracket_open_tok: bracket_open_tok.into(),
+        bracket_open_tok,
         elements,
-        bracket_close_tok: bracket_close_tok.into(),
+        bracket_close_tok,
     }))
 }
 
@@ -243,9 +243,9 @@ fn parse_array_index_expr(
     let bracket_close_tok = match_delimiter!(parser, Delimiter::BracketClose =>);
     Some(Expr::ArrayIndex(ArrayIndexExpr {
         expr: Box::new(left),
-        bracket_open_tok: bracket_open_tok.into(),
+        bracket_open_tok,
         index: Box::new(index),
-        bracket_close_tok: bracket_close_tok.into(),
+        bracket_close_tok,
     }))
 }
 

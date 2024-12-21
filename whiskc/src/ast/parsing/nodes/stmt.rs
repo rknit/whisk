@@ -25,7 +25,7 @@ impl lookup_parser::Handlers<Stmt> for StmtHandlers {
         F: FnMut(TokenKind, lookup_parser::Handler<Stmt>),
     {
         handler(TokenKind::Keyword(Keyword::Let), |_, parser| {
-            LetStmt::parse(parser).map(|v| Stmt::Let(v))
+            LetStmt::parse(parser).map(Stmt::Let)
         });
     }
 }
