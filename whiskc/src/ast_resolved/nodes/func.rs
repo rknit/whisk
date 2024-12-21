@@ -1,12 +1,12 @@
 use crate::{ast::location::Located, symbol_table::SymbolID, ty::Type};
 
-use super::stmt::Block;
+use super::expr::BlockExpr;
 
 #[derive(Debug, Clone)]
 pub struct Function {
     pub table_id: SymbolID,
     pub sig: FunctionSig,
-    pub body: Block,
+    pub body: BlockExpr,
 }
 
 #[derive(Debug, Clone)]

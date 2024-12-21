@@ -2,14 +2,17 @@ use crate::{
     ast::{self, location::Located, nodes::func::LocatedParam},
     ast_resolved::{
         errors::{ControlFlowError, IdentResolveError},
-        nodes::func::{ExternFunction, Function, FunctionSig, Param},
+        nodes::{
+            expr::Expr,
+            func::{ExternFunction, Function, FunctionSig, Param},
+        },
         ControlFlow, Resolve, ResolveContext,
     },
     symbol_table::{FuncSymbol, SymbolAttribute, SymbolID, SymbolKind, VarSymbol},
     ty::PrimType,
 };
 
-use super::expr::ExprResolve;
+use super::expr::{ExprFlow, ExprResolve};
 
 impl Resolve<Function> for ast::nodes::func::Function {
     fn resolve(&self, ctx: &mut ResolveContext) -> Option<Function> {
@@ -47,10 +50,13 @@ impl Resolve<Function> for ast::nodes::func::Function {
             });
         }
 
-        let (body, flow) = self.body.resolve(ctx);
+        let ExprFlow(body, flow) = self.body.resolve(ctx);
         if flow != ControlFlow::Return && self.sig.ret_ty.0 != PrimType::Unit.into() {
             ctx.push_error(ControlFlowError::NotAllFuncPathReturned(self.sig.name.clone()).into());
         }
+        let Expr::Block(body) = body? else {
+            unreachable!()
+        };
 
         ctx.pop_local();
         ctx.unset_func_symbol_id();
@@ -63,7 +69,7 @@ impl Resolve<Function> for ast::nodes::func::Function {
                 params,
                 ret_ty: self.sig.ret_ty.0,
             },
-            body: todo!(),
+            body,
         })
     }
 }

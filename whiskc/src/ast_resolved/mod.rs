@@ -53,7 +53,7 @@ impl<'a> ResolveContext<'a> {
         self.func_sym_id = SymbolID::nil();
     }
 
-    pub fn _get_func_symbol_id(&self) -> SymbolID {
+    pub fn get_func_symbol_id(&self) -> SymbolID {
         if self.func_sym_id == SymbolID::nil() {
             panic!("unset function symbol id");
         }
@@ -112,7 +112,7 @@ impl<'a> ResolveContext<'a> {
         self.global_table.get_symbol_id_by_name(name)
     }
 
-    pub fn _get_symbol_by_name(&self, name: &str) -> Option<&Symbol> {
+    pub fn get_symbol_by_name(&self, name: &str) -> Option<&Symbol> {
         for table_id in self.local_tables.iter().rev() {
             let table = self.get_table(*table_id).unwrap();
             if let Some(symbol) = table.get_symbol_by_name(name) {

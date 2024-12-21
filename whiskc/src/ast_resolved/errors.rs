@@ -86,6 +86,10 @@ pub enum TypeResolveError {
         actual_type: Located<Type>,
     },
     NonBoolInIfCond(Located<Type>),
+    BlockBranchTypeMismatch {
+        branch: Located<Type>,
+        other: Located<Type>,
+    },
     NonAssignableType(Located<Type>),
     AssignmentTypeMismatch {
         target_ty: Located<Type>,

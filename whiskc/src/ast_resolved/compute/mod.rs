@@ -1,37 +1,31 @@
 use crate::ast::parsing::token::Operator;
 
-use super::nodes::expr::{BinaryExpr, ExprKind, UnaryExpr};
+use super::nodes::expr::{BinaryExpr, Expr, UnaryExpr};
 
 pub trait EvalConstant {
-    fn eval_constant(&self) -> Option<ExprKind>;
+    fn eval_constant(&self) -> Option<Expr>;
 }
 
-impl EvalConstant for ExprKind {
-    fn eval_constant(&self) -> Option<ExprKind> {
+impl EvalConstant for Expr {
+    fn eval_constant(&self) -> Option<Expr> {
         match self {
-            ExprKind::Integer(_)
-            | ExprKind::Bool(_)
-            | ExprKind::Identifier(_)
-            | ExprKind::Call(_) => None,
-            ExprKind::Unary(expr) => expr.eval_constant(),
-            ExprKind::Binary(expr) => expr.eval_constant(),
-            ExprKind::Block(_) => {
-                eprintln!("todo: eval_constant block expr");
-                None
-            }
+            Expr::Integer(_) | Expr::Bool(_) | Expr::Identifier(_) | Expr::Call(_) => None,
+            Expr::Unary(expr) => expr.eval_constant(),
+            Expr::Binary(expr) => expr.eval_constant(),
+            _ => todo!(),
         }
     }
 }
 
 impl EvalConstant for UnaryExpr {
-    fn eval_constant(&self) -> Option<ExprKind> {
+    fn eval_constant(&self) -> Option<Expr> {
         match self.op {
-            Operator::Sub => match self.expr.get_kind() {
-                ExprKind::Integer(v) => Some(ExprKind::Integer(-v)),
+            Operator::Sub => match *self.expr {
+                Expr::Integer(v) => Some(Expr::Integer(-v)),
                 _ => None,
             },
-            Operator::Not => match self.expr.get_kind() {
-                ExprKind::Bool(v) => Some(ExprKind::Bool(!v)),
+            Operator::Not => match *self.expr {
+                Expr::Bool(v) => Some(Expr::Bool(!v)),
                 _ => None,
             },
             _ => unimplemented!("EvalConstant unary"),
@@ -40,23 +34,23 @@ impl EvalConstant for UnaryExpr {
 }
 
 impl EvalConstant for BinaryExpr {
-    fn eval_constant(&self) -> Option<ExprKind> {
-        let get_ints = || match (&self.left.get_kind(), &self.right.get_kind()) {
-            (ExprKind::Integer(lhs), ExprKind::Integer(rhs)) => Some((*lhs, *rhs)),
+    fn eval_constant(&self) -> Option<Expr> {
+        let get_ints = || match (self.left.as_ref(), self.right.as_ref()) {
+            (Expr::Integer(lhs), Expr::Integer(rhs)) => Some((lhs, rhs)),
             _ => None,
         };
-        let get_bools = || match (&self.left.get_kind(), &self.right.get_kind()) {
-            (ExprKind::Bool(lhs), ExprKind::Bool(rhs)) => Some((*lhs, *rhs)),
+        let get_bools = || match (self.left.as_ref(), self.right.as_ref()) {
+            (Expr::Bool(lhs), Expr::Bool(rhs)) => Some((lhs, rhs)),
             _ => None,
         };
         let get_bools_laxed = || {
-            let lhs = if let ExprKind::Bool(lhs) = self.left.get_kind() {
-                Some(*lhs)
+            let lhs = if let Expr::Bool(lhs) = *self.left {
+                Some(lhs)
             } else {
                 None
             };
-            let rhs = if let ExprKind::Bool(rhs) = self.right.get_kind() {
-                Some(*rhs)
+            let rhs = if let Expr::Bool(rhs) = *self.right {
+                Some(rhs)
             } else {
                 None
             };
@@ -65,11 +59,11 @@ impl EvalConstant for BinaryExpr {
         Some(match self.op {
             Operator::Add => {
                 let (lhs, rhs) = get_ints()?;
-                ExprKind::Integer(lhs + rhs)
+                Expr::Integer(lhs + rhs)
             }
             Operator::Sub => {
                 let (lhs, rhs) = get_ints()?;
-                ExprKind::Integer(lhs - rhs)
+                Expr::Integer(lhs - rhs)
             }
             Operator::And => {
                 let (lhs, rhs) = get_bools_laxed();
@@ -95,14 +89,14 @@ impl EvalConstant for BinaryExpr {
                     return None;
                 }
             }
-            Operator::Equal => ExprKind::Bool(if let Some((lhs, rhs)) = get_ints() {
+            Operator::Equal => Expr::Bool(if let Some((lhs, rhs)) = get_ints() {
                 lhs == rhs
             } else if let Some((lhs, rhs)) = get_bools() {
                 lhs == rhs
             } else {
                 return None;
             }),
-            Operator::NotEqual => ExprKind::Bool(if let Some((lhs, rhs)) = get_ints() {
+            Operator::NotEqual => Expr::Bool(if let Some((lhs, rhs)) = get_ints() {
                 lhs != rhs
             } else if let Some((lhs, rhs)) = get_bools() {
                 lhs != rhs
@@ -111,19 +105,19 @@ impl EvalConstant for BinaryExpr {
             }),
             Operator::Less => {
                 let (lhs, rhs) = get_ints()?;
-                ExprKind::Bool(lhs < rhs)
+                Expr::Bool(lhs < rhs)
             }
             Operator::LessEqual => {
                 let (lhs, rhs) = get_ints()?;
-                ExprKind::Bool(lhs <= rhs)
+                Expr::Bool(lhs <= rhs)
             }
             Operator::Greater => {
                 let (lhs, rhs) = get_ints()?;
-                ExprKind::Bool(lhs > rhs)
+                Expr::Bool(lhs > rhs)
             }
             Operator::GreaterEqual => {
                 let (lhs, rhs) = get_ints()?;
-                ExprKind::Bool(lhs >= rhs)
+                Expr::Bool(lhs >= rhs)
             }
             _ => unimplemented!("EvalConstant binary"),
         })

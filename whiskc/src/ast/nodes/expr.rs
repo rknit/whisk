@@ -10,6 +10,7 @@ use super::{punctuate::Puntuated, stmt::Stmt};
 
 #[derive(Debug, Clone)]
 pub enum Expr {
+    Unit(LocationRange),
     Integer(Located<i64>),
     Bool(Located<bool>),
     Identifier(Located<String>),
@@ -28,6 +29,7 @@ pub enum Expr {
 impl Locatable for Expr {
     fn get_location(&self) -> LocationRange {
         match self {
+            Expr::Unit(loc) => *loc,
             Expr::Integer(located) => located.1,
             Expr::Bool(located) => located.1,
             Expr::Identifier(located) => located.1,

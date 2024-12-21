@@ -5,7 +5,9 @@ use crate::{
     },
     ast_resolved::{
         errors::{IdentResolveError, TypeResolveError, ValueResolveError},
-        nodes::expr::{BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, UnaryExpr},
+        nodes::expr::{
+            BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, ReturnExpr, UnaryExpr,
+        },
         ControlFlow, ResolveContext,
     },
     symbol_table::Symbol,
@@ -16,17 +18,36 @@ use ast::nodes::expr as ast_expr;
 
 use super::stmt::StmtResolve;
 
-pub type ResolvedExpr = (Option<Expr>, ControlFlow);
+#[derive(Debug)]
+pub struct ExprFlow(pub Option<Expr>, pub ControlFlow);
+impl ExprFlow {
+    pub fn flow(expr: impl Into<Expr>) -> Self {
+        Self(Some(expr.into()), ControlFlow::Flow)
+    }
+
+    pub fn flow_none() -> Self {
+        Self(None, ControlFlow::Flow)
+    }
+
+    pub fn ret(expr: impl Into<Expr>) -> Self {
+        Self(Some(expr.into()), ControlFlow::Return)
+    }
+
+    pub fn ret_none() -> Self {
+        Self(None, ControlFlow::Return)
+    }
+}
 
 pub trait ExprResolve {
-    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr;
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow;
 }
 
 impl ExprResolve for ast_expr::Expr {
-    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow {
         match self {
-            ast_expr::Expr::Integer(expr) => expr.resolve(ctx),
-            ast_expr::Expr::Bool(expr) => expr.resolve(ctx),
+            ast_expr::Expr::Unit(_) => ExprFlow::flow(Expr::Unit),
+            ast_expr::Expr::Integer(expr) => ExprFlow::flow(Expr::Integer(expr.0)),
+            ast_expr::Expr::Bool(expr) => ExprFlow::flow(Expr::Bool(expr.0)),
             ast_expr::Expr::Identifier(expr) => expr.resolve(ctx),
             ast_expr::Expr::Unary(expr) => expr.resolve(ctx),
             ast_expr::Expr::Binary(expr) => expr.resolve(ctx),
@@ -38,49 +59,26 @@ impl ExprResolve for ast_expr::Expr {
     }
 }
 
-impl ExprResolve for Located<i64> {
-    fn resolve(&self, _ctx: &mut ResolveContext) -> ResolvedExpr {
-        (
-            Some(Expr::new(self.0, PrimType::Integer.into())),
-            ControlFlow::Flow,
-        )
-    }
-}
-
-impl ExprResolve for Located<bool> {
-    fn resolve(&self, _ctx: &mut ResolveContext) -> ResolvedExpr {
-        (
-            Some(Expr::new(self.0, PrimType::Bool.into())),
-            ControlFlow::Flow,
-        )
-    }
-}
-
 impl ExprResolve for Located<String> {
-    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow {
         let Some(symbol) = ctx.get_symbol_by_name_mut(&self.0) else {
             ctx.push_error(IdentResolveError::UnknownIdentifier(self.clone()).into());
-            return (None, ControlFlow::Flow);
+            return ExprFlow::flow_none();
         };
         symbol.push_ref(self.1);
-        (
-            Some(Expr::new(
-                IdentExpr {
-                    sym_id: symbol.get_id(),
-                    ident: self.0.clone(),
-                },
-                symbol.get_type(),
-            )),
-            ControlFlow::Flow,
-        )
+        ExprFlow::flow(IdentExpr {
+            sym_id: symbol.get_id(),
+            ident: self.0.clone(),
+            ty: symbol.get_type(),
+        })
     }
 }
 
 impl ExprResolve for ast_expr::UnaryExpr {
-    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
-        let (expr, flow) = self.expr.resolve(ctx);
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow {
+        let ExprFlow(expr, flow) = self.expr.resolve(ctx);
         if expr.is_none() || flow == ControlFlow::Return {
-            return (expr, flow);
+            return ExprFlow(expr, flow);
         }
         let expr = expr.unwrap();
 
@@ -95,7 +93,7 @@ impl ExprResolve for ast_expr::UnaryExpr {
                         )
                         .into(),
                     );
-                    return (None, ControlFlow::Flow);
+                    return ExprFlow::flow_none();
                 }
                 expr.get_type()
             }
@@ -114,30 +112,25 @@ impl ExprResolve for ast_expr::UnaryExpr {
             _ => unimplemented!("unary op '{}'", self.op.0),
         };
 
-        (
-            Some(Expr::new(
-                UnaryExpr {
-                    op: self.op.0,
-                    expr: Box::new(expr),
-                },
-                ty,
-            )),
-            ControlFlow::Flow,
-        )
+        ExprFlow::flow(UnaryExpr {
+            op: self.op.0,
+            expr: Box::new(expr),
+            ty,
+        })
     }
 }
 
 impl ExprResolve for ast_expr::BinaryExpr {
-    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
-        let (left, flow) = self.left.resolve(ctx);
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow {
+        let ExprFlow(left, flow) = self.left.resolve(ctx);
         if left.is_none() || flow == ControlFlow::Return {
-            return (left, flow);
+            return ExprFlow(left, flow);
         }
         let left = left.unwrap();
 
-        let (right, flow) = self.right.resolve(ctx);
+        let ExprFlow(right, flow) = self.right.resolve(ctx);
         if right.is_none() || flow == ControlFlow::Return {
-            return (right, flow);
+            return ExprFlow(right, flow);
         }
         let right = right.unwrap();
 
@@ -168,7 +161,7 @@ impl ExprResolve for ast_expr::BinaryExpr {
                         }
                         .into(),
                     );
-                    return (None, ControlFlow::Flow);
+                    return ExprFlow::flow_none();
                 }
                 if !right.get_type().is_numeric_ty() {
                     ctx.push_error(
@@ -178,11 +171,11 @@ impl ExprResolve for ast_expr::BinaryExpr {
                         }
                         .into(),
                     );
-                    return (None, ControlFlow::Flow);
+                    return ExprFlow::flow_none();
                 }
 
                 if !check_type_mismatch(ctx) {
-                    return (None, ControlFlow::Flow);
+                    return ExprFlow::flow_none();
                 }
                 left.get_type()
             }
@@ -239,25 +232,20 @@ impl ExprResolve for ast_expr::BinaryExpr {
             _ => unimplemented!("binary op '{}'", self.op.0),
         };
 
-        (
-            Some(Expr::new(
-                BinaryExpr {
-                    op: self.op.0,
-                    left: Box::new(left),
-                    right: Box::new(right),
-                },
-                ty,
-            )),
-            ControlFlow::Flow,
-        )
+        ExprFlow::flow(BinaryExpr {
+            op: self.op.0,
+            left: Box::new(left),
+            right: Box::new(right),
+            ty,
+        })
     }
 }
 
 impl ExprResolve for ast_expr::CallExpr {
-    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
-        let (callee, flow) = self.callee.resolve(ctx);
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow {
+        let ExprFlow(callee, flow) = self.callee.resolve(ctx);
         if callee.is_none() || flow == ControlFlow::Return {
-            return (callee, flow);
+            return ExprFlow(callee, flow);
         }
         let callee = callee.unwrap();
 
@@ -269,7 +257,7 @@ impl ExprResolve for ast_expr::CallExpr {
                 ))
                 .into(),
             );
-            return (None, ControlFlow::Flow);
+            return ExprFlow::flow_none();
         };
 
         let (expect_params, ret_ty) = {
@@ -298,9 +286,9 @@ impl ExprResolve for ast_expr::CallExpr {
         let mut args = Vec::new();
 
         for ((i, expect_param), ast_arg) in expect_params.iter().enumerate().zip(&self.args.items) {
-            let (arg, flow) = ast_arg.resolve(ctx);
+            let ExprFlow(arg, flow) = ast_arg.resolve(ctx);
             if flow == ControlFlow::Return {
-                return (arg, flow);
+                return ExprFlow(arg, flow);
             }
             let Some(arg) = arg else {
                 continue;
@@ -322,52 +310,42 @@ impl ExprResolve for ast_expr::CallExpr {
             );
         }
 
-        (
-            Some(Expr::new(
-                CallExpr {
-                    callee: Box::new(callee),
-                    args,
-                },
-                ret_ty,
-            )),
-            ControlFlow::Flow,
-        )
+        ExprFlow::flow(CallExpr {
+            callee: Box::new(callee),
+            args,
+            ty: ret_ty,
+        })
     }
 }
 
 impl ExprResolve for ast_expr::BlockExpr {
-    fn resolve(&self, ctx: &mut ResolveContext) -> ResolvedExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow {
         let mut stmts = Vec::new();
         let table_id = ctx.push_local();
 
         for ast_stmt in &self.stmts {
-            let (stmt, _flow) = ast_stmt.resolve(ctx);
+            let (stmt, flow) = ast_stmt.resolve(ctx);
             if let Some(stmt) = stmt {
                 stmts.push(stmt);
             }
-            //match flow {
-            //    ControlFlow::Flow => (),
-            //    ControlFlow::Return => {
-            //        ctx.pop_local();
-            //        return (
-            //            Some(Expr::new(
-            //                BlockExpr {
-            //                    table_id,
-            //                    stmts,
-            //                    eval_expr: None,
-            //                },
-            //                PrimType::Unit.into(),
-            //            )),
-            //            ControlFlow::Return,
-            //        );
-            //    }
-            //};
+            match flow {
+                ControlFlow::Flow => (),
+                ControlFlow::Return => {
+                    ctx.pop_local();
+                    return ExprFlow::ret(BlockExpr {
+                        table_id,
+                        stmts,
+                        eval_expr: None,
+                        ty: PrimType::Unit.into(),
+                    });
+                }
+            };
         }
 
         let eval_expr = if let Some(eval_expr) = &self.eval_expr {
-            let (expr, flow) = eval_expr.resolve(ctx);
+            let ExprFlow(expr, flow) = eval_expr.resolve(ctx);
             if expr.is_none() || flow == ControlFlow::Return {
-                return (expr, flow);
+                return ExprFlow(expr, flow);
             }
             Some(Box::new(expr.unwrap()))
         } else {
@@ -379,16 +357,148 @@ impl ExprResolve for ast_expr::BlockExpr {
             .unwrap_or(PrimType::Unit.into());
 
         ctx.pop_local();
-        (
-            Some(Expr::new(
-                BlockExpr {
-                    table_id,
-                    stmts,
-                    eval_expr,
-                },
-                eval_ty,
-            )),
-            ControlFlow::Flow,
-        )
+        ExprFlow::flow(BlockExpr {
+            table_id,
+            stmts,
+            eval_expr,
+            ty: eval_ty,
+        })
+    }
+}
+
+impl ExprResolve for ast_expr::ReturnExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow {
+        let (func_name, expect_ret_ty) = {
+            let func_sym_id = ctx.get_func_symbol_id();
+            let Symbol::Function(func) = ctx
+                .global_table
+                .get_symbol(func_sym_id)
+                .expect("already set function symbol id")
+            else {
+                panic!("symbol is not a function");
+            };
+            (func.get_name().to_owned(), func.get_return_type())
+        };
+
+        let (value, val_ty) = if let Some(expr) = &self.expr {
+            let ExprFlow(value, flow) = expr.resolve(ctx);
+            if flow == ControlFlow::Return {
+                return ExprFlow(value, flow);
+            }
+
+            let val_ty = if let Some(value) = &value {
+                value.get_type()
+            } else {
+                expect_ret_ty
+            };
+            (value, val_ty)
+        } else {
+            (None, PrimType::Unit.into())
+        };
+
+        if expect_ret_ty != val_ty {
+            ctx.push_error(
+                TypeResolveError::ReturnTypeMismatch {
+                    function_name: func_name.to_owned(),
+                    expected_type: expect_ret_ty,
+                    actual_type: Located(val_ty, self.get_location()),
+                }
+                .into(),
+            );
+        }
+
+        let expr = value.map(|v| Box::new(v));
+        ExprFlow::ret(ReturnExpr { expr })
+    }
+}
+
+impl ExprResolve for ast_expr::IfExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow {
+        let ExprFlow(cond, flow) = self.cond.resolve(ctx);
+        if flow == ControlFlow::Return {
+            return ExprFlow(cond, flow);
+        }
+
+        if let Some(cond) = &cond {
+            if cond.get_type() != PrimType::Bool.into() {
+                ctx.push_error(
+                    TypeResolveError::NonBoolInIfCond(Located(
+                        cond.get_type(),
+                        self.cond.get_location(),
+                    ))
+                    .into(),
+                );
+            }
+
+            // dont resolve If stmt when the condition is false
+            if matches!(cond, Expr::Bool(false)) {
+                return if let Some(else_stmt) = &self.else_expr {
+                    else_stmt.body.resolve(ctx)
+                } else {
+                    ExprFlow::flow_none()
+                };
+            }
+        }
+
+        let ExprFlow(then_block, then_flow) = self.then.resolve(ctx);
+        let then_ty = then_block.as_ref().map(|v| v.get_type());
+
+        let ExprFlow(else_block, else_flow) = if let Some(else_stmt) = &self.else_expr {
+            else_stmt.body.resolve(ctx)
+        } else {
+            ExprFlow::flow_none()
+        };
+        let else_ty = else_block.as_ref().map(|v| v.get_type());
+
+        let result_flow = if then_flow == ControlFlow::Return && else_flow == ControlFlow::Return {
+            ControlFlow::Return
+        } else {
+            ControlFlow::Flow
+        };
+
+        let result_ty = if let (Some(then_ty), Some(else_ty)) = (then_ty, else_ty) {
+            if then_ty != else_ty {
+                ctx.push_error(
+                    TypeResolveError::BlockBranchTypeMismatch {
+                        branch: Located(then_ty, self.then.get_location()),
+                        other: Located(else_ty, self.else_expr.as_ref().unwrap().get_location()),
+                    }
+                    .into(),
+                );
+                None
+            } else {
+                Some(then_ty)
+            }
+        } else if let Some(ty) = then_ty.or(else_ty) {
+            Some(ty)
+        } else {
+            None
+        };
+
+        if let (Some(cond), Some(then_block)) = (cond, then_block) {
+            let Expr::Block(then) = then_block else {
+                unreachable!()
+            };
+            let else_ = else_block.map(|v| {
+                let Expr::Block(else_) = v else {
+                    unreachable!()
+                };
+                else_
+            });
+            ExprFlow(
+                Some(
+                    IfExpr {
+                        cond: Box::new(cond),
+                        then,
+                        else_,
+                        ty: result_ty.unwrap(),
+                    }
+                    .into(),
+                ),
+                result_flow,
+            )
+        } else {
+            ExprFlow(None, result_flow)
+        }
     }
 }

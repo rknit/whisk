@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 
 use crate::{
     ast::{
-        location::Located,
+        location::{Located, LocationRange},
         nodes::{
             expr::*,
             punctuate::Puntuated,
@@ -61,7 +61,10 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
             nud(TokenKind::Operator(op), parse_prefix_unary_expr);
         }
 
-        nud(TokenKind::Delimiter(Delimiter::ParenOpen), parse_group_expr);
+        nud(
+            TokenKind::Delimiter(Delimiter::ParenOpen),
+            parse_unit_or_group_expr,
+        );
 
         nud(
             TokenKind::Delimiter(Delimiter::BracketOpen),
@@ -122,18 +125,24 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
     }
 }
 
-fn parse_group_expr(
+fn parse_unit_or_group_expr(
     _pratt_parser: &PrattParser<Expr, BindingPower>,
     parser: &mut ParseContext,
 ) -> ParseResult<Expr> {
     let paren_open_tok = match_delimiter!(parser, Delimiter::ParenOpen =>);
-    let expr = Expr::parse(parser)?;
-    let paren_close_tok = match_delimiter!(parser, Delimiter::ParenClose =>);
-    Some(Expr::Grouped(GroupedExpr {
-        paren_open_tok,
-        expr: Box::new(expr),
-        paren_close_tok,
-    }))
+    Some(
+        if let Ok(paren_close_tok) = match_delimiter!(parser, Delimiter::ParenClose) {
+            Expr::Unit(LocationRange::combine(paren_open_tok.1, paren_close_tok.1))
+        } else {
+            let expr = Expr::parse(parser)?;
+            let paren_close_tok = match_delimiter!(parser, Delimiter::ParenClose =>);
+            Expr::Grouped(GroupedExpr {
+                paren_open_tok,
+                expr: Box::new(expr),
+                paren_close_tok,
+            })
+        },
+    )
 }
 
 fn parse_primary_expr(
