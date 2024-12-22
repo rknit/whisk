@@ -15,7 +15,7 @@ impl Codegen for ast::func::Function {
 
         self.body.codegen(ctx)?;
 
-        if self.sig.ret_ty == PrimType::Unit.into() {
+        if self.sig.ret_ty == PrimType::Unit.into() || self.body.eval_expr.is_some() {
             let func = ctx.get_current_fi_mut();
             if !matches!(func.get_insts()[..], [.., Inst::Ret]) {
                 func.push_inst(Inst::Ret);

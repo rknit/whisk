@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use once_cell::sync::Lazy;
 use strum::IntoEnumIterator;
 
@@ -58,6 +60,10 @@ impl pratt_parser::Handlers<Located<Type>, BindingPower> for TypeHandlers {
     where
         F: FnMut(TokenKind, BindingPower, pratt_parser::LedHandler<Located<Type>, BindingPower>),
     {
+    }
+
+    fn delimiters(&self) -> HashSet<TokenKind> {
+        HashSet::new()
     }
 }
 

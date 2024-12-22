@@ -145,11 +145,11 @@ impl ExprCodegen for IfExpr {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
         self.cond.codegen(ctx)?;
 
-        let then_insert_point = ctx.get_current_fi_mut().len();
+        let branch_point = ctx.get_current_fi_mut().len();
 
         self.then.codegen(ctx)?;
 
-        let merge_insert_point = ctx.get_current_fi_mut().len();
+        let then_to_merge_point = ctx.get_current_fi_mut().len() + 1;
 
         if let Some(body) = &self.else_ {
             body.codegen(ctx)?;
@@ -157,18 +157,18 @@ impl ExprCodegen for IfExpr {
 
         let func = ctx.get_current_fi_mut();
 
+        let jmp_dist = func.len() - branch_point + 1;
+        func.insert_inst(branch_point, Inst::JmpFalse(jmp_dist as isize));
+
         if !matches!(
             self.then.stmts.last(),
             Some(Stmt::Expr(ExprStmt {
                 expr: Expr::Return(_)
             }))
         ) {
-            let jmp_dist = func.len() - merge_insert_point + 1;
-            func.insert_inst(merge_insert_point, Inst::Jmp(jmp_dist as isize));
+            let jmp_dist = func.len() - then_to_merge_point + 1;
+            func.insert_inst(then_to_merge_point, Inst::Jmp(jmp_dist as isize));
         }
-
-        let jmp_dist = func.len() - then_insert_point + 1;
-        func.insert_inst(then_insert_point, Inst::JmpFalse(jmp_dist as isize));
 
         Ok(())
     }
