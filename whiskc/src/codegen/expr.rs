@@ -2,8 +2,12 @@ use wsk_vm::{Cmp, Inst};
 
 use crate::{
     ast::parsing::token::Operator,
-    ast_resolved::nodes::expr::{
-        BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr, UnaryExpr,
+    ast_resolved::nodes::{
+        expr::{
+            BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr,
+            UnaryExpr,
+        },
+        stmt::{ExprStmt, Stmt},
     },
     ty::Type,
 };
@@ -138,8 +142,35 @@ impl ExprCodegen for ReturnExpr {
 }
 
 impl ExprCodegen for IfExpr {
-    fn codegen(&self, _ctx: &mut Context) -> Result<(), CodegenError> {
-        todo!()
+    fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
+        self.cond.codegen(ctx)?;
+
+        let then_insert_point = ctx.get_current_fi_mut().len();
+
+        self.then.codegen(ctx)?;
+
+        let merge_insert_point = ctx.get_current_fi_mut().len();
+
+        if let Some(body) = &self.else_ {
+            body.codegen(ctx)?;
+        }
+
+        let func = ctx.get_current_fi_mut();
+
+        if !matches!(
+            self.then.stmts.last(),
+            Some(Stmt::Expr(ExprStmt {
+                expr: Expr::Return(_)
+            }))
+        ) {
+            let jmp_dist = func.len() - merge_insert_point + 1;
+            func.insert_inst(merge_insert_point, Inst::Jmp(jmp_dist as isize));
+        }
+
+        let jmp_dist = func.len() - then_insert_point + 1;
+        func.insert_inst(then_insert_point, Inst::JmpFalse(jmp_dist as isize));
+
+        Ok(())
     }
 }
 

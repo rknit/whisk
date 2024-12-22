@@ -1,5 +1,4 @@
 func main() int {
-  return 1 + {
-    return 8;
-  };
+  let x = 14;
+  x
 }

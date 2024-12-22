@@ -1,7 +1,11 @@
 use crate::{
-    ast::{self, location::Located, nodes::func::LocatedParam},
+    ast::{
+        self,
+        location::{Locatable, Located},
+        nodes::func::LocatedParam,
+    },
     ast_resolved::{
-        errors::{ControlFlowError, IdentResolveError},
+        errors::{ControlFlowError, IdentResolveError, TypeResolveError},
         nodes::{
             expr::Expr,
             func::{ExternFunction, Function, FunctionSig, Param},
@@ -50,13 +54,38 @@ impl Resolve<Function> for ast::nodes::func::Function {
             });
         }
 
-        let ExprFlow(body, flow) = self.body.resolve(ctx);
-        if flow != ControlFlow::Return && self.sig.ret_ty.0 != PrimType::Unit.into() {
-            ctx.push_error(ControlFlowError::NotAllFuncPathReturned(self.sig.name.clone()).into());
-        }
+        let ExprFlow(body, mut flow) = self.body.resolve(ctx);
+
         let Expr::Block(body) = body? else {
             unreachable!()
         };
+
+        if let Some(eval_expr) = &body.eval_expr {
+            flow = ControlFlow::Return;
+
+            if eval_expr.get_type() != self.sig.ret_ty.0 {
+                ctx.push_error(
+                    TypeResolveError::ReturnTypeMismatch {
+                        function_name: self.sig.name.0.clone(),
+                        expected_type: self.sig.ret_ty.0,
+                        actual_type: Located(
+                            eval_expr.get_type(),
+                            self.body
+                                .eval_expr
+                                .as_ref()
+                                .unwrap()
+                                .as_ref()
+                                .get_location(),
+                        ),
+                    }
+                    .into(),
+                );
+            }
+        }
+
+        if flow != ControlFlow::Return && self.sig.ret_ty.0 != PrimType::Unit.into() {
+            ctx.push_error(ControlFlowError::NotAllFuncPathReturned(self.sig.name.clone()).into());
+        }
 
         ctx.pop_local();
         ctx.unset_func_symbol_id();
