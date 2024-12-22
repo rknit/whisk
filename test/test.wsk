@@ -1,9 +1,10 @@
 func main() int {
-  let y = 4;
-  let x = if y == 4 {
-    1
-  } else {
-    2
+  let x = 0;
+  loop {
+    x = x + 1;
+    if x == 10 {
+      return x;
+    };
   };
-  x
+  1
 }

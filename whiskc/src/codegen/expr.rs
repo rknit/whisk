@@ -76,6 +76,21 @@ impl ExprCodegen for UnaryExpr {
 
 impl ExprCodegen for BinaryExpr {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
+        if self.op == Operator::Assign {
+            self.right.codegen(ctx)?;
+
+            // dont evaluate identifier
+            // self.target.codegen(ctx)?;
+
+            return if let Expr::Identifier(IdentExpr { sym_id, .. }) = self.left.as_ref() {
+                let id = ctx.get_local(*sym_id);
+                ctx.get_current_fi_mut().push_inst(Inst::Store(id));
+                Ok(())
+            } else {
+                unimplemented!("unsupported assignment type")
+            };
+        }
+
         self.left.codegen(ctx)?;
         self.right.codegen(ctx)?;
 
@@ -175,8 +190,13 @@ impl ExprCodegen for IfExpr {
 }
 
 impl ExprCodegen for LoopExpr {
-    fn codegen(&self, _ctx: &mut Context) -> Result<(), CodegenError> {
-        todo!()
+    fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
+        let jmp_dest = ctx.get_current_fi_mut().len();
+        self.body.codegen(ctx)?;
+        let func = ctx.get_current_fi_mut();
+        let jmp_src = func.len();
+        func.push_inst(Inst::Jmp(jmp_dest as isize - jmp_src as isize));
+        Ok(())
     }
 }
 

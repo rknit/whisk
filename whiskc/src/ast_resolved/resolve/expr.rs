@@ -160,6 +160,18 @@ impl ExprResolve for ast_expr::BinaryExpr {
 
         use crate::ast::parsing::token::Operator;
         let ty = match self.op.0 {
+            Operator::Assign => {
+                if left.get_type() != right.get_type() {
+                    ctx.push_error(
+                        TypeResolveError::AssignmentTypeMismatch {
+                            target_ty: Located(left.get_type(), self.left.get_location()),
+                            value_ty: Located(right.get_type(), self.right.get_location()),
+                        }
+                        .into(),
+                    );
+                }
+                PrimType::Unit.into()
+            }
             Operator::Add | Operator::Sub => {
                 if !left.get_type().is_numeric_ty() {
                     ctx.push_error(
