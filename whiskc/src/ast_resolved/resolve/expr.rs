@@ -353,6 +353,7 @@ impl ExprResolve for ast_expr::BlockExpr {
         let eval_expr = if let Some(eval_expr) = &self.eval_expr {
             let ExprFlow(expr, flow) = eval_expr.resolve(ctx);
             if expr.is_none() || flow == ControlFlow::Return {
+                ctx.pop_local();
                 return ExprFlow(expr, flow);
             }
             Some(Box::new(expr.unwrap()))
