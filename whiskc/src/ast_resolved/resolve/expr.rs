@@ -6,7 +6,8 @@ use crate::{
     ast_resolved::{
         errors::{IdentResolveError, TypeResolveError, ValueResolveError},
         nodes::expr::{
-            BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, ReturnExpr, UnaryExpr,
+            BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr,
+            UnaryExpr,
         },
         ControlFlow, ResolveContext,
     },
@@ -21,6 +22,10 @@ use super::stmt::StmtResolve;
 #[derive(Debug)]
 pub struct ExprFlow(pub Option<Expr>, pub ControlFlow);
 impl ExprFlow {
+    pub fn new(expr: impl Into<Expr>, flow: ControlFlow) -> Self {
+        Self(Some(expr.into()), flow)
+    }
+
     pub fn flow(expr: impl Into<Expr>) -> Self {
         Self(Some(expr.into()), ControlFlow::Flow)
     }
@@ -31,6 +36,10 @@ impl ExprFlow {
 
     pub fn ret(expr: impl Into<Expr>) -> Self {
         Self(Some(expr.into()), ControlFlow::Return)
+    }
+
+    pub fn none(flow: ControlFlow) -> Self {
+        Self(None, flow)
     }
 }
 
@@ -50,7 +59,10 @@ impl ExprResolve for ast_expr::Expr {
             ast_expr::Expr::Grouped(expr) => expr.expr.resolve(ctx),
             ast_expr::Expr::Call(expr) => expr.resolve(ctx),
             ast_expr::Expr::Block(expr) => expr.resolve(ctx),
-            _ => unimplemented!("expr resolve"),
+            ast_expr::Expr::Return(expr) => expr.resolve(ctx),
+            ast_expr::Expr::If(expr) => expr.resolve(ctx),
+            ast_expr::Expr::Loop(expr) => expr.resolve(ctx),
+            _ => unimplemented!("expr resolve {:?}", self),
         }
     }
 }
@@ -494,5 +506,18 @@ impl ExprResolve for ast_expr::IfExpr {
         } else {
             ExprFlow(None, result_flow)
         }
+    }
+}
+
+impl ExprResolve for ast_expr::LoopExpr {
+    fn resolve(&self, ctx: &mut ResolveContext) -> ExprFlow {
+        let ExprFlow(body, flow) = self.body.resolve(ctx);
+        let Some(body) = body else {
+            return ExprFlow::none(flow);
+        };
+        let Expr::Block(body) = body else {
+            unreachable!()
+        };
+        ExprFlow::new(LoopExpr { ty: body.ty, body }, flow)
     }
 }
