@@ -45,7 +45,7 @@ impl Resolve<Function> for ast::nodes::func::Function {
                 );
             };
             params.push(Param {
-                sym_id: sym_id.unwrap_or_else(|| SymbolID::nil()),
+                sym_id: sym_id.unwrap_or_else(SymbolID::nil),
                 name: param_name.0.clone(),
             });
         }

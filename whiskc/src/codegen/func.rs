@@ -1,6 +1,6 @@
 use wsk_vm::Inst;
 
-use super::Codegen;
+use super::{expr::ExprCodegen, Codegen};
 
 use crate::{ast_resolved::nodes as ast, ty::PrimType};
 

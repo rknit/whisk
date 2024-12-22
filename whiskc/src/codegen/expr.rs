@@ -3,7 +3,7 @@ use wsk_vm::{Cmp, Inst};
 use crate::{
     ast::parsing::token::Operator,
     ast_resolved::nodes::expr::{
-        BinaryExpr, BlockExpr, CallExpr, Expr, ExprKind, IdentExpr, UnaryExpr,
+        BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr, UnaryExpr,
     },
     ty::Type,
 };
@@ -12,14 +12,18 @@ use super::{Codegen, CodegenError, Context};
 
 impl Codegen for Expr {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
-        match self.get_kind() {
-            ExprKind::Integer(v) => v.codegen(ctx),
-            ExprKind::Bool(v) => v.codegen(ctx),
-            ExprKind::Identifier(v) => v.codegen(ctx),
-            ExprKind::Unary(v) => v.codegen(ctx),
-            ExprKind::Binary(v) => v.codegen(ctx),
-            ExprKind::Call(v) => v.codegen(ctx),
-            ExprKind::Block(v) => v.codegen(ctx),
+        match self {
+            Expr::Unit => todo!(),
+            Expr::Integer(v) => v.codegen(ctx),
+            Expr::Bool(v) => v.codegen(ctx),
+            Expr::Identifier(v) => v.codegen(ctx),
+            Expr::Unary(v) => v.codegen(ctx),
+            Expr::Binary(v) => v.codegen(ctx),
+            Expr::Call(v) => v.codegen(ctx),
+            Expr::Block(v) => v.codegen(ctx),
+            Expr::Return(_) => todo!(),
+            Expr::If(_) => todo!(),
+            Expr::Loop(_) => todo!(),
         }
     }
 }
@@ -123,6 +127,24 @@ impl ExprCodegen for BlockExpr {
     }
 }
 
-trait ExprCodegen {
+impl ExprCodegen for ReturnExpr {
+    fn codegen(&self, _ctx: &mut Context) -> Result<(), CodegenError> {
+        todo!()
+    }
+}
+
+impl ExprCodegen for IfExpr {
+    fn codegen(&self, _ctx: &mut Context) -> Result<(), CodegenError> {
+        todo!()
+    }
+}
+
+impl ExprCodegen for LoopExpr {
+    fn codegen(&self, _ctx: &mut Context) -> Result<(), CodegenError> {
+        todo!()
+    }
+}
+
+pub trait ExprCodegen {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError>;
 }

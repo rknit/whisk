@@ -32,10 +32,6 @@ impl ExprFlow {
     pub fn ret(expr: impl Into<Expr>) -> Self {
         Self(Some(expr.into()), ControlFlow::Return)
     }
-
-    pub fn ret_none() -> Self {
-        Self(None, ControlFlow::Return)
-    }
 }
 
 pub trait ExprResolve {
@@ -407,7 +403,7 @@ impl ExprResolve for ast_expr::ReturnExpr {
             );
         }
 
-        let expr = value.map(|v| Box::new(v));
+        let expr = value.map(Box::new);
         ExprFlow::ret(ReturnExpr { expr })
     }
 }
@@ -469,10 +465,8 @@ impl ExprResolve for ast_expr::IfExpr {
             } else {
                 Some(then_ty)
             }
-        } else if let Some(ty) = then_ty.or(else_ty) {
-            Some(ty)
         } else {
-            None
+            then_ty.or(else_ty)
         };
 
         if let (Some(cond), Some(then_block)) = (cond, then_block) {

@@ -1,10 +1,7 @@
 use wsk_vm::Inst;
 
 use crate::{
-    ast_resolved::nodes::{
-        expr::{ExprKind, IdentExpr},
-        stmt::{AssignStmt, Block, ExprStmt, IfStmt, LetStmt, LoopStmt, ReturnStmt, Stmt},
-    },
+    ast_resolved::nodes::stmt::{ExprStmt, LetStmt, Stmt},
     ty::PrimType,
 };
 
@@ -13,17 +10,13 @@ use super::Codegen;
 impl Codegen for Stmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
         match self {
-            Stmt::Block(stmt) => stmt.codegen(ctx),
             Stmt::Expr(stmt) => stmt.codegen(ctx),
-            Stmt::Assign(stmt) => stmt.codegen(ctx),
             Stmt::Let(stmt) => stmt.codegen(ctx),
-            Stmt::If(stmt) => stmt.codegen(ctx),
-            Stmt::Return(stmt) => stmt.codegen(ctx),
-            Stmt::Loop(stmt) => stmt.codegen(ctx),
         }
     }
 }
 
+/*
 impl Codegen for Block {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
         ctx.push_bound();
@@ -36,6 +29,7 @@ impl Codegen for Block {
         Ok(())
     }
 }
+*/
 
 impl Codegen for ExprStmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
@@ -47,6 +41,7 @@ impl Codegen for ExprStmt {
     }
 }
 
+/*
 impl Codegen for AssignStmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
         self.value.codegen(ctx)?;
@@ -63,6 +58,7 @@ impl Codegen for AssignStmt {
         }
     }
 }
+*/
 
 impl Codegen for LetStmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
@@ -75,6 +71,7 @@ impl Codegen for LetStmt {
     }
 }
 
+/*
 impl Codegen for IfStmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
         self.cond.codegen(ctx)?;
@@ -123,3 +120,4 @@ impl Codegen for LoopStmt {
         Ok(())
     }
 }
+*/
