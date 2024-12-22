@@ -13,7 +13,7 @@ use super::{Codegen, CodegenError, Context};
 impl Codegen for Expr {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
         match self {
-            Expr::Unit => todo!(),
+            Expr::Unit => Ok(()),
             Expr::Integer(v) => v.codegen(ctx),
             Expr::Bool(v) => v.codegen(ctx),
             Expr::Identifier(v) => v.codegen(ctx),
@@ -21,9 +21,9 @@ impl Codegen for Expr {
             Expr::Binary(v) => v.codegen(ctx),
             Expr::Call(v) => v.codegen(ctx),
             Expr::Block(v) => v.codegen(ctx),
-            Expr::Return(_) => todo!(),
-            Expr::If(_) => todo!(),
-            Expr::Loop(_) => todo!(),
+            Expr::Return(v) => v.codegen(ctx),
+            Expr::If(v) => v.codegen(ctx),
+            Expr::Loop(v) => v.codegen(ctx),
         }
     }
 }
@@ -128,8 +128,12 @@ impl ExprCodegen for BlockExpr {
 }
 
 impl ExprCodegen for ReturnExpr {
-    fn codegen(&self, _ctx: &mut Context) -> Result<(), CodegenError> {
-        todo!()
+    fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
+        if let Some(expr) = &self.expr {
+            expr.codegen(ctx)?;
+        }
+        ctx.get_current_fi_mut().push_inst(Inst::Ret);
+        Ok(())
     }
 }
 
