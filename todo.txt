@@ -1,2 +1,1 @@
-- whiskc: never type
-- whiskc: rework block expr
+- whiskc: fix semicolon placements in control-flow expr

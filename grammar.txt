@@ -1,0 +1,31 @@
+<program> ::= <item>*
+
+<item> ::= <attribute>* ( <func> | <extern_func> )
+
+<func> ::= <func_sig> <block>
+<extern_func> ::= extern <func_sig> ;
+<func_sig> ::= func <ident> \( <param_list> \) <type>?
+<param_list> ::= <param> | <param> , <param_list> | <epsilon>
+<param> ::= <ident> <type>
+
+<type> ::= <primitive>
+<primitive> ::= int | bool | \(\)
+
+<stmt> ::= <expr_stmt> | <let>
+<expr_stmt> ::= <expr> ;?
+<let> ::= let <ident> <type>? = <expr> ;
+
+<expr> ::= <constant> | <unary> | <binary> | <group> | <call> | <block> | <return> | <if> | <loop>
+<constant> ::= <integer> | <boolean> | \(\)
+<unary> ::= <unary_op> <expr>
+<unary_op> ::= ! | -
+<binary> ::= <expr> <binary_op> <expr>
+<binary_op> ::= + | - | && | \|\| | = | == | != | < | <= | > | >=
+<group> ::= \( <expr> \)
+<call> ::= <expr> \( <arg_list> \)
+<arg_list> ::= <expr> | <expr> , <arg_list> | <epsilon>
+<block> ::= { <stmt>* <expr>? }
+<return> ::= return <expr>?
+<if> ::= if <expr> <block> <else>?
+<else> ::= else <block>
+<loop> ::= loop <block>

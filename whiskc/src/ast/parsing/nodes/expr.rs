@@ -127,11 +127,16 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
     }
 
     fn delimiters(&self) -> HashSet<TokenKind> {
-        HashSet::from_iter([
-            TokenKind::Delimiter(Delimiter::BraceOpen),
-            TokenKind::Delimiter(Delimiter::BraceClose),
-            TokenKind::Delimiter(Delimiter::Semicolon),
-        ])
+        HashSet::from_iter(
+            [
+                Delimiter::BraceOpen,
+                Delimiter::BraceClose,
+                Delimiter::ParenOpen,
+                Delimiter::ParenClose,
+                Delimiter::Semicolon,
+            ]
+            .map(TokenKind::Delimiter),
+        )
     }
 }
 
