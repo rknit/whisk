@@ -26,6 +26,11 @@ pub enum Expr {
     If(IfExpr),
     Loop(LoopExpr),
 }
+impl Expr {
+    pub fn is_block(&self) -> bool {
+        matches!(self, Self::Block(_) | Self::If(_) | Self::Loop(_))
+    }
+}
 impl Locatable for Expr {
     fn get_location(&self) -> LocationRange {
         match self {

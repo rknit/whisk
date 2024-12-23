@@ -37,6 +37,7 @@ impl StmtResolve<ExprStmt> for ast_stmt::ExprStmt {
         let ExprFlow(expr, flow) = self.expr.resolve(ctx);
 
         let stmt = if let Some(expr) = expr {
+            // discard constant values
             if expr.is_constant() {
                 None
             } else {
@@ -45,6 +46,7 @@ impl StmtResolve<ExprStmt> for ast_stmt::ExprStmt {
         } else {
             None
         };
+
         (stmt, flow)
     }
 }

@@ -32,11 +32,12 @@ impl lookup_parser::Handlers<Stmt> for StmtHandlers {
 
 fn parse_expr_stmt(parser: &mut ParseContext) -> ParseResult<Stmt> {
     let expr = Expr::parse(parser)?;
-    let semi_tok = match_delimiter!(parser, Delimiter::Semicolon);
-    Some(Stmt::Expr(ExprStmt {
-        expr,
-        semi_tok: semi_tok.ok(),
-    }))
+    let semi_tok = if expr.is_block() {
+        match_delimiter!(parser, Delimiter::Semicolon).ok()
+    } else {
+        Some(match_delimiter!(parser, Delimiter::Semicolon =>))
+    };
+    Some(Stmt::Expr(ExprStmt { expr, semi_tok }))
 }
 
 impl Parse for LetStmt {
