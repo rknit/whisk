@@ -4,7 +4,7 @@ use once_cell::sync::Lazy;
 
 use crate::{
     ast::{
-        location::{Located, LocationRange},
+        location::{Locatable, Located, LocationRange},
         nodes::{
             expr::*,
             punctuate::Puntuated,
@@ -321,6 +321,18 @@ fn parse_block_expr(
             parser.lexer.next_token();
         }
     };
+
+    for stmt in &stmts {
+        let Stmt::Expr(ExprStmt { expr, semi_tok }) = stmt else {
+            continue;
+        };
+        if !expr.is_block() && semi_tok.is_none() {
+            parser.push_error(Located(
+                ParseError::MissingDelimiter(Delimiter::Semicolon),
+                expr.get_location().next().into(),
+            ));
+        }
+    }
 
     Some(Expr::Block(BlockExpr {
         brace_open_tok,

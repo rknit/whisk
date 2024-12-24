@@ -134,6 +134,8 @@ impl ExprCodegen for CallExpr {
 
 impl ExprCodegen for BlockExpr {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
+        ctx.push_bound();
+
         for stmt in &self.stmts {
             stmt.codegen(ctx)?;
         }
@@ -142,6 +144,7 @@ impl ExprCodegen for BlockExpr {
             expr.codegen(ctx)?;
         }
 
+        ctx.pop_bound();
         Ok(())
     }
 }
