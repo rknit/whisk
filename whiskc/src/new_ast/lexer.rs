@@ -94,7 +94,7 @@ impl<R: Read> CharReader<R> {
                                 Char::Invalid
                             }
                             None => match self.fill_buffer() {
-                                Some(0) | None => Char::Invalid,
+                                None => Char::Invalid,
                                 _ => self.next_char(),
                             },
                         }
