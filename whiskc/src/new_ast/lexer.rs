@@ -1,14 +1,44 @@
 use core::fmt;
-use std::{io::Read, mem::size_of, str};
+use std::{collections::VecDeque, io::Read, mem::size_of, str};
 
 #[derive(Debug)]
 pub struct Lexer<R: Read> {
     rd: CharReader<R>,
+    buf: VecDeque<Char>,
 }
 impl<R: Read> Lexer<R> {
     pub fn new(source: R) -> Self {
         Self {
             rd: CharReader::new(source),
+            buf: VecDeque::new(),
+        }
+    }
+
+    pub fn is_eof(&self) -> bool {
+        self.rd.is_eof() && (self.buf.is_empty() || matches!(self.buf.front(), Some(Char::EOF)))
+    }
+
+    fn peek_char(&mut self) -> &Char {
+        self.peek_char_ahead(0)
+    }
+
+    fn peek_char_ahead(&mut self, ahead: usize) -> &Char {
+        self.ensure_char_buf_len(ahead + 1);
+        unsafe { self.buf.get(ahead).unwrap_unchecked() }
+    }
+
+    fn next_char(&mut self) -> Char {
+        self.ensure_char_buf_len(1);
+        unsafe { self.buf.pop_front().unwrap_unchecked() }
+    }
+
+    fn ensure_char_buf_len(&mut self, n: usize) {
+        if self.buf.len() >= n {
+            return;
+        }
+        for _ in 0..n {
+            let c = self.rd.next_char();
+            self.buf.push_back(c);
         }
     }
 }
