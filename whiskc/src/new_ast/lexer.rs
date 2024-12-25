@@ -59,7 +59,7 @@ impl<R: Read> Lexer<R> {
         let start = self.pos;
 
         let token = if self.rd.is_eof() {
-            _ = self.next_char();
+            self.skip();
             Token::new(TokenKind::EndOfFile, start)
         } else {
             let c = self.next_char();
@@ -69,17 +69,65 @@ impl<R: Read> Lexer<R> {
         self.toks.push_back(token);
     }
 
-    fn peek_char(&mut self) -> &Char {
+    pub fn peek_until(&mut self, cond: impl Fn(char) -> bool) -> String {
+        let mut s = String::new();
+        loop {
+            self.ensure_char_buf_len(s.len() + 1);
+            let Some(Char::Char(c)) = self.buf.get(s.len()) else {
+                break;
+            };
+            if !cond(*c) {
+                break;
+            }
+            s.push(*c);
+        }
+        s
+    }
+
+    pub fn match_until(&mut self, cond: impl Fn(char) -> bool) -> String {
+        let s = self.peek_until(cond);
+        for _ in 0..s.len() {
+            self.skip();
+        }
+        s
+    }
+
+    pub fn peek_string(&mut self, s: &str) -> bool {
+        self.ensure_char_buf_len(s.len());
+        for (ch, c) in self.buf.iter().zip(s.chars()) {
+            if !matches!(ch, Char::Char(ch) if *ch == c) {
+                return false;
+            }
+        }
+        true
+    }
+
+    pub fn match_string(&mut self, s: &str) -> bool {
+        if self.peek_string(s) {
+            for _ in 0..s.len() {
+                self.skip();
+            }
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn peek_char(&mut self) -> &Char {
         self.peek_char_ahead(0)
     }
 
-    fn peek_char_ahead(&mut self, ahead: usize) -> &Char {
+    pub fn peek_char_ahead(&mut self, ahead: usize) -> &Char {
         self.ensure_char_buf_len(ahead + 1);
         unsafe { self.buf.get(ahead).unwrap_unchecked() }
     }
 
+    pub fn skip(&mut self) {
+        _ = self.next_char();
+    }
+
     #[must_use]
-    fn next_char(&mut self) -> Char {
+    pub fn next_char(&mut self) -> Char {
         self.ensure_char_buf_len(1);
 
         let c = unsafe { self.buf.pop_front().unwrap_unchecked() };

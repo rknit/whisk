@@ -33,3 +33,7 @@
 <if> ::= if <expr> <block> <else>?
 <else> ::= else <block>
 <loop> ::= loop <block>
+
+<ident> ::= (a..z | A..Z | _) (a..z | A..Z | _ | 0..9)*
+<integer> ::= (0..9)+
+<boolean> ::= true | false
