@@ -1,21 +1,72 @@
 use core::fmt;
 use std::{collections::VecDeque, io::Read, mem::size_of, str};
 
+use crate::ast::location::Location;
+
+use super::token::{Token, TokenKind};
+
 #[derive(Debug)]
 pub struct Lexer<R: Read> {
     rd: CharReader<R>,
     buf: VecDeque<Char>,
+    toks: VecDeque<Token>,
+    pos: Location,
 }
 impl<R: Read> Lexer<R> {
     pub fn new(source: R) -> Self {
         Self {
             rd: CharReader::new(source),
             buf: VecDeque::new(),
+            toks: VecDeque::new(),
+            pos: Location::new(1, 1),
         }
     }
 
     pub fn is_eof(&self) -> bool {
         self.rd.is_eof() && (self.buf.is_empty() || matches!(self.buf.front(), Some(Char::EOF)))
+    }
+
+    pub fn peek_kind(&mut self) -> &TokenKind {
+        self.peek_kind_ahead(0)
+    }
+
+    pub fn peek_kind_ahead(&mut self, ahead: usize) -> &TokenKind {
+        &self.peek_token_ahead(ahead).kind
+    }
+
+    pub fn peek_token(&mut self) -> &Token {
+        self.peek_token_ahead(0)
+    }
+
+    pub fn peek_token_ahead(&mut self, ahead: usize) -> &Token {
+        self.ensure_token_count(ahead + 1);
+        unsafe { self.toks.get(ahead).unwrap_unchecked() }
+    }
+
+    #[must_use]
+    pub fn next_token(&mut self) -> Token {
+        self.ensure_token_count(1);
+        unsafe { self.toks.pop_front().unwrap_unchecked() }
+    }
+
+    fn ensure_token_count(&mut self, n: usize) {
+        while self.toks.len() < n {
+            self.make_token();
+        }
+    }
+
+    fn make_token(&mut self) {
+        let start = self.pos;
+
+        let token = if self.rd.is_eof() {
+            _ = self.next_char();
+            Token::new(TokenKind::EndOfFile, start)
+        } else {
+            let c = self.next_char();
+            Token::new(TokenKind::Unknown(c.to_string()), start)
+        };
+
+        self.toks.push_back(token);
     }
 
     fn peek_char(&mut self) -> &Char {
@@ -27,9 +78,18 @@ impl<R: Read> Lexer<R> {
         unsafe { self.buf.get(ahead).unwrap_unchecked() }
     }
 
+    #[must_use]
     fn next_char(&mut self) -> Char {
         self.ensure_char_buf_len(1);
-        unsafe { self.buf.pop_front().unwrap_unchecked() }
+
+        let c = unsafe { self.buf.pop_front().unwrap_unchecked() };
+        if matches!(c, Char::Char('\n')) {
+            self.pos.line += 1;
+            self.pos.col = 0;
+        }
+        self.pos.col += 1;
+
+        c
     }
 
     fn ensure_char_buf_len(&mut self, n: usize) {

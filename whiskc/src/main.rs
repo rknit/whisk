@@ -1,12 +1,12 @@
 use std::fs::File;
 
-use whiskc::new_ast::lexer::CharReader;
+use whiskc::new_ast::lexer::Lexer;
 
 fn main() {
     let f = File::open("./test/test.wsk").unwrap();
-    let mut rd = CharReader::new(f);
-    while !rd.is_eof() {
-        print!("{}", rd.next_char());
+    let mut lexer = Lexer::new(f);
+    while !lexer.is_eof() {
+        println!("{:?}", lexer.next_token());
     }
 
     // let args: Vec<String> = env::args().collect();

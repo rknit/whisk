@@ -12,10 +12,12 @@
 <primitive> ::= int | bool | \(\)
 
 <stmt> ::= <expr_stmt> | <let>
-<expr_stmt> ::= <expr> ;?
+<expr_stmt> ::= <f_expr> ; | <cf_expr> ;?
 <let> ::= let <ident> <type>? = <expr> ;
 
-<expr> ::= <constant> | <unary> | <binary> | <group> | <call> | <block> | <return> | <if> | <loop>
+<expr> ::= <f_expr> | <cf_expr>
+
+<f_expr> ::= <constant> | <unary> | <binary> | <group> | <call> | <return>
 <constant> ::= <integer> | <boolean> | \(\)
 <unary> ::= <unary_op> <expr>
 <unary_op> ::= ! | -
@@ -24,8 +26,10 @@
 <group> ::= \( <expr> \)
 <call> ::= <expr> \( <arg_list> \)
 <arg_list> ::= <expr> | <expr> , <arg_list> | <epsilon>
-<block> ::= { <stmt>* <expr>? }
 <return> ::= return <expr>?
+
+<cf_expr> ::= <block> | <if> | <loop>
+<block> ::= { <stmt>* <expr>? }
 <if> ::= if <expr> <block> <else>?
 <else> ::= else <block>
 <loop> ::= loop <block>

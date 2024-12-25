@@ -38,6 +38,10 @@ pub struct LocationRange {
     pub end: Location,
 }
 impl LocationRange {
+    pub fn new(start: Location, end: Location) -> Self {
+        Self { start, end }
+    }
+
     pub fn next(&self) -> Location {
         self.end.next()
     }
@@ -86,6 +90,10 @@ pub struct Location {
     pub col: u32,
 }
 impl Location {
+    pub fn new(line: u32, col: u32) -> Self {
+        Self { line, col }
+    }
+
     pub fn front(&self) -> Self {
         Self {
             line: self.line,

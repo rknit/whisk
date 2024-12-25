@@ -29,32 +29,17 @@ impl Token {
     }
 }
 
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
-    Unknown,
+    Unknown(String),
     EndOfFile,
     Literal(Literal),
     Keyword(Keyword),
     LiteralKeyword(LiteralKeyword),
     TypeKeyword(TypeKeyword),
-    Identifier(Identifier),
+    Identifier(String),
     Delimiter(Delimiter),
     Operator(Operator),
-}
-impl fmt::Debug for TokenKind {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Unknown => write!(f, "UNK"),
-            Self::EndOfFile => write!(f, "EOF"),
-            Self::Literal(lit) => write!(f, "{:?}", lit),
-            Self::LiteralKeyword(lit) => write!(f, "{:?}", lit),
-            Self::Keyword(kw) => write!(f, "{:?}", kw),
-            Self::TypeKeyword(kw) => write!(f, "{:?}", kw),
-            Self::Identifier(id) => write!(f, "{:?}", id),
-            Self::Delimiter(de) => write!(f, "{:?}", de),
-            Self::Operator(op) => write!(f, "{:?}", op),
-        }
-    }
 }
 impl fmt::Display for TokenKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -62,35 +47,17 @@ impl fmt::Display for TokenKind {
             f,
             "{}",
             match self {
-                Self::Unknown => "UNK".to_string(),
-                Self::EndOfFile => "EOF".to_string(),
+                Self::Unknown(s) => format!("UNK('{}')", s),
+                Self::EndOfFile => "EOF".to_owned(),
                 Self::Literal(lit) => format!("{}", lit),
                 Self::LiteralKeyword(lit) => format!("{}", lit),
                 Self::Keyword(kw) => format!("'{}' keyword", kw),
                 Self::TypeKeyword(kw) => format!("'{}' type", kw),
-                Self::Identifier(ident) => format!("'{}'", ident.0),
+                Self::Identifier(ident) => ident.clone(),
                 Self::Delimiter(delim) => format!("'{}'", delim),
                 Self::Operator(op) => format!("'{}' operator", op),
             }
         )
-    }
-}
-
-#[derive(Debug, Clone, Eq)]
-pub struct Identifier(pub String);
-impl PartialEq for Identifier {
-    fn eq(&self, _other: &Self) -> bool {
-        true
-    }
-}
-impl Hash for Identifier {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        discriminant(&TokenKind::Identifier(Identifier(String::new()))).hash(state)
-    }
-}
-impl From<Identifier> for TokenKind {
-    fn from(value: Identifier) -> Self {
-        Self::Identifier(value)
     }
 }
 
@@ -112,16 +79,6 @@ impl fmt::Display for Literal {
                 Self::Int(i) => i.to_string(),
             }
         )
-    }
-}
-impl Hash for Literal {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        discriminant(self).hash(state)
-    }
-}
-impl From<Literal> for TokenKind {
-    fn from(value: Literal) -> Self {
-        Self::Literal(value)
     }
 }
 
@@ -152,11 +109,6 @@ impl FromStr for LiteralKeyword {
             }
         }
         Err(())
-    }
-}
-impl From<LiteralKeyword> for TokenKind {
-    fn from(value: LiteralKeyword) -> Self {
-        Self::LiteralKeyword(value)
     }
 }
 
@@ -203,11 +155,6 @@ impl FromStr for Keyword {
         Err(())
     }
 }
-impl From<Keyword> for TokenKind {
-    fn from(value: Keyword) -> Self {
-        Self::Keyword(value)
-    }
-}
 
 #[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TypeKeyword {
@@ -236,11 +183,6 @@ impl FromStr for TypeKeyword {
             }
         }
         Err(())
-    }
-}
-impl From<TypeKeyword> for TokenKind {
-    fn from(value: TypeKeyword) -> Self {
-        Self::TypeKeyword(value)
     }
 }
 
@@ -285,11 +227,6 @@ impl FromStr for Delimiter {
             }
         }
         Err(())
-    }
-}
-impl From<Delimiter> for TokenKind {
-    fn from(value: Delimiter) -> Self {
-        Self::Delimiter(value)
     }
 }
 
@@ -382,10 +319,5 @@ impl FromStr for Operator {
             }
         }
         Err(())
-    }
-}
-impl From<Operator> for TokenKind {
-    fn from(value: Operator) -> Self {
-        Self::Operator(value)
     }
 }
