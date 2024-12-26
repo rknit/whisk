@@ -43,7 +43,6 @@ impl<R: Read> Lexer<R> {
         unsafe { self.toks.get(ahead).unwrap_unchecked() }
     }
 
-    #[must_use]
     pub fn next_token(&mut self) -> Token {
         self.ensure_token_count(1);
         unsafe { self.toks.pop_front().unwrap_unchecked() }
