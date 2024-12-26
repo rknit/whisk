@@ -1,6 +1,6 @@
 use crate::{
     ast::{
-        location::{Located, LocationRange},
+        location::{Located, Span},
         parsing::token::Operator,
     },
     symbol_table::{SymbolAttribute, SymbolKind},
@@ -53,7 +53,7 @@ pub enum ValueResolveError {
         actual_count: usize,
     },
     ArrayLengthMismatch {
-        loc: LocationRange,
+        loc: Span,
         expect_count: usize,
         actual_count: usize,
     },
@@ -63,13 +63,13 @@ pub enum ValueResolveError {
 pub enum IdentResolveError {
     GlobalIdentAlreadyUsed {
         ident: String,
-        first_origin: (SymbolKind, LocationRange),
-        dup_origin: (SymbolKind, LocationRange),
+        first_origin: (SymbolKind, Span),
+        dup_origin: (SymbolKind, Span),
     },
     VarNameAlreadyUsed {
         ident: String,
-        first_origin: (Type, LocationRange),
-        dup_origin: (Type, LocationRange),
+        first_origin: (Type, Span),
+        dup_origin: (Type, Span),
     },
     UnknownIdentifier(Located<String>),
     UnexpectedAttrib {
@@ -135,7 +135,7 @@ pub enum TypeResolveError {
         index_ty: Located<Type>,
     },
     InvalidTypeCast {
-        loc: LocationRange,
+        loc: Span,
         from_ty: Type,
         to_ty: Type,
     },

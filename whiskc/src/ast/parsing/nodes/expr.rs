@@ -4,7 +4,7 @@ use once_cell::sync::Lazy;
 
 use crate::{
     ast::{
-        location::{Locatable, Located, LocationRange},
+        location::{Locatable, Located, Span},
         nodes::{
             expr::*,
             punctuate::Puntuated,
@@ -147,7 +147,7 @@ fn parse_unit_or_group_expr(
     let paren_open_tok = match_delimiter!(parser, Delimiter::ParenOpen =>);
     Some(
         if let Ok(paren_close_tok) = match_delimiter!(parser, Delimiter::ParenClose) {
-            Expr::Unit(LocationRange::combine(paren_open_tok.1, paren_close_tok.1))
+            Expr::Unit(Span::combine(paren_open_tok.1, paren_close_tok.1))
         } else {
             let expr = Expr::parse(parser)?;
             let paren_close_tok = match_delimiter!(parser, Delimiter::ParenClose =>);

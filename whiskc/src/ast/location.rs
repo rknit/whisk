@@ -3,15 +3,15 @@ use core::{
     fmt,
 };
 
-#[derive(Clone)]
-pub struct Located<T>(pub T, pub LocationRange);
+#[derive(Clone, Copy)]
+pub struct Located<T>(pub T, pub Span);
 impl<T> Located<T> {
     pub fn new_temporary(v: T) -> Self {
-        Located(v, LocationRange::default())
+        Located(v, Span::default())
     }
 }
-impl<T> From<(T, LocationRange)> for Located<T> {
-    fn from(value: (T, LocationRange)) -> Self {
+impl<T> From<(T, Span)> for Located<T> {
+    fn from(value: (T, Span)) -> Self {
         Self(value.0, value.1)
     }
 }
@@ -22,7 +22,7 @@ impl<T: fmt::Debug> fmt::Debug for Located<T> {
 }
 
 pub trait Locatable {
-    fn get_location(&self) -> LocationRange;
+    fn get_location(&self) -> Span;
 }
 
 impl<T: Locatable> From<T> for Located<T> {
@@ -33,11 +33,11 @@ impl<T: Locatable> From<T> for Located<T> {
 }
 
 #[derive(Default, Clone, Copy, PartialEq, Eq)]
-pub struct LocationRange {
+pub struct Span {
     pub start: Location,
     pub end: Location,
 }
-impl LocationRange {
+impl Span {
     pub fn new(start: Location, end: Location) -> Self {
         Self { start, end }
     }
@@ -53,7 +53,7 @@ impl LocationRange {
         }
     }
 }
-impl fmt::Debug for LocationRange {
+impl fmt::Debug for Span {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.start == self.end {
             write!(f, "[{:#?}]", self.start)
@@ -62,7 +62,7 @@ impl fmt::Debug for LocationRange {
         }
     }
 }
-impl PartialOrd for LocationRange {
+impl PartialOrd for Span {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         Some(if self.end < other.start {
             std::cmp::Ordering::Less
@@ -75,7 +75,7 @@ impl PartialOrd for LocationRange {
         })
     }
 }
-impl From<Location> for LocationRange {
+impl From<Location> for Span {
     fn from(value: Location) -> Self {
         Self {
             start: value,

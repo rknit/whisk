@@ -1,6 +1,6 @@
 use crate::{
     ast::{
-        location::{Locatable, Located, LocationRange},
+        location::{Locatable, Located, Span},
         parsing::token::{Delimiter, Keyword, Operator},
     },
     ty::Type,
@@ -10,7 +10,7 @@ use super::{punctuate::Puntuated, stmt::Stmt};
 
 #[derive(Debug, Clone)]
 pub enum Expr {
-    Unit(LocationRange),
+    Unit(Span),
     Integer(Located<i64>),
     Bool(Located<bool>),
     Identifier(Located<String>),
@@ -32,7 +32,7 @@ impl Expr {
     }
 }
 impl Locatable for Expr {
-    fn get_location(&self) -> LocationRange {
+    fn get_location(&self) -> Span {
         match self {
             Expr::Unit(loc) => *loc,
             Expr::Integer(located) => located.1,
@@ -59,8 +59,8 @@ pub struct UnaryExpr {
     pub expr: Box<Expr>,
 }
 impl Locatable for UnaryExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.op.1, self.expr.get_location())
+    fn get_location(&self) -> Span {
+        Span::combine(self.op.1, self.expr.get_location())
     }
 }
 
@@ -71,8 +71,8 @@ pub struct BinaryExpr {
     pub right: Box<Expr>,
 }
 impl Locatable for BinaryExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.left.get_location(), self.right.get_location())
+    fn get_location(&self) -> Span {
+        Span::combine(self.left.get_location(), self.right.get_location())
     }
 }
 
@@ -83,8 +83,8 @@ pub struct GroupedExpr {
     pub paren_close_tok: Located<Delimiter>,
 }
 impl Locatable for GroupedExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.paren_open_tok.1, self.paren_close_tok.1)
+    fn get_location(&self) -> Span {
+        Span::combine(self.paren_open_tok.1, self.paren_close_tok.1)
     }
 }
 
@@ -96,8 +96,8 @@ pub struct CallExpr {
     pub paren_close_tok: Located<Delimiter>,
 }
 impl Locatable for CallExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.callee.get_location(), self.paren_close_tok.1)
+    fn get_location(&self) -> Span {
+        Span::combine(self.callee.get_location(), self.paren_close_tok.1)
     }
 }
 
@@ -108,8 +108,8 @@ pub struct ArrayExpr {
     pub bracket_close_tok: Located<Delimiter>,
 }
 impl Locatable for ArrayExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.bracket_open_tok.1, self.bracket_close_tok.1)
+    fn get_location(&self) -> Span {
+        Span::combine(self.bracket_open_tok.1, self.bracket_close_tok.1)
     }
 }
 
@@ -121,8 +121,8 @@ pub struct ArrayIndexExpr {
     pub bracket_close_tok: Located<Delimiter>,
 }
 impl Locatable for ArrayIndexExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.expr.get_location(), self.bracket_close_tok.1)
+    fn get_location(&self) -> Span {
+        Span::combine(self.expr.get_location(), self.bracket_close_tok.1)
     }
 }
 
@@ -133,8 +133,8 @@ pub struct CastExpr {
     pub ty: Located<Type>,
 }
 impl Locatable for CastExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.expr.get_location(), self.ty.1)
+    fn get_location(&self) -> Span {
+        Span::combine(self.expr.get_location(), self.ty.1)
     }
 }
 
@@ -146,8 +146,8 @@ pub struct BlockExpr {
     pub brace_close_tok: Located<Delimiter>,
 }
 impl Locatable for BlockExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.brace_open_tok.1, self.brace_close_tok.1)
+    fn get_location(&self) -> Span {
+        Span::combine(self.brace_open_tok.1, self.brace_close_tok.1)
     }
 }
 
@@ -157,13 +157,13 @@ pub struct ReturnExpr {
     pub expr: Option<Box<Expr>>,
 }
 impl Locatable for ReturnExpr {
-    fn get_location(&self) -> LocationRange {
+    fn get_location(&self) -> Span {
         let end_loc = if let Some(expr) = &self.expr {
             expr.get_location()
         } else {
             self.return_tok.1
         };
-        LocationRange::combine(self.return_tok.1, end_loc)
+        Span::combine(self.return_tok.1, end_loc)
     }
 }
 
@@ -175,11 +175,11 @@ pub struct IfExpr {
     pub else_expr: Option<ElseExpr>,
 }
 impl Locatable for IfExpr {
-    fn get_location(&self) -> LocationRange {
+    fn get_location(&self) -> Span {
         if let Some(else_expr) = &self.else_expr {
-            LocationRange::combine(self.if_tok.1, else_expr.get_location())
+            Span::combine(self.if_tok.1, else_expr.get_location())
         } else {
-            LocationRange::combine(self.if_tok.1, self.then.get_location())
+            Span::combine(self.if_tok.1, self.then.get_location())
         }
     }
 }
@@ -190,8 +190,8 @@ pub struct ElseExpr {
     pub body: BlockExpr,
 }
 impl Locatable for ElseExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.else_tok.1, self.body.get_location())
+    fn get_location(&self) -> Span {
+        Span::combine(self.else_tok.1, self.body.get_location())
     }
 }
 
@@ -201,7 +201,7 @@ pub struct LoopExpr {
     pub body: BlockExpr,
 }
 impl Locatable for LoopExpr {
-    fn get_location(&self) -> LocationRange {
-        LocationRange::combine(self.loop_tok.1, self.body.get_location())
+    fn get_location(&self) -> Span {
+        Span::combine(self.loop_tok.1, self.body.get_location())
     }
 }

@@ -1,6 +1,6 @@
 use std::{fs, path::Path, str::FromStr};
 
-use crate::ast::location::{Location, LocationRange};
+use crate::ast::location::{Location, Span};
 
 use super::token::{
     Delimiter, Identifier, Keyword, Literal, LiteralKeyword, Operator, OperatorChar, Token,
@@ -13,7 +13,7 @@ pub struct Lexer {
     index: usize,
     tokens: Vec<Token>,
     current_loc: Location,
-    prev_loc: LocationRange,
+    prev_loc: Span,
 }
 impl Lexer {
     pub fn new(source_path: &Path) -> Self {
@@ -37,11 +37,11 @@ impl Lexer {
         &self.peek_token(ahead).kind
     }
 
-    pub fn peek_loc(&mut self, ahead: usize) -> &LocationRange {
+    pub fn peek_loc(&mut self, ahead: usize) -> &Span {
         &self.peek_token(ahead).loc
     }
 
-    pub fn get_prev_loc(&self) -> &LocationRange {
+    pub fn get_prev_loc(&self) -> &Span {
         &self.prev_loc
     }
 
@@ -80,7 +80,7 @@ impl Lexer {
             let value = value.parse::<i64>().unwrap();
             Token {
                 kind: TokenKind::Literal(Literal::Int(value)),
-                loc: LocationRange {
+                loc: Span {
                     start,
                     end: self.current_loc.front(),
                 },
@@ -99,7 +99,7 @@ impl Lexer {
                     }
                     return Token {
                         kind: TokenKind::Operator(op),
-                        loc: LocationRange {
+                        loc: Span {
                             start,
                             end: self.current_loc.front(),
                         },
@@ -129,7 +129,7 @@ impl Lexer {
             if let Ok(kw) = Keyword::from_str(&ident) {
                 Token {
                     kind: TokenKind::Keyword(kw),
-                    loc: LocationRange {
+                    loc: Span {
                         start,
                         end: self.current_loc.front(),
                     },
@@ -137,7 +137,7 @@ impl Lexer {
             } else if let Ok(kw) = TypeKeyword::from_str(&ident) {
                 Token {
                     kind: TokenKind::TypeKeyword(kw),
-                    loc: LocationRange {
+                    loc: Span {
                         start,
                         end: self.current_loc.front(),
                     },
@@ -145,7 +145,7 @@ impl Lexer {
             } else if let Ok(kw) = LiteralKeyword::from_str(&ident) {
                 Token {
                     kind: TokenKind::LiteralKeyword(kw),
-                    loc: LocationRange {
+                    loc: Span {
                         start,
                         end: self.current_loc.front(),
                     },
@@ -153,7 +153,7 @@ impl Lexer {
             } else {
                 Token {
                     kind: TokenKind::Identifier(Identifier(ident)),
-                    loc: LocationRange {
+                    loc: Span {
                         start,
                         end: self.current_loc.front(),
                     },

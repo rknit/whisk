@@ -1,10 +1,8 @@
 <program> ::= <item>*
 
-<item> ::= <attribute>* ( <func> | <extern_func> )
+<item> ::= <attribute>* <func>
 
-<func> ::= <func_sig> <block>
-<extern_func> ::= extern <func_sig> ;
-<func_sig> ::= func <ident> \( <param_list> \) <type>?
+<func> ::= func <ident> \( <param_list> \) <type>? <block>
 <param_list> ::= <param> | <param> , <param_list> | <epsilon>
 <param> ::= <ident> <type>
 

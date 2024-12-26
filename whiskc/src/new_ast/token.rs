@@ -6,15 +6,15 @@ use std::str::FromStr;
 use strum::EnumIter;
 use strum::IntoEnumIterator;
 
-use crate::ast::location::LocationRange;
+use crate::ast::location::Span;
 
 #[derive(Debug, Clone)]
 pub struct Token {
     pub kind: TokenKind,
-    pub loc: LocationRange,
+    pub loc: Span,
 }
 impl Token {
-    pub fn new(kind: impl Into<TokenKind>, loc: impl Into<LocationRange>) -> Self {
+    pub fn new(kind: impl Into<TokenKind>, loc: impl Into<Span>) -> Self {
         Self {
             kind: kind.into(),
             loc: loc.into(),
@@ -24,7 +24,7 @@ impl Token {
     pub fn temp(kind: impl Into<TokenKind>) -> Self {
         Self {
             kind: kind.into(),
-            loc: LocationRange::default(),
+            loc: Span::default(),
         }
     }
 }

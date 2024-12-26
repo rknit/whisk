@@ -7,12 +7,12 @@ use strum::EnumIter;
 use strum::IntoEnumIterator;
 
 use crate::ast::location::Location;
-use crate::ast::location::LocationRange;
+use crate::ast::location::Span;
 
 #[derive(Debug, Clone)]
 pub struct Token {
     pub kind: TokenKind,
-    pub loc: LocationRange,
+    pub loc: Span,
 }
 impl Token {
     pub fn temp(kind: TokenKind) -> Self {

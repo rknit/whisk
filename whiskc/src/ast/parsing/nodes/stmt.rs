@@ -2,7 +2,7 @@ use once_cell::sync::Lazy;
 
 use crate::{
     ast::{
-        location::{Located, LocationRange},
+        location::{Located, Span},
         nodes::{expr::Expr, stmt::*},
         parsing::{
             parsers::lookup_parser::{self, LookUpParseError, LookUpParser},
@@ -63,7 +63,7 @@ impl Parse for Stmt {
         static PARSER: Lazy<LookUpParser<Stmt>> =
             Lazy::new(|| LookUpParser::<Stmt>::new(&StmtHandlers));
 
-        let prev_loc: LocationRange = *parser.lexer.get_prev_loc();
+        let prev_loc: Span = *parser.lexer.get_prev_loc();
 
         let parsed_lookup_stmt = PARSER.parse(parser);
 

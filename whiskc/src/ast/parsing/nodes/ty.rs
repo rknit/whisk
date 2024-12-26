@@ -5,7 +5,7 @@ use strum::IntoEnumIterator;
 
 use crate::{
     ast::{
-        location::{Located, LocationRange},
+        location::{Located, Span},
         parsing::{
             parsers::pratt_parser::{self, PrattParseError, PrattParser},
             token::{Delimiter, Identifier, Literal, Token, TokenKind, TypeKeyword},
@@ -72,7 +72,7 @@ fn parse_unit_type(parser: &mut ParseContext) -> ParseResult<Located<Type>> {
     let paren_close_tok = match_delimiter!(parser, Delimiter::ParenClose =>);
     Some(Located(
         PrimType::Unit.into(),
-        LocationRange::combine(paren_open_tok.1, paren_close_tok.1),
+        Span::combine(paren_open_tok.1, paren_close_tok.1),
     ))
 }
 
@@ -110,7 +110,7 @@ fn parse_array_type(parser: &mut ParseContext) -> ParseResult<Located<Type>> {
         let brace_close_tok = match_delimiter!(parser, Delimiter::BracketClose =>);
         Some(Located(
             todo!("array type parse"),
-            LocationRange::combine(_brace_open_tok.1, brace_close_tok.1),
+            Span::combine(_brace_open_tok.1, brace_close_tok.1),
         ))
     }
 }
@@ -137,7 +137,7 @@ fn parse_keyword_type(parser: &mut ParseContext) -> ParseResult<Located<Type>> {
 fn parse_prim_int_type(
     parser: &mut ParseContext,
     ident: String,
-    loc: LocationRange,
+    loc: Span,
 ) -> ParseResult<Located<Type>> {
     let mut it = ident.chars();
     let _int_kind = it.next().unwrap();

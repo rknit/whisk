@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use uuid::Uuid;
 
 use crate::{
-    ast::location::{Located, LocationRange},
+    ast::location::{Located, Span},
     //cfg::nodes::value::Value,
     ty::{FuncType, Type},
 };
@@ -217,21 +217,21 @@ impl Symbol {
         }
     }
 
-    pub fn get_origin(&self) -> LocationRange {
+    pub fn get_origin(&self) -> Span {
         match self {
             Symbol::Variable(symbol) => symbol.get_origin(),
             Symbol::Function(symbol) => symbol.get_origin(),
         }
     }
 
-    pub fn push_ref(&mut self, loc: LocationRange) {
+    pub fn push_ref(&mut self, loc: Span) {
         match self {
             Symbol::Variable(symbol) => symbol.push_ref(loc),
             Symbol::Function(symbol) => symbol.push_ref(loc),
         }
     }
 
-    pub fn get_refs(&self) -> &Vec<LocationRange> {
+    pub fn get_refs(&self) -> &Vec<Span> {
         match self {
             Symbol::Variable(symbol) => symbol.get_refs(),
             Symbol::Function(symbol) => symbol.get_refs(),
@@ -255,7 +255,7 @@ pub struct VarSymbol {
     name: Located<String>,
     ty: Type,
     //value: Option<Value>,
-    refs: Vec<LocationRange>,
+    refs: Vec<Span>,
 }
 impl VarSymbol {
     pub fn new(name: Located<String>, ty: Type) -> Self {
@@ -284,11 +284,11 @@ impl VarSymbol {
         self.ty
     }
 
-    pub fn get_origin(&self) -> LocationRange {
+    pub fn get_origin(&self) -> Span {
         self.name.1
     }
 
-    pub fn push_ref(&mut self, loc: LocationRange) {
+    pub fn push_ref(&mut self, loc: Span) {
         if let [.., last] = self.refs[..] {
             if last > loc {
                 panic!("reference location out of order");
@@ -300,7 +300,7 @@ impl VarSymbol {
         self.refs.push(loc);
     }
 
-    pub fn get_refs(&self) -> &Vec<LocationRange> {
+    pub fn get_refs(&self) -> &Vec<Span> {
         &self.refs
     }
 
@@ -325,7 +325,7 @@ pub struct FuncSymbol {
     params: Vec<(Located<String>, Type)>,
     ret_ty: Type,
     attributes: HashSet<SymbolAttribute>,
-    refs: Vec<LocationRange>,
+    refs: Vec<Span>,
 }
 impl FuncSymbol {
     pub fn new(name: Located<String>, params: Vec<(Located<String>, Type)>, ret_ty: Type) -> Self {
@@ -367,11 +367,11 @@ impl FuncSymbol {
         FuncType(self.id).into()
     }
 
-    pub fn get_origin(&self) -> LocationRange {
+    pub fn get_origin(&self) -> Span {
         self.name.1
     }
 
-    pub fn push_ref(&mut self, loc: LocationRange) {
+    pub fn push_ref(&mut self, loc: Span) {
         if let [.., last] = self.refs[..] {
             if last > loc {
                 panic!("reference location out of order");
@@ -383,7 +383,7 @@ impl FuncSymbol {
         self.refs.push(loc);
     }
 
-    pub fn get_refs(&self) -> &Vec<LocationRange> {
+    pub fn get_refs(&self) -> &Vec<Span> {
         &self.refs
     }
 }
