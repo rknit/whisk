@@ -60,6 +60,11 @@ impl fmt::Display for TokenKind {
         )
     }
 }
+impl From<String> for TokenKind {
+    fn from(value: String) -> Self {
+        Self::Identifier(value)
+    }
+}
 
 #[derive(Debug, Clone, Copy, Eq)]
 pub enum Literal {
@@ -79,6 +84,11 @@ impl fmt::Display for Literal {
                 Self::Int(i) => i.to_string(),
             }
         )
+    }
+}
+impl From<Literal> for TokenKind {
+    fn from(value: Literal) -> Self {
+        Self::Literal(value)
     }
 }
 
@@ -109,6 +119,11 @@ impl FromStr for LiteralKeyword {
             }
         }
         Err(())
+    }
+}
+impl From<LiteralKeyword> for TokenKind {
+    fn from(value: LiteralKeyword) -> Self {
+        Self::LiteralKeyword(value)
     }
 }
 
@@ -155,6 +170,11 @@ impl FromStr for Keyword {
         Err(())
     }
 }
+impl From<Keyword> for TokenKind {
+    fn from(value: Keyword) -> Self {
+        Self::Keyword(value)
+    }
+}
 
 #[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TypeKeyword {
@@ -183,6 +203,11 @@ impl FromStr for TypeKeyword {
             }
         }
         Err(())
+    }
+}
+impl From<TypeKeyword> for TokenKind {
+    fn from(value: TypeKeyword) -> Self {
+        Self::TypeKeyword(value)
     }
 }
 
@@ -227,6 +252,11 @@ impl FromStr for Delimiter {
             }
         }
         Err(())
+    }
+}
+impl From<Delimiter> for TokenKind {
+    fn from(value: Delimiter) -> Self {
+        Self::Delimiter(value)
     }
 }
 
@@ -319,5 +349,10 @@ impl FromStr for Operator {
             }
         }
         Err(())
+    }
+}
+impl From<Operator> for TokenKind {
+    fn from(value: Operator) -> Self {
+        Self::Operator(value)
     }
 }

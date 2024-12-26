@@ -1,9 +1,14 @@
 use core::fmt;
-use std::{collections::VecDeque, io::Read, mem::size_of, str};
+use std::{
+    collections::VecDeque,
+    io::Read,
+    mem::size_of,
+    str::{self, FromStr},
+};
 
-use crate::ast::location::Location;
+use crate::ast::location::{Location, Span};
 
-use super::token::{Token, TokenKind};
+use super::token::{Keyword, Token, TokenKind};
 
 #[derive(Debug)]
 pub struct Lexer<R: Read> {
@@ -60,6 +65,14 @@ impl<R: Read> Lexer<R> {
         let token = if self.rd.is_eof() {
             self.skip();
             Token::new(TokenKind::EndOfFile, start)
+        } else if self.peek_char().is(|c| c.is_ascii_alphabetic() || c == '_') {
+            let ident = self.match_while(|c| c.is_ascii_alphanumeric() || c == '_');
+            let span = Span::new(start, self.pos.front());
+            if let Ok(kw) = Keyword::from_str(&ident) {
+                Token::new(kw, span)
+            } else {
+                Token::new(ident, span)
+            }
         } else {
             let c = self.next_char();
             Token::new(TokenKind::Unknown(c.to_string()), start)
@@ -68,7 +81,7 @@ impl<R: Read> Lexer<R> {
         self.toks.push_back(token);
     }
 
-    pub fn peek_until(&mut self, cond: impl Fn(char) -> bool) -> String {
+    pub fn peek_while(&mut self, cond: impl Fn(char) -> bool) -> String {
         let mut s = String::new();
         loop {
             self.ensure_char_buf_len(s.len() + 1);
@@ -83,8 +96,8 @@ impl<R: Read> Lexer<R> {
         s
     }
 
-    pub fn match_until(&mut self, cond: impl Fn(char) -> bool) -> String {
-        let s = self.peek_until(cond);
+    pub fn match_while(&mut self, cond: impl Fn(char) -> bool) -> String {
+        let s = self.peek_while(cond);
         for _ in 0..s.len() {
             self.skip();
         }
@@ -158,6 +171,14 @@ pub enum Char {
     EOF,
     Invalid,
     Char(char),
+}
+impl Char {
+    pub fn is(&self, f: impl FnOnce(char) -> bool) -> bool {
+        let Self::Char(c) = self else {
+            return false;
+        };
+        f(*c)
+    }
 }
 impl fmt::Display for Char {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
