@@ -8,7 +8,7 @@ use std::{
 
 use crate::ast::location::{Location, Span};
 
-use super::token::{Keyword, Token, TokenKind};
+use super::token::{Delimiter, Keyword, Literal, Token, TokenKind, TypeKeyword};
 
 #[derive(Debug)]
 pub struct Lexer<R: Read> {
@@ -60,15 +60,30 @@ impl<R: Read> Lexer<R> {
     }
 
     fn make_token(&mut self) {
+        self.skip_whitespace_and_comment();
         let start = self.pos;
 
-        let token = if self.rd.is_eof() {
-            self.skip();
+        let token = if self.is_eof() {
             Token::new(TokenKind::EndOfFile, start)
+        } else if self.peek_char().is(|c| char::is_ascii_digit(&c)) {
+            let int = self.match_while(|c| char::is_ascii_digit(&c));
+            let int = int.parse::<i64>().expect("valid 64 bit decimal integer");
+            Token::new(Literal::Int(int), Span::new(start, self.pos.front()))
+        } else if self
+            .peek_char()
+            .is(|c| Delimiter::from_str(c.to_string().as_str()).is_ok())
+        {
+            let Char::Char(c) = self.next_char() else {
+                unreachable!()
+            };
+            let delim = unsafe { Delimiter::from_str(c.to_string().as_str()).unwrap_unchecked() };
+            Token::new(delim, Span::new(start, self.pos.front()))
         } else if self.peek_char().is(|c| c.is_ascii_alphabetic() || c == '_') {
             let ident = self.match_while(|c| c.is_ascii_alphanumeric() || c == '_');
             let span = Span::new(start, self.pos.front());
             if let Ok(kw) = Keyword::from_str(&ident) {
+                Token::new(kw, span)
+            } else if let Ok(kw) = TypeKeyword::from_str(&ident) {
                 Token::new(kw, span)
             } else {
                 Token::new(ident, span)
@@ -79,6 +94,29 @@ impl<R: Read> Lexer<R> {
         };
 
         self.toks.push_back(token);
+    }
+
+    pub fn skip_whitespace_and_comment(&mut self) {
+        loop {
+            let start = self.pos;
+
+            self.skip_while(char::is_whitespace);
+
+            if self.match_string("//") {
+                self.skip_while(|c| c != '\n');
+                self.skip();
+            }
+
+            if self.match_string("/*") {
+                while !self.match_string("*/") {
+                    self.skip();
+                }
+            }
+
+            if start == self.pos {
+                break;
+            }
+        }
     }
 
     pub fn peek_while(&mut self, cond: impl Fn(char) -> bool) -> String {
@@ -134,6 +172,12 @@ impl<R: Read> Lexer<R> {
         unsafe { self.buf.get(ahead).unwrap_unchecked() }
     }
 
+    pub fn skip_while(&mut self, cond: impl Fn(char) -> bool) {
+        while self.peek_char().is(&cond) {
+            self.skip();
+        }
+    }
+
     pub fn skip(&mut self) {
         _ = self.next_char();
     }
@@ -143,6 +187,10 @@ impl<R: Read> Lexer<R> {
         self.ensure_char_buf_len(1);
 
         let c = unsafe { self.buf.pop_front().unwrap_unchecked() };
+        if matches!(c, Char::EOF) {
+            return c;
+        }
+
         if matches!(c, Char::Char('\n')) {
             self.pos.line += 1;
             self.pos.col = 0;
