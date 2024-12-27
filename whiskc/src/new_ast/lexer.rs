@@ -6,9 +6,12 @@ use std::{
     str::{self, FromStr},
 };
 
-use crate::ast::location::{Location, Span};
+use crate::{
+    ast::location::{Location, Span},
+    new_ast::token::Operator,
+};
 
-use super::token::{Delimiter, Keyword, Literal, Token, TokenKind, TypeKeyword};
+use super::token::{Delimiter, Keyword, Literal, OperatorChar, Token, TokenKind, TypeKeyword};
 
 #[derive(Debug)]
 pub struct Lexer<R: Read> {
@@ -69,15 +72,34 @@ impl<R: Read> Lexer<R> {
             let int = self.match_while(|c| char::is_ascii_digit(&c));
             let int = int.parse::<i64>().expect("valid 64 bit decimal integer");
             Token::new(Literal::Int(int), Span::new(start, self.pos.front()))
-        } else if self
-            .peek_char()
-            .is(|c| Delimiter::from_str(c.to_string().as_str()).is_ok())
-        {
+        } else if self.peek_char().is(Delimiter::is_valid) {
             let Char::Char(c) = self.next_char() else {
                 unreachable!()
             };
-            let delim = unsafe { Delimiter::from_str(c.to_string().as_str()).unwrap_unchecked() };
+            let delim = unsafe { Delimiter::from_char(c).unwrap_unchecked() };
             Token::new(delim, Span::new(start, self.pos.front()))
+        } else if self.peek_char().is(OperatorChar::is_valid) {
+            let mut op_str = self.peek_while(OperatorChar::is_valid);
+
+            let op = loop {
+                if let Ok(op) = Operator::from_str(&op_str) {
+                    break Some(op);
+                }
+                if op_str.len() == 1 {
+                    break None;
+                }
+                op_str.pop();
+            };
+            for _ in 0..op_str.len() {
+                self.skip();
+            }
+
+            let span = Span::new(start, self.pos.front());
+            if let Some(op) = op {
+                Token::new(op, span)
+            } else {
+                Token::new(TokenKind::Unknown(op_str), span)
+            }
         } else if self.peek_char().is(|c| c.is_ascii_alphabetic() || c == '_') {
             let ident = self.match_while(|c| c.is_ascii_alphanumeric() || c == '_');
             let span = Span::new(start, self.pos.front());

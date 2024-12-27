@@ -242,16 +242,16 @@ impl fmt::Display for Delimiter {
         )
     }
 }
-impl FromStr for Delimiter {
-    type Err = ();
+impl Delimiter {
+    pub fn from_char(c: char) -> Option<Self> {
+        Self::iter().find(|&delim| match delim.to_string().chars().next() {
+            Some(ch) => ch == c,
+            None => false,
+        })
+    }
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        for v in Self::iter() {
-            if v.to_string() == s {
-                return Ok(v);
-            }
-        }
-        Err(())
+    pub fn is_valid(c: char) -> bool {
+        Self::from_char(c).is_some()
     }
 }
 impl From<Delimiter> for TokenKind {
@@ -289,16 +289,16 @@ impl fmt::Display for OperatorChar {
         )
     }
 }
-impl FromStr for OperatorChar {
-    type Err = ();
+impl OperatorChar {
+    pub fn from_char(c: char) -> Option<Self> {
+        Self::iter().find(|&delim| match delim.to_string().chars().next() {
+            Some(ch) => ch == c,
+            None => false,
+        })
+    }
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        for v in Self::iter() {
-            if v.to_string() == s {
-                return Ok(v);
-            }
-        }
-        Err(())
+    pub fn is_valid(c: char) -> bool {
+        Self::from_char(c).is_some()
     }
 }
 
