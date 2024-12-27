@@ -6,7 +6,7 @@ use crate::{
     ty::Type,
 };
 
-use super::{punctuate::Puntuated, stmt::Stmt};
+use super::{punctuate::Punctuated, stmt::Stmt};
 
 #[derive(Debug, Clone)]
 pub enum Expr {
@@ -92,7 +92,7 @@ impl Locatable for GroupedExpr {
 pub struct CallExpr {
     pub callee: Box<Expr>,
     pub paren_open_tok: Located<Delimiter>,
-    pub args: Puntuated<Expr>,
+    pub args: Punctuated<Expr>,
     pub paren_close_tok: Located<Delimiter>,
 }
 impl Locatable for CallExpr {
@@ -104,7 +104,7 @@ impl Locatable for CallExpr {
 #[derive(Debug, Clone)]
 pub struct ArrayExpr {
     pub bracket_open_tok: Located<Delimiter>,
-    pub elements: Puntuated<Expr>,
+    pub elements: Punctuated<Expr>,
     pub bracket_close_tok: Located<Delimiter>,
 }
 impl Locatable for ArrayExpr {

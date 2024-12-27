@@ -2,7 +2,6 @@ use crate::{
     ast::{
         self,
         location::{Locatable, Located},
-        nodes::func::LocatedParam,
     },
     ast_resolved::{
         errors::{ControlFlowError, IdentResolveError, TypeResolveError},
@@ -28,7 +27,9 @@ impl Resolve<Function> for ast::nodes::func::Function {
         let table_id = ctx.push_local();
 
         let mut params = Vec::new();
-        for LocatedParam(param_name, Located(param_ty, _)) in &self.sig.params.items {
+        for crate::ast::nodes::func::Param(param_name, Located(param_ty, _)) in
+            &self.sig.params.items
+        {
             let symbol = VarSymbol::new(param_name.clone(), *param_ty);
             let sym_id = ctx.new_symbol(&param_name.0, symbol.into());
             if sym_id.is_none() {

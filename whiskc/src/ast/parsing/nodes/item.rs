@@ -20,12 +20,12 @@ impl Parse for Item {
         let item = match ctx.lexer.peek_token_kind(0) {
             TokenKind::Keyword(kw) => match kw {
                 Keyword::Extern => {
-                    let mut func = Box::new(ExternFunction::parse(ctx)?);
+                    let mut func = ExternFunction::parse(ctx)?;
                     func.sig.attributes = attributes;
                     Some(Item::ExternFunction(func))
                 }
                 Keyword::Func => {
-                    let mut func = Box::new(Function::parse(ctx)?);
+                    let mut func = Function::parse(ctx)?;
                     func.sig.attributes = attributes;
                     Some(Item::Function(func))
                 }

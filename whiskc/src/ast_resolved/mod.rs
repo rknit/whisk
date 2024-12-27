@@ -6,6 +6,7 @@ mod compute;
 pub mod errors;
 pub mod nodes;
 mod resolve;
+pub mod visit;
 
 pub use nodes::ast::ResolvedAST;
 pub use resolve::ast::resolve;

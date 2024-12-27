@@ -4,8 +4,8 @@ use crate::{
         nodes::{
             attributes::Attributes,
             expr::Expr,
-            func::{ExternFunction, Function, FunctionSig, LocatedParam},
-            punctuate::Puntuated,
+            func::{ExternFunction, Function, FunctionSig, Param},
+            punctuate::Punctuated,
         },
         parsing::{
             token::{Delimiter, Keyword, TokenKind},
@@ -51,10 +51,10 @@ impl Parse for FunctionSig {
         let name = match_identifier!(ctx, "function name".to_owned() =>)?;
 
         let paren_open_tok = match_delimiter!(ctx, Delimiter::ParenOpen =>);
-        let params = Puntuated::parse(ctx, Delimiter::Comma, Delimiter::ParenClose, move |ctx| {
+        let params = Punctuated::parse(ctx, Delimiter::Comma, Delimiter::ParenClose, move |ctx| {
             let param_name = match_identifier!(ctx, "parameter name".to_owned() =>)?;
             let param_ty = Located::<Type>::parse(ctx)?;
-            Some(LocatedParam(param_name, param_ty))
+            Some(Param(param_name, param_ty))
         })?;
         let paren_close_tok = match_delimiter!(ctx, Delimiter::ParenClose =>);
 

@@ -6,7 +6,7 @@ use crate::{
     ty::Type,
 };
 
-use super::{attributes::Attributes, expr::BlockExpr, punctuate::Puntuated};
+use super::{attributes::Attributes, expr::BlockExpr, punctuate::Punctuated};
 
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -22,7 +22,7 @@ pub struct ExternFunction {
 }
 
 #[derive(Debug, Clone)]
-pub struct LocatedParam(pub Located<String>, pub Located<Type>);
+pub struct Param(pub Located<String>, pub Located<Type>);
 
 #[derive(Debug, Clone)]
 pub struct FunctionSig {
@@ -30,7 +30,7 @@ pub struct FunctionSig {
     pub func_tok: Located<Keyword>,
     pub name: Located<String>,
     pub paren_open_tok: Located<Delimiter>,
-    pub params: Puntuated<LocatedParam>,
+    pub params: Punctuated<Param>,
     pub paren_close_tok: Located<Delimiter>,
     pub ret_ty: Located<Type>,
 }

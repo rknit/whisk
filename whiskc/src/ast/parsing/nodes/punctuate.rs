@@ -1,10 +1,10 @@
-use crate::ast::nodes::punctuate::Puntuated;
+use crate::ast::nodes::punctuate::Punctuated;
 use crate::ast::parsing::{
     token::{Delimiter, TokenKind},
     ParseContext, ParseResult,
 };
 
-impl<T> Puntuated<T> {
+impl<T> Punctuated<T> {
     pub fn parse<F>(
         parser: &mut ParseContext,
         sep: Delimiter,

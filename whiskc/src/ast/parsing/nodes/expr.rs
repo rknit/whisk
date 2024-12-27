@@ -5,7 +5,7 @@ use crate::{
         location::{Locatable, Located, Span},
         nodes::{
             expr::*,
-            punctuate::Puntuated,
+            punctuate::Punctuated,
             stmt::{ExprStmt, Stmt},
         },
         parsing::{
@@ -212,7 +212,7 @@ fn parse_call_expr(
     _bp: BindingPower,
 ) -> ParseResult<Expr> {
     let paren_open_tok = match_delimiter!(parser, Delimiter::ParenOpen =>);
-    let args = Puntuated::parse(parser, Delimiter::Comma, Delimiter::ParenClose, Expr::parse)?;
+    let args = Punctuated::parse(parser, Delimiter::Comma, Delimiter::ParenClose, Expr::parse)?;
     let paren_close_tok = match_delimiter!(parser, Delimiter::ParenClose =>);
     Some(Expr::Call(CallExpr {
         callee: Box::new(left),
@@ -227,7 +227,7 @@ fn parse_array_expr(
     parser: &mut ParseContext,
 ) -> ParseResult<Expr> {
     let bracket_open_tok = match_delimiter!(parser, Delimiter::BracketOpen =>);
-    let elements = Puntuated::parse(
+    let elements = Punctuated::parse(
         parser,
         Delimiter::Comma,
         Delimiter::BracketClose,
