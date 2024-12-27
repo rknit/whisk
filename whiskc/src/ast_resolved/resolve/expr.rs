@@ -176,7 +176,7 @@ impl ExprResolve for ast_expr::BinaryExpr {
                 if !left.get_type().is_numeric_ty() {
                     ctx.push_error(
                         TypeResolveError::NonNumericTypeInBinaryOp {
-                            op: self.op.clone(),
+                            op: self.op,
                             ty: Located(left.get_type(), self.left.get_location()),
                         }
                         .into(),
@@ -186,7 +186,7 @@ impl ExprResolve for ast_expr::BinaryExpr {
                 if !right.get_type().is_numeric_ty() {
                     ctx.push_error(
                         TypeResolveError::NonNumericTypeInBinaryOp {
-                            op: self.op.clone(),
+                            op: self.op,
                             ty: Located(right.get_type(), self.right.get_location()),
                         }
                         .into(),
@@ -203,7 +203,7 @@ impl ExprResolve for ast_expr::BinaryExpr {
                 if left.get_type() != PrimType::Bool.into() {
                     ctx.push_error(
                         TypeResolveError::UnexpectedTypeInBinaryOp {
-                            op: self.op.clone(),
+                            op: self.op,
                             expect_type: PrimType::Bool.into(),
                             actual_type: Located(left.get_type(), self.left.get_location()),
                         }
@@ -213,7 +213,7 @@ impl ExprResolve for ast_expr::BinaryExpr {
                 if right.get_type() != PrimType::Bool.into() {
                     ctx.push_error(
                         TypeResolveError::UnexpectedTypeInBinaryOp {
-                            op: self.op.clone(),
+                            op: self.op,
                             expect_type: PrimType::Bool.into(),
                             actual_type: Located(right.get_type(), self.left.get_location()),
                         }
@@ -231,7 +231,7 @@ impl ExprResolve for ast_expr::BinaryExpr {
                 if !left.get_type().is_ord_ty() {
                     ctx.push_error(
                         TypeResolveError::UnorderedTypeInBinaryOp {
-                            op: self.op.clone(),
+                            op: self.op,
                             ty: Located(left.get_type(), self.left.get_location()),
                         }
                         .into(),
@@ -240,7 +240,7 @@ impl ExprResolve for ast_expr::BinaryExpr {
                 if !right.get_type().is_ord_ty() {
                     ctx.push_error(
                         TypeResolveError::UnorderedTypeInBinaryOp {
-                            op: self.op.clone(),
+                            op: self.op,
                             ty: Located(right.get_type(), self.right.get_location()),
                         }
                         .into(),

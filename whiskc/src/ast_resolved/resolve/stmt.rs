@@ -63,7 +63,7 @@ impl StmtResolve<LetStmt> for ast_stmt::LetStmt {
                 if annotated_ty.0 != value.get_type() {
                     ctx.push_error(
                         TypeResolveError::AssignmentTypeMismatch {
-                            target_ty: annotated_ty.clone(),
+                            target_ty: *annotated_ty,
                             value_ty: Located(value.get_type(), self.value.get_location()),
                         }
                         .into(),

@@ -113,7 +113,7 @@ pub fn visit_block_expr(v: &mut impl Visit, node: &BlockExpr) {
         v.visit_stmt(stmt);
     }
     if let Some(eval_expr) = &node.eval_expr {
-        v.visit_expr(&eval_expr);
+        v.visit_expr(eval_expr);
     }
 }
 
