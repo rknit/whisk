@@ -27,11 +27,19 @@ impl Token {
             loc: Span::default(),
         }
     }
+
+    pub fn placeholder() -> Self {
+        Self {
+            kind: TokenKind::Placeholder,
+            loc: Span::default(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     Unknown(String),
+    Placeholder,
     EndOfFile,
     Literal(Literal),
     Keyword(Keyword),
@@ -48,6 +56,7 @@ impl fmt::Display for TokenKind {
             "{}",
             match self {
                 Self::Unknown(s) => format!("UNK('{}')", s),
+                Self::Placeholder => "\u{2588}".to_owned(),
                 Self::EndOfFile => "EOF".to_owned(),
                 Self::Literal(lit) => format!("{}", lit),
                 Self::LiteralKeyword(lit) => format!("{}", lit),

@@ -62,7 +62,7 @@ impl Parse for FunctionSig {
             ctx.lexer.peek_token_kind(0),
             TokenKind::Delimiter(Delimiter::BraceOpen)
         ) {
-            Located::new_temporary(PrimType::Unit.into())
+            Located::new_temp(PrimType::Unit.into())
         } else {
             Located::<Type>::parse(ctx)?
         };

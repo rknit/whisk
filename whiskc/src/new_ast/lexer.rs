@@ -11,7 +11,9 @@ use crate::{
     new_ast::token::Operator,
 };
 
-use super::token::{Delimiter, Keyword, Literal, OperatorChar, Token, TokenKind, TypeKeyword};
+use super::token::{
+    Delimiter, Keyword, Literal, LiteralKeyword, OperatorChar, Token, TokenKind, TypeKeyword,
+};
 
 #[derive(Debug)]
 pub struct Lexer<R: Read> {
@@ -19,6 +21,7 @@ pub struct Lexer<R: Read> {
     buf: VecDeque<Char>,
     toks: VecDeque<Token>,
     pos: Location,
+    last: Location,
 }
 impl<R: Read> Lexer<R> {
     pub fn new(source: R) -> Self {
@@ -27,6 +30,7 @@ impl<R: Read> Lexer<R> {
             buf: VecDeque::new(),
             toks: VecDeque::new(),
             pos: Location::new(1, 1),
+            last: Location::default(),
         }
     }
 
@@ -53,7 +57,13 @@ impl<R: Read> Lexer<R> {
 
     pub fn next_token(&mut self) -> Token {
         self.ensure_token_count(1);
-        unsafe { self.toks.pop_front().unwrap_unchecked() }
+        let t = unsafe { self.toks.pop_front().unwrap_unchecked() };
+        self.last = t.loc.end;
+        t
+    }
+
+    pub fn get_last_loc(&self) -> Location {
+        self.last
     }
 
     fn ensure_token_count(&mut self, n: usize) {
@@ -106,6 +116,8 @@ impl<R: Read> Lexer<R> {
             if let Ok(kw) = Keyword::from_str(&ident) {
                 Token::new(kw, span)
             } else if let Ok(kw) = TypeKeyword::from_str(&ident) {
+                Token::new(kw, span)
+            } else if let Ok(kw) = LiteralKeyword::from_str(&ident) {
                 Token::new(kw, span)
             } else {
                 Token::new(ident, span)

@@ -6,7 +6,7 @@ use core::{
 #[derive(Clone, Copy)]
 pub struct Located<T>(pub T, pub Span);
 impl<T> Located<T> {
-    pub fn new_temporary(v: T) -> Self {
+    pub fn new_temp(v: T) -> Self {
         Located(v, Span::default())
     }
 }
