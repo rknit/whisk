@@ -1,5 +1,5 @@
 use core::fmt;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::ast::parsing::{
     token::{Token, TokenKind},
@@ -10,7 +10,6 @@ use crate::ast::parsing::{
 pub struct PrattParser<R, BP> {
     nud_lookup: HashMap<TokenKind, NudHandler<R, BP>>,
     led_lookup: HashMap<TokenKind, LedHandler<R, BP>>,
-    delimiters: HashSet<TokenKind>,
     bp_lookup: HashMap<TokenKind, BP>,
 }
 impl<R, BP: PartialOrd + BindingPower + Clone + fmt::Debug> PrattParser<R, BP> {
@@ -18,7 +17,6 @@ impl<R, BP: PartialOrd + BindingPower + Clone + fmt::Debug> PrattParser<R, BP> {
         let mut parser = Self {
             nud_lookup: HashMap::new(),
             led_lookup: HashMap::new(),
-            delimiters: handlers.delimiters(),
             bp_lookup: HashMap::new(),
         };
         handlers.nuds(|tt, handler| parser.nud(tt, handler));
@@ -45,14 +43,9 @@ impl<R, BP: PartialOrd + BindingPower + Clone + fmt::Debug> PrattParser<R, BP> {
 
         loop {
             let tt = parser.lexer.peek_token_kind(0);
-            if self.delimiters.contains(tt) {
-                break;
-            }
 
             let cur_bp = if let Some(bp) = self.bp_lookup.get(tt) {
                 bp
-            } else if self.nud_lookup.contains_key(tt) {
-                &BP::primary()
             } else {
                 &BP::zero()
             };
@@ -93,8 +86,6 @@ pub trait Handlers<R, BP> {
     fn leds<F>(&self, led: F)
     where
         F: FnMut(TokenKind, BP, LedHandler<R, BP>);
-
-    fn delimiters(&self) -> HashSet<TokenKind>;
 }
 
 pub trait BindingPower {

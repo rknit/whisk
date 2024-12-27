@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use once_cell::sync::Lazy;
 
 use crate::{
@@ -124,19 +122,6 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
             BindingPower::Cast,
             parse_cast_expr,
         );
-    }
-
-    fn delimiters(&self) -> HashSet<TokenKind> {
-        HashSet::from_iter(
-            [
-                Delimiter::BraceOpen,
-                Delimiter::BraceClose,
-                Delimiter::ParenOpen,
-                Delimiter::ParenClose,
-                Delimiter::Semicolon,
-            ]
-            .map(TokenKind::Delimiter),
-        )
     }
 }
 
@@ -280,7 +265,6 @@ fn parse_block_expr(
     let brace_open_tok = match_delimiter!(parser, Delimiter::BraceOpen =>);
 
     let mut stmts = Vec::new();
-    let mut eval_expr = None;
     let brace_close_tok = loop {
         if let Ok(b) = match_delimiter!(parser, Delimiter::BraceClose) {
             break b;
@@ -291,15 +275,6 @@ fn parse_block_expr(
 
         let stmt = Stmt::parse(parser);
         if let Some(stmt) = stmt {
-            if let Stmt::Expr(ExprStmt {
-                expr,
-                semi_tok: None,
-            }) = stmt
-            {
-                eval_expr = Some(Box::new(expr));
-                break match_delimiter!(parser, Delimiter::BraceClose =>);
-            }
-
             stmts.push(stmt);
             continue;
         }
@@ -320,6 +295,22 @@ fn parse_block_expr(
         ) {
             parser.lexer.next_token();
         }
+    };
+
+    let eval_expr = if matches!(
+        stmts.last(),
+        Some(Stmt::Expr(ExprStmt { semi_tok: None, .. }))
+    ) {
+        let Some(Stmt::Expr(ExprStmt {
+            expr,
+            semi_tok: None,
+        })) = stmts.pop()
+        else {
+            unreachable!()
+        };
+        Some(Box::new(expr))
+    } else {
+        None
     };
 
     for stmt in &stmts {

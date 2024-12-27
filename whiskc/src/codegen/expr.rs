@@ -183,7 +183,8 @@ impl ExprCodegen for IfExpr {
             Some(Stmt::Expr(ExprStmt {
                 expr: Expr::Return(_)
             }))
-        ) {
+        ) && self.else_.is_some()
+        {
             let jmp_dist = func.len() - then_to_merge_point + 1;
             func.insert_inst(then_to_merge_point, Inst::Jmp(jmp_dist as isize));
         }

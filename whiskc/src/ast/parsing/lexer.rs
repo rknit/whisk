@@ -347,7 +347,7 @@ macro_rules! match_delimiter {
             Ok(v) => v,
             Err(e) => {
                 $parser.push_error(e);
-                Located::new_temporary($default)
+                Located::new_temp($default)
             }
         }
     }};
@@ -372,7 +372,7 @@ macro_rules! match_keyword {
             Ok(v) => v,
             Err(e) => {
                 $parser.push_error(e);
-                Located::new_temporary($default)
+                Located::new_temp($default)
             }
         }
     }};
@@ -401,7 +401,7 @@ macro_rules! match_operator {
             Ok(v) => v,
             Err(e) => {
                 $parser.push_error(e);
-                Located::new_temporary($default)
+                Located::new_temp($default)
             }
         }
     }};
