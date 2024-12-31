@@ -4,6 +4,7 @@ use crate::symbol_table::{Symbol, SymbolID, SymbolTable};
 
 pub mod errors;
 pub mod nodes;
+pub mod passes;
 mod resolve;
 pub mod visit;
 

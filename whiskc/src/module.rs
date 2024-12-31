@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     ast::{self, AST},
-    ast_resolved::{self, ResolvedAST},
+    ast_resolved::{self, passes::run_passes, ResolvedAST},
     codegen::codegen_wsk_vm,
     symbol_table::SymbolTable,
 };
@@ -62,6 +62,14 @@ impl Module {
         self.resolved_ast.as_ref()
     }
 
+    pub fn run_passes(&mut self) -> Option<&ResolvedAST> {
+        let Some(ast) = &mut self.resolved_ast else {
+            return None;
+        };
+        run_passes(ast);
+        self.resolved_ast.as_ref()
+    }
+
     pub fn codegen(&self) {
         let Some(ast) = &self.resolved_ast else {
             return;
@@ -74,7 +82,6 @@ impl Module {
                 return;
             }
         };
-        dbg!(&prog);
 
         let mut bin_path = self.path.clone();
         bin_path.set_extension("wc");
