@@ -43,7 +43,7 @@ impl fmt::Debug for Type {
     }
 }
 
-#[derive(Clone, Copy, Eq)]
+#[derive(Debug, Clone, Copy, Eq)]
 pub enum PrimType {
     Never,
     Unit,

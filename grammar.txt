@@ -35,3 +35,11 @@
 <ident> ::= (a..z | A..Z | _) (a..z | A..Z | _ | 0..9)*
 <integer> ::= (0..9)+
 <boolean> ::= true | false
+
+/* TODO */
+
+<type> ::= type <ident> = <struct> ;
+
+<struct> ::= struct { <field_list> }
+<field_list> ::= <field> | <field> , <field_list> | <epsilon>
+<field> ::= <ident> <type>

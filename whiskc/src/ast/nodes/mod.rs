@@ -5,3 +5,4 @@ pub mod func;
 pub mod item;
 pub mod punctuate;
 pub mod stmt;
+pub mod ty;
