@@ -1,12 +1,9 @@
-use crate::{
-    ast::{
-        location::Located,
-        parsing::token::{Delimiter, Keyword},
-    },
-    ty::Type,
+use crate::ast::{
+    location::Located,
+    parsing::token::{Delimiter, Keyword},
 };
 
-use super::{attributes::Attributes, expr::BlockExpr, punctuate::Punctuated};
+use super::{attributes::Attributes, expr::BlockExpr, punctuate::Punctuated, ty::Type};
 
 #[derive(Debug, Clone)]
 pub struct Function {
@@ -22,7 +19,7 @@ pub struct ExternFunction {
 }
 
 #[derive(Debug, Clone)]
-pub struct Param(pub Located<String>, pub Located<Type>);
+pub struct Param(pub Located<String>, pub Type);
 
 #[derive(Debug, Clone)]
 pub struct FunctionSig {
@@ -32,5 +29,5 @@ pub struct FunctionSig {
     pub paren_open_tok: Located<Delimiter>,
     pub params: Punctuated<Param>,
     pub paren_close_tok: Located<Delimiter>,
-    pub ret_ty: Located<Type>,
+    pub ret_ty: Type,
 }

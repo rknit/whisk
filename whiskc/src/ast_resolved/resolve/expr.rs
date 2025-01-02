@@ -5,14 +5,16 @@ use crate::{
     },
     ast_resolved::{
         errors::{IdentResolveError, TypeResolveError, ValueResolveError},
-        nodes::expr::{
-            BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr,
-            UnaryExpr,
+        nodes::{
+            expr::{
+                BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr,
+                UnaryExpr,
+            },
+            ty::Type,
         },
         ControlFlow, ResolveContext,
     },
     symbol_table::Symbol,
-    ty::{FuncType, PrimType, Type},
 };
 
 use ast::nodes::expr as ast_expr;
@@ -62,7 +64,7 @@ impl ExprResolve for ast_expr::Expr {
             ast_expr::Expr::Return(expr) => expr.resolve(ctx),
             ast_expr::Expr::If(expr) => expr.resolve(ctx),
             ast_expr::Expr::Loop(expr) => expr.resolve(ctx),
-            _ => unimplemented!("expr resolve {:?}", self),
+            // _ => unimplemented!("expr resolve {:?}", self),
         }
     }
 }
@@ -106,7 +108,7 @@ impl ExprResolve for ast_expr::UnaryExpr {
                 expr.get_type()
             }
             Operator::Not => {
-                if expr.get_type() != PrimType::Bool.into() {
+                if expr.get_type() != Type::Bool {
                     ctx.push_error(
                         TypeResolveError::NonBoolUsedInNotOp(Located(
                             expr.get_type(),
@@ -115,7 +117,7 @@ impl ExprResolve for ast_expr::UnaryExpr {
                         .into(),
                     );
                 }
-                PrimType::Bool.into()
+                Type::Bool
             }
             _ => unimplemented!("unary op '{}'", self.op.0),
         };
@@ -170,7 +172,7 @@ impl ExprResolve for ast_expr::BinaryExpr {
                         .into(),
                     );
                 }
-                PrimType::Unit.into()
+                Type::Unit
             }
             Operator::Add | Operator::Sub => {
                 if !left.get_type().is_numeric_ty() {
@@ -200,27 +202,27 @@ impl ExprResolve for ast_expr::BinaryExpr {
                 left.get_type()
             }
             Operator::And | Operator::Or => {
-                if left.get_type() != PrimType::Bool.into() {
+                if left.get_type() != Type::Bool {
                     ctx.push_error(
                         TypeResolveError::UnexpectedTypeInBinaryOp {
                             op: self.op,
-                            expect_type: PrimType::Bool.into(),
+                            expect_type: Type::Bool,
                             actual_type: Located(left.get_type(), self.left.get_location()),
                         }
                         .into(),
                     );
                 }
-                if right.get_type() != PrimType::Bool.into() {
+                if right.get_type() != Type::Bool {
                     ctx.push_error(
                         TypeResolveError::UnexpectedTypeInBinaryOp {
                             op: self.op,
-                            expect_type: PrimType::Bool.into(),
+                            expect_type: Type::Bool,
                             actual_type: Located(right.get_type(), self.left.get_location()),
                         }
                         .into(),
                     );
                 }
-                PrimType::Bool.into()
+                Type::Bool
             }
             Operator::Equal
             | Operator::NotEqual
@@ -247,7 +249,7 @@ impl ExprResolve for ast_expr::BinaryExpr {
                     );
                 }
                 check_type_mismatch(ctx);
-                PrimType::Bool.into()
+                Type::Bool
             }
             _ => unimplemented!("binary op '{}'", self.op.0),
         };
@@ -269,7 +271,7 @@ impl ExprResolve for ast_expr::CallExpr {
         }
         let callee = callee.unwrap();
 
-        let Type::Function(FuncType(func_sym_id)) = callee.get_type() else {
+        let Type::Func(func_sym_id) = callee.get_type() else {
             ctx.push_error(
                 TypeResolveError::CallOnNonFunctionType(Located(
                     callee.get_type(),
@@ -356,7 +358,7 @@ impl ExprResolve for ast_expr::BlockExpr {
                         table_id,
                         stmts,
                         eval_expr: None,
-                        ty: PrimType::Unit.into(),
+                        ty: Type::Unit,
                     });
                 }
             };
@@ -375,7 +377,7 @@ impl ExprResolve for ast_expr::BlockExpr {
         let eval_ty = eval_expr
             .as_ref()
             .map(|v| v.get_type())
-            .unwrap_or(PrimType::Unit.into());
+            .unwrap_or(Type::Unit);
 
         ctx.pop_local();
         ExprFlow::flow(BlockExpr {
@@ -414,7 +416,7 @@ impl ExprResolve for ast_expr::ReturnExpr {
             };
             (value, val_ty)
         } else {
-            (None, PrimType::Unit.into())
+            (None, Type::Unit)
         };
 
         if expect_ret_ty != val_ty {
@@ -441,7 +443,7 @@ impl ExprResolve for ast_expr::IfExpr {
         }
 
         if let Some(cond) = &cond {
-            if cond.get_type() != PrimType::Bool.into() {
+            if cond.get_type() != Type::Bool {
                 ctx.push_error(
                     TypeResolveError::NonBoolInIfCond(Located(
                         cond.get_type(),

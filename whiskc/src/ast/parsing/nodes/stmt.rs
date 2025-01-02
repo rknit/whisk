@@ -1,16 +1,13 @@
 use once_cell::sync::Lazy;
 
-use crate::{
-    ast::{
-        location::{Located, Span},
-        nodes::{expr::Expr, stmt::*},
-        parsing::{
-            parsers::lookup_parser::{self, LookUpParseError, LookUpParser},
-            token::{Delimiter, Keyword, Operator, TokenKind},
-            Parse, ParseContext, ParseError, ParseResult, TryParse,
-        },
+use crate::ast::{
+    location::{Located, Span},
+    nodes::{expr::Expr, stmt::*, ty::Type},
+    parsing::{
+        parsers::lookup_parser::{self, LookUpParseError, LookUpParser},
+        token::{Delimiter, Keyword, Operator, TokenKind},
+        Parse, ParseContext, ParseError, ParseResult, TryParse,
     },
-    ty::Type,
 };
 
 #[derive(Debug, Clone)]
@@ -42,7 +39,7 @@ impl Parse for LetStmt {
     fn parse(parser: &mut ParseContext) -> ParseResult<Self> {
         let let_tok = match_keyword!(parser, Keyword::Let =>);
         let name = match_identifier!(parser, "let declaration's name".to_owned() =>)?;
-        let ty = Located::<Type>::try_parse(parser);
+        let ty = Type::try_parse(parser);
         let assign_tok = match_operator!(parser, Operator::Assign =>);
         let value = Expr::parse(parser)?;
         let semi_tok = match_delimiter!(parser, Delimiter::Semicolon =>);

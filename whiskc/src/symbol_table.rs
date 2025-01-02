@@ -4,8 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     ast::location::{Located, Span},
-    //cfg::nodes::value::Value,
-    ty::{FuncType, Type},
+    ast_resolved::nodes::ty::Type,
 };
 
 pub type SymbolID = uuid::Uuid;
@@ -174,18 +173,21 @@ impl From<FuncSymbol> for SymbolTableEntry {
 pub enum SymbolKind {
     Variable,
     Function,
+    Type,
 }
 
 #[derive(Debug, Clone)]
 pub enum Symbol {
     Variable(VarSymbol),
     Function(FuncSymbol),
+    Type(TypeSymbol),
 }
 impl Symbol {
     pub fn get_name(&self) -> &str {
         match self {
             Symbol::Variable(symbol) => symbol.get_name(),
             Symbol::Function(symbol) => symbol.get_name(),
+            Symbol::Type(symbol) => symbol.get_name(),
         }
     }
 
@@ -193,6 +195,7 @@ impl Symbol {
         match self {
             Symbol::Variable(symbol) => symbol.set_id(id),
             Symbol::Function(symbol) => symbol.set_id(id),
+            Symbol::Type(symbol) => symbol.set_id(id),
         }
     }
 
@@ -200,6 +203,7 @@ impl Symbol {
         match self {
             Symbol::Variable(symbol) => symbol.get_id(),
             Symbol::Function(symbol) => symbol.get_id(),
+            Symbol::Type(symbol) => symbol.get_id(),
         }
     }
 
@@ -207,6 +211,7 @@ impl Symbol {
         match self {
             Symbol::Variable(symbol) => symbol.get_type(),
             Symbol::Function(symbol) => symbol.get_type(),
+            Symbol::Type(symbol) => symbol.get_type(),
         }
     }
 
@@ -214,6 +219,7 @@ impl Symbol {
         match self {
             Symbol::Variable(_) => SymbolKind::Variable,
             Symbol::Function(_) => SymbolKind::Function,
+            Symbol::Type(_) => SymbolKind::Type,
         }
     }
 
@@ -221,6 +227,7 @@ impl Symbol {
         match self {
             Symbol::Variable(symbol) => symbol.get_origin(),
             Symbol::Function(symbol) => symbol.get_origin(),
+            Symbol::Type(symbol) => symbol.get_origin(),
         }
     }
 
@@ -228,6 +235,7 @@ impl Symbol {
         match self {
             Symbol::Variable(symbol) => symbol.push_ref(loc),
             Symbol::Function(symbol) => symbol.push_ref(loc),
+            Symbol::Type(symbol) => symbol.push_ref(loc),
         }
     }
 
@@ -235,6 +243,7 @@ impl Symbol {
         match self {
             Symbol::Variable(symbol) => symbol.get_refs(),
             Symbol::Function(symbol) => symbol.get_refs(),
+            Symbol::Type(symbol) => symbol.get_refs(),
         }
     }
 }
@@ -246,6 +255,66 @@ impl From<VarSymbol> for Symbol {
 impl From<FuncSymbol> for Symbol {
     fn from(value: FuncSymbol) -> Self {
         Self::Function(value)
+    }
+}
+impl From<TypeSymbol> for Symbol {
+    fn from(value: TypeSymbol) -> Self {
+        Self::Type(value)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TypeSymbol {
+    id: SymbolID,
+    name: Located<String>,
+    ty: Type,
+    refs: Vec<Span>,
+}
+impl TypeSymbol {
+    pub fn new(name: Located<String>, ty: Type) -> Self {
+        Self {
+            id: SymbolID::nil(),
+            name,
+            ty,
+            //value: None,
+            refs: vec![],
+        }
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.name.0
+    }
+
+    fn set_id(&mut self, id: SymbolID) {
+        self.id = id;
+    }
+
+    pub fn get_id(&self) -> SymbolID {
+        self.id
+    }
+
+    pub fn get_type(&self) -> Type {
+        self.ty
+    }
+
+    pub fn get_origin(&self) -> Span {
+        self.name.1
+    }
+
+    pub fn push_ref(&mut self, loc: Span) {
+        if let [.., last] = self.refs[..] {
+            if last > loc {
+                panic!("reference location out of order");
+            }
+            if last == loc {
+                panic!("duplicate reference location");
+            }
+        }
+        self.refs.push(loc);
+    }
+
+    pub fn get_refs(&self) -> &Vec<Span> {
+        &self.refs
     }
 }
 
@@ -364,7 +433,7 @@ impl FuncSymbol {
     }
 
     pub fn get_type(&self) -> Type {
-        FuncType(self.id).into()
+        Type::Func(self.get_id())
     }
 
     pub fn get_origin(&self) -> Span {

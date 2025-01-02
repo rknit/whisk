@@ -1,18 +1,16 @@
-use crate::{
-    ast::{
-        location::Located,
-        nodes::{
-            attributes::Attributes,
-            expr::Expr,
-            func::{ExternFunction, Function, FunctionSig, Param},
-            punctuate::Punctuated,
-        },
-        parsing::{
-            token::{Delimiter, Keyword, TokenKind},
-            Parse, ParseContext, ParseError, ParseResult,
-        },
+use crate::ast::{
+    location::Located,
+    nodes::{
+        attributes::Attributes,
+        expr::Expr,
+        func::{ExternFunction, Function, FunctionSig, Param},
+        punctuate::Punctuated,
+        ty::{PrimType, Type},
     },
-    ty::{PrimType, Type},
+    parsing::{
+        token::{Delimiter, Keyword, TokenKind},
+        Parse, ParseContext, ParseError, ParseResult,
+    },
 };
 
 impl Parse for Function {
@@ -53,7 +51,7 @@ impl Parse for FunctionSig {
         let paren_open_tok = match_delimiter!(ctx, Delimiter::ParenOpen =>);
         let params = Punctuated::parse(ctx, Delimiter::Comma, Delimiter::ParenClose, move |ctx| {
             let param_name = match_identifier!(ctx, "parameter name".to_owned() =>)?;
-            let param_ty = Located::<Type>::parse(ctx)?;
+            let param_ty = Type::parse(ctx)?;
             Some(Param(param_name, param_ty))
         })?;
         let paren_close_tok = match_delimiter!(ctx, Delimiter::ParenClose =>);
@@ -62,9 +60,9 @@ impl Parse for FunctionSig {
             ctx.lexer.peek_token_kind(0),
             TokenKind::Delimiter(Delimiter::BraceOpen)
         ) {
-            Located::new_temp(PrimType::Unit.into())
+            Type::Primitive(Located::new_temp(PrimType::Unit))
         } else {
-            Located::<Type>::parse(ctx)?
+            Type::parse(ctx)?
         };
 
         Some(Self {

@@ -2,7 +2,7 @@ use wsk_vm::Inst;
 
 use super::{expr::ExprCodegen, Codegen};
 
-use crate::{ast_resolved::nodes as ast, ty::PrimType};
+use crate::ast_resolved::nodes::{self as ast, ty::Type};
 
 impl Codegen for ast::func::Function {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
@@ -15,7 +15,7 @@ impl Codegen for ast::func::Function {
 
         self.body.codegen(ctx)?;
 
-        if self.sig.ret_ty == PrimType::Unit.into() || self.body.eval_expr.is_some() {
+        if self.sig.ret_ty == Type::Unit || self.body.eval_expr.is_some() {
             let func = ctx.get_current_fi_mut();
             if !matches!(func.get_insts()[..], [.., Inst::Ret]) {
                 func.push_inst(Inst::Ret);

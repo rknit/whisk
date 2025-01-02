@@ -1,9 +1,6 @@
-use crate::{
-    ast::{
-        location::{Locatable, Located, Span},
-        parsing::token::{Delimiter, Keyword, Operator},
-    },
-    ty::Type,
+use crate::ast::{
+    location::{Locatable, Located, Span},
+    parsing::token::{Delimiter, Keyword, Operator},
 };
 
 use super::{punctuate::Punctuated, stmt::Stmt};
@@ -18,9 +15,6 @@ pub enum Expr {
     Binary(BinaryExpr),
     Grouped(GroupedExpr),
     Call(CallExpr),
-    Array(ArrayExpr),
-    ArrayIndex(ArrayIndexExpr),
-    Cast(CastExpr),
     Block(BlockExpr),
     Return(ReturnExpr),
     If(IfExpr),
@@ -42,9 +36,6 @@ impl Locatable for Expr {
             Expr::Binary(binary_expr) => binary_expr.get_location(),
             Expr::Grouped(grouped_expr) => grouped_expr.get_location(),
             Expr::Call(call_expr) => call_expr.get_location(),
-            Expr::Array(array_expr) => array_expr.get_location(),
-            Expr::ArrayIndex(array_index_expr) => array_index_expr.get_location(),
-            Expr::Cast(cast_expr) => cast_expr.get_location(),
             Expr::Block(expr) => expr.get_location(),
             Expr::Return(expr) => expr.get_location(),
             Expr::If(expr) => expr.get_location(),
@@ -98,43 +89,6 @@ pub struct CallExpr {
 impl Locatable for CallExpr {
     fn get_location(&self) -> Span {
         Span::combine(self.callee.get_location(), self.paren_close_tok.1)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ArrayExpr {
-    pub bracket_open_tok: Located<Delimiter>,
-    pub elements: Punctuated<Expr>,
-    pub bracket_close_tok: Located<Delimiter>,
-}
-impl Locatable for ArrayExpr {
-    fn get_location(&self) -> Span {
-        Span::combine(self.bracket_open_tok.1, self.bracket_close_tok.1)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ArrayIndexExpr {
-    pub expr: Box<Expr>,
-    pub bracket_open_tok: Located<Delimiter>,
-    pub index: Box<Expr>,
-    pub bracket_close_tok: Located<Delimiter>,
-}
-impl Locatable for ArrayIndexExpr {
-    fn get_location(&self) -> Span {
-        Span::combine(self.expr.get_location(), self.bracket_close_tok.1)
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct CastExpr {
-    pub expr: Box<Expr>,
-    pub as_tok: Located<Keyword>,
-    pub ty: Located<Type>,
-}
-impl Locatable for CastExpr {
-    fn get_location(&self) -> Span {
-        Span::combine(self.expr.get_location(), self.ty.1)
     }
 }
 

@@ -8,8 +8,8 @@ use crate::{
             UnaryExpr,
         },
         stmt::{ExprStmt, Stmt},
+        ty::Type,
     },
-    ty::Type,
 };
 
 use super::{Codegen, CodegenError, Context};
@@ -121,8 +121,8 @@ impl ExprCodegen for CallExpr {
             arg.codegen(ctx)?;
         }
 
-        if let Type::Function(func_ty) = self.callee.get_type() {
-            let fi = ctx.get_fi(func_ty.0).expect("codegen fi");
+        if let Type::Func(func_ty) = self.callee.get_type() {
+            let fi = ctx.get_fi(func_ty).expect("codegen fi");
             ctx.get_current_fi_mut().push_inst(Inst::Call(fi));
         } else {
             unimplemented!("unsupported function call type")

@@ -1,22 +1,19 @@
 use once_cell::sync::Lazy;
 
-use crate::{
-    ast::{
-        location::{Locatable, Located, Span},
-        nodes::{
-            expr::*,
-            punctuate::Punctuated,
-            stmt::{ExprStmt, Stmt},
-        },
-        parsing::{
-            parsers::pratt_parser::{self, PrattParseError, PrattParseResult, PrattParser},
-            token::{
-                Delimiter, Identifier, Keyword, Literal, LiteralKeyword, Operator, Token, TokenKind,
-            },
-            Parse, ParseContext, ParseError, ParseResult,
-        },
+use crate::ast::{
+    location::{Locatable, Located, Span},
+    nodes::{
+        expr::*,
+        punctuate::Punctuated,
+        stmt::{ExprStmt, Stmt},
     },
-    ty::Type,
+    parsing::{
+        parsers::pratt_parser::{self, PrattParseError, PrattParseResult, PrattParser},
+        token::{
+            Delimiter, Identifier, Keyword, Literal, LiteralKeyword, Operator, Token, TokenKind,
+        },
+        Parse, ParseContext, ParseError, ParseResult,
+    },
 };
 
 #[derive(Debug, Clone)]
@@ -33,10 +30,8 @@ enum BindingPower {
     LogicalMultiplicative,
     Comparative,
     Additive,
-    Cast,
     Unary,
     Call,
-    ArrayIndex,
     Primary,
 }
 
@@ -64,11 +59,6 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
         nud(
             TokenKind::Delimiter(Delimiter::ParenOpen),
             parse_unit_or_group_expr,
-        );
-
-        nud(
-            TokenKind::Delimiter(Delimiter::BracketOpen),
-            parse_array_expr,
         );
 
         nud(TokenKind::Delimiter(Delimiter::BraceOpen), parse_block_expr);
@@ -109,18 +99,6 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
             TokenKind::Delimiter(Delimiter::ParenOpen),
             BindingPower::Call,
             parse_call_expr,
-        );
-
-        led(
-            TokenKind::Delimiter(Delimiter::BracketOpen),
-            BindingPower::ArrayIndex,
-            parse_array_index_expr,
-        );
-
-        led(
-            TokenKind::Keyword(Keyword::As),
-            BindingPower::Cast,
-            parse_cast_expr,
         );
     }
 }
@@ -222,42 +200,6 @@ fn parse_call_expr(
     }))
 }
 
-fn parse_array_expr(
-    _pratt_parser: &PrattParser<Expr, BindingPower>,
-    parser: &mut ParseContext,
-) -> ParseResult<Expr> {
-    let bracket_open_tok = match_delimiter!(parser, Delimiter::BracketOpen =>);
-    let elements = Punctuated::parse(
-        parser,
-        Delimiter::Comma,
-        Delimiter::BracketClose,
-        Expr::parse,
-    )?;
-    let bracket_close_tok = match_delimiter!(parser, Delimiter::BracketClose =>);
-    Some(Expr::Array(ArrayExpr {
-        bracket_open_tok,
-        elements,
-        bracket_close_tok,
-    }))
-}
-
-fn parse_array_index_expr(
-    _pratt_parser: &PrattParser<Expr, BindingPower>,
-    parser: &mut ParseContext,
-    left: Expr,
-    _bp: BindingPower,
-) -> ParseResult<Expr> {
-    let bracket_open_tok = match_delimiter!(parser, Delimiter::BracketOpen =>);
-    let index = Expr::parse(parser)?;
-    let bracket_close_tok = match_delimiter!(parser, Delimiter::BracketClose =>);
-    Some(Expr::ArrayIndex(ArrayIndexExpr {
-        expr: Box::new(left),
-        bracket_open_tok,
-        index: Box::new(index),
-        bracket_close_tok,
-    }))
-}
-
 fn parse_block_expr(
     _pratt_parser: &PrattParser<Expr, BindingPower>,
     parser: &mut ParseContext,
@@ -330,21 +272,6 @@ fn parse_block_expr(
         stmts,
         eval_expr,
         brace_close_tok,
-    }))
-}
-
-fn parse_cast_expr(
-    _pratt_parser: &PrattParser<Expr, BindingPower>,
-    parser: &mut ParseContext,
-    left: Expr,
-    _bp: BindingPower,
-) -> ParseResult<Expr> {
-    let as_tok = match_keyword!(parser, Keyword::As =>);
-    let ty = Located::<Type>::parse(parser)?;
-    Some(Expr::Cast(CastExpr {
-        expr: Box::new(left),
-        as_tok,
-        ty,
     }))
 }
 

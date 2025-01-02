@@ -3,7 +3,7 @@ use crate::{
     ast_resolved::{
         errors::{IdentResolveError, TypeResolveError},
         nodes::stmt::{ExprStmt, LetStmt, Stmt},
-        ControlFlow, ResolveContext,
+        ControlFlow, Resolve, ResolveContext,
     },
     symbol_table::VarSymbol,
 };
@@ -58,23 +58,28 @@ impl StmtResolve<LetStmt> for ast_stmt::LetStmt {
             return (None, flow);
         }
 
+        let annotated_ty = self.ty.as_ref().and_then(|v| v.resolve(ctx));
+
         let value_ty = if let Some(value) = &value {
-            if let Some(annotated_ty) = &self.ty {
-                if annotated_ty.0 != value.get_type() {
+            if let Some(annotated_ty) = annotated_ty {
+                if annotated_ty != value.get_type() {
                     ctx.push_error(
                         TypeResolveError::AssignmentTypeMismatch {
-                            target_ty: *annotated_ty,
+                            target_ty: Located(
+                                annotated_ty,
+                                self.ty.as_ref().unwrap().get_location(),
+                            ),
                             value_ty: Located(value.get_type(), self.value.get_location()),
                         }
                         .into(),
                     );
                 }
-                annotated_ty.0
+                annotated_ty
             } else {
                 value.get_type()
             }
-        } else if let Some(ty) = &self.ty {
-            ty.0
+        } else if let Some(ty) = annotated_ty {
+            ty
         } else {
             return (None, ControlFlow::Flow);
         };

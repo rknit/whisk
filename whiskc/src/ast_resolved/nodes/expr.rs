@@ -1,10 +1,6 @@
-use crate::{
-    ast::parsing::token::Operator,
-    symbol_table::SymbolID,
-    ty::{PrimType, Type},
-};
+use crate::{ast::parsing::token::Operator, symbol_table::SymbolID};
 
-use super::stmt::Stmt;
+use super::{stmt::Stmt, ty::Type};
 
 #[derive(Debug, Clone)]
 pub enum Expr {
@@ -27,15 +23,15 @@ impl Expr {
 
     pub fn get_type(&self) -> Type {
         match self {
-            Expr::Unit => PrimType::Unit.into(),
-            Expr::Integer(_) => PrimType::Integer.into(),
-            Expr::Bool(_) => PrimType::Bool.into(),
+            Expr::Unit => Type::Unit,
+            Expr::Integer(_) => Type::Int,
+            Expr::Bool(_) => Type::Bool,
             Expr::Identifier(expr) => expr.ty,
             Expr::Unary(expr) => expr.ty,
             Expr::Binary(expr) => expr.ty,
             Expr::Call(expr) => expr.ty,
             Expr::Block(expr) => expr.ty,
-            Expr::Return(_) => PrimType::Never.into(),
+            Expr::Return(_) => Type::Never,
             Expr::If(expr) => expr.ty,
             Expr::Loop(expr) => expr.ty,
         }

@@ -1,6 +1,6 @@
-use crate::{ast::location::Located, symbol_table::SymbolID, ty::Type};
+use crate::{ast::location::Located, symbol_table::SymbolID};
 
-use super::expr::BlockExpr;
+use super::{expr::BlockExpr, ty::Type};
 
 #[derive(Debug, Clone)]
 pub struct Function {

@@ -1,12 +1,9 @@
-use crate::{
-    ast::{
-        location::Located,
-        parsing::token::{Delimiter, Keyword, Operator},
-    },
-    ty::Type,
+use crate::ast::{
+    location::Located,
+    parsing::token::{Delimiter, Keyword, Operator},
 };
 
-use super::expr::Expr;
+use super::{expr::Expr, ty::Type};
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
@@ -24,7 +21,7 @@ pub struct ExprStmt {
 pub struct LetStmt {
     pub let_tok: Located<Keyword>,
     pub name: Located<String>,
-    pub ty: Option<Located<Type>>,
+    pub ty: Option<Type>,
     pub assign_tok: Located<Operator>,
     pub value: Expr,
     pub semi_tok: Located<Delimiter>,

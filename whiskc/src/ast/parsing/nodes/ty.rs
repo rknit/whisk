@@ -1,17 +1,14 @@
 use once_cell::sync::Lazy;
 use strum::IntoEnumIterator;
 
-use crate::{
-    ast::{
-        location::Located,
-        nodes::ty::{Type, UnitType},
-        parsing::{
-            parsers::pratt_parser::{self, PrattParseError, PrattParser},
-            token::{Delimiter, Identifier, Token, TokenKind, TypeKeyword},
-            Parse, ParseContext, ParseError, ParseResult, TryParse,
-        },
+use crate::ast::{
+    location::{Located, Span},
+    nodes::ty::{PrimType, Type},
+    parsing::{
+        parsers::pratt_parser::{self, PrattParseError, PrattParser},
+        token::{Delimiter, Identifier, Token, TokenKind, TypeKeyword},
+        Parse, ParseContext, ParseError, ParseResult, TryParse,
     },
-    ty::PrimType,
 };
 
 #[derive(Debug, Clone)]
@@ -61,13 +58,10 @@ impl pratt_parser::Handlers<Type, BindingPower> for TypeHandlers {
 fn parse_unit_type(parser: &mut ParseContext) -> ParseResult<Type> {
     let paren_open_tok = match_delimiter!(parser, Delimiter::ParenOpen =>);
     let paren_close_tok = match_delimiter!(parser, Delimiter::ParenClose =>);
-    Some(
-        UnitType {
-            paren_open_tok,
-            paren_close_tok,
-        }
-        .into(),
-    )
+    Some(Type::Primitive(Located(
+        PrimType::Unit,
+        Span::combine(paren_open_tok.1, paren_close_tok.1),
+    )))
 }
 
 fn parse_keyword_type(parser: &mut ParseContext) -> ParseResult<Type> {
@@ -81,7 +75,7 @@ fn parse_keyword_type(parser: &mut ParseContext) -> ParseResult<Type> {
 
     let prim_ty = match kw {
         TypeKeyword::Bool => PrimType::Bool,
-        TypeKeyword::Int => PrimType::Integer,
+        TypeKeyword::Int => PrimType::Int,
     };
 
     Some(Type::Primitive(Located(prim_ty, loc)))

@@ -1,6 +1,6 @@
-use crate::{ast::location::Located, symbol_table::SymbolID, ty::Type};
+use crate::{ast::location::Located, symbol_table::SymbolID};
 
-use super::expr::Expr;
+use super::{expr::Expr, ty::Type};
 
 #[derive(Debug, Clone)]
 pub enum Stmt {

@@ -4,8 +4,9 @@ use crate::{
         parsing::token::Operator,
     },
     symbol_table::{SymbolAttribute, SymbolKind},
-    ty::Type,
 };
+
+use super::nodes::ty::Type;
 
 #[derive(Debug, Clone)]
 pub enum ResolveError {

@@ -6,9 +6,11 @@ use wsk_vm::{
 };
 
 use crate::{
-    ast_resolved::{nodes::item::Item, ResolvedAST},
+    ast_resolved::{
+        nodes::{item::Item, ty::Type},
+        ResolvedAST,
+    },
     symbol_table::SymbolID,
-    ty::PrimType,
 };
 
 mod expr;
@@ -30,7 +32,7 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
             ctx.prog.set_entry_point(fi);
             has_entry = true;
 
-            if !func.sig.params.is_empty() || func.sig.ret_ty != PrimType::Integer.into() {
+            if !func.sig.params.is_empty() || func.sig.ret_ty != Type::Int {
                 return Err(CodegenError::UnsupportedMainFunctionSig);
             }
         }

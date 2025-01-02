@@ -1,9 +1,6 @@
-use crate::{
-    ast::{
-        location::Located,
-        parsing::token::{Delimiter, Keyword, Operator},
-    },
-    ty::PrimType,
+use crate::ast::{
+    location::{Locatable, Located, Span},
+    parsing::token::{Delimiter, Keyword, Operator},
 };
 
 use super::punctuate::Punctuated;
@@ -19,21 +16,25 @@ pub struct TypeDecl {
 
 #[derive(Debug, Clone)]
 pub enum Type {
-    Unit(UnitType),
     Primitive(Located<PrimType>),
     Struct(Struct),
     Ident(Located<String>),
 }
-
-#[derive(Debug, Clone)]
-pub struct UnitType {
-    pub paren_open_tok: Located<Delimiter>,
-    pub paren_close_tok: Located<Delimiter>,
-}
-impl From<UnitType> for Type {
-    fn from(value: UnitType) -> Self {
-        Self::Unit(value)
+impl Locatable for Type {
+    fn get_location(&self) -> Span {
+        match self {
+            Type::Primitive(ty) => ty.1,
+            Type::Struct(ty) => ty.get_location(),
+            Type::Ident(ty) => ty.1,
+        }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PrimType {
+    Unit,
+    Int,
+    Bool,
 }
 
 #[derive(Debug, Clone)]
@@ -42,6 +43,11 @@ pub struct Struct {
     pub brace_open_tok: Located<Delimiter>,
     pub fields: Punctuated<Field>,
     pub brace_close_tok: Located<Delimiter>,
+}
+impl Locatable for Struct {
+    fn get_location(&self) -> Span {
+        Span::combine(self.struct_tok.1, self.brace_close_tok.1)
+    }
 }
 impl From<Struct> for Type {
     fn from(value: Struct) -> Self {
@@ -53,4 +59,9 @@ impl From<Struct> for Type {
 pub struct Field {
     pub name: Located<String>,
     pub ty: Type,
+}
+impl Locatable for Field {
+    fn get_location(&self) -> Span {
+        Span::combine(self.name.1, self.ty.get_location())
+    }
 }
