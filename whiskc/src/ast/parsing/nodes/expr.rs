@@ -241,7 +241,7 @@ fn parse_block_expr(
 
     let eval_expr = if matches!(
         stmts.last(),
-        Some(Stmt::Expr(ExprStmt { semi_tok: None, .. }))
+        Some(Stmt::Expr(ExprStmt { semi_tok: None, expr })) if expr.has_eval_expr() || !expr.is_block()
     ) {
         let Some(Stmt::Expr(ExprStmt {
             expr,

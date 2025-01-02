@@ -24,6 +24,21 @@ impl Expr {
     pub fn is_block(&self) -> bool {
         matches!(self, Self::Block(_) | Self::If(_) | Self::Loop(_))
     }
+
+    pub fn has_eval_expr(&self) -> bool {
+        match self {
+            Self::Block(v) => v.eval_expr.is_some(),
+            Self::If(v) => {
+                v.then.eval_expr.is_some()
+                    && v.else_expr
+                        .as_ref()
+                        .map(|v| v.body.eval_expr.is_some())
+                        .unwrap_or(false)
+            }
+            Self::Loop(v) => v.body.eval_expr.is_some(),
+            _ => false,
+        }
+    }
 }
 impl Locatable for Expr {
     fn get_location(&self) -> Span {

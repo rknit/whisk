@@ -6,7 +6,6 @@ use std::str::FromStr;
 use strum::EnumIter;
 use strum::IntoEnumIterator;
 
-use crate::ast::location::Location;
 use crate::ast::location::Span;
 
 #[derive(Debug, Clone)]
@@ -18,10 +17,7 @@ impl Token {
     pub fn temp(kind: TokenKind) -> Self {
         Self {
             kind,
-            loc: Location {
-                ..Default::default()
-            }
-            .into(),
+            loc: Span::default(),
         }
     }
 }
@@ -145,13 +141,14 @@ impl FromStr for LiteralKeyword {
 #[derive(EnumIter, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Keyword {
     Pub,
+    Type,
+    Struct,
     Extern,
     Func,
     Let,
     If,
     Else,
     Return,
-    As,
     Loop,
 }
 impl fmt::Display for Keyword {
@@ -161,13 +158,14 @@ impl fmt::Display for Keyword {
             "{}",
             match self {
                 Self::Pub => "pub",
+                Self::Type => "type",
+                Self::Struct => "struct",
                 Self::Extern => "extern",
                 Self::Func => "func",
                 Self::Let => "let",
                 Self::If => "if",
                 Self::Else => "else",
                 Self::Return => "return",
-                Self::As => "as",
                 Self::Loop => "loop",
             }
         )
