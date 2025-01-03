@@ -14,12 +14,12 @@ fn main() {
         return;
     };
     dbg!(&ast);
+
     module.resolve_ast();
     let Some(_ast) = module.run_passes() else {
         return;
     };
     // dbg!(&ast);
-    //module.gen_cfg();
-    //module.display_cfg();
+
     module.codegen();
 }

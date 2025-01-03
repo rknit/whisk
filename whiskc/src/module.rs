@@ -1,8 +1,4 @@
-use std::{
-    //fs::{self},
-    fs,
-    path::PathBuf,
-};
+use std::{fs, path::PathBuf};
 
 use crate::{
     ast::{self, AST},
@@ -16,7 +12,6 @@ pub struct Module {
     path: PathBuf,
     ast: Option<AST>,
     resolved_ast: Option<ResolvedAST>,
-    //cfg: Option<CFG>,
 }
 impl Module {
     pub fn new(path: PathBuf) -> Self {
@@ -30,7 +25,6 @@ impl Module {
             path,
             ast: None,
             resolved_ast: None,
-            //cfg: None,
         }
     }
 
@@ -87,31 +81,6 @@ impl Module {
         let bin = prog.to_bin();
         fs::write(bin_path, bin).unwrap();
     }
-
-    //pub fn gen_cfg(&mut self) -> Option<&CFG> {
-    //    self.cfg = Some(CFG::new(
-    //        self.resolved_ast.as_ref()?,
-    //        self.symbol_table.as_mut()?,
-    //    ));
-    //    dbg!(&self.cfg);
-    //    self.cfg.as_ref()
-    //}
-    //
-    //pub fn display_cfg(&self) {
-    //    let Some(sym_table) = &self.symbol_table else {
-    //        return;
-    //    };
-    //    let Some(cfg) = &self.cfg else {
-    //        return;
-    //    };
-    //    let mut s = String::new();
-    //    display_cfg(&mut s, cfg, sym_table);
-    //
-    //    let mut disp_path = self.path.clone();
-    //    disp_path.set_extension("wir");
-    //    fs::write(disp_path.clone(), s)
-    //        .expect(format!("unable to write to {}", disp_path.display()).as_str());
-    //}
 
     pub fn get_name(&self) -> &str {
         &self.name
