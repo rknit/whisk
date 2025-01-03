@@ -3,14 +3,15 @@ use crate::ast::{
     parsing::token::{Delimiter, Keyword, Operator},
 };
 
-use super::punctuate::Punctuated;
+use super::{attributes::Attributes, punctuate::Punctuated};
 
 #[derive(Debug, Clone)]
 pub struct TypeDecl {
+    pub attributes: Attributes,
     pub ty_tok: Located<Keyword>,
     pub name: Located<String>,
     pub assign_tok: Located<Operator>,
-    pub kind: Type,
+    pub ty: Type,
     pub semi_tok: Located<Delimiter>,
 }
 

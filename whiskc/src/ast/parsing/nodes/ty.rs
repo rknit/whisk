@@ -3,10 +3,13 @@ use strum::IntoEnumIterator;
 
 use crate::ast::{
     location::{Located, Span},
-    nodes::ty::{PrimType, Type},
+    nodes::{
+        punctuate::Punctuated,
+        ty::{Field, PrimType, Struct, Type},
+    },
     parsing::{
         parsers::pratt_parser::{self, PrattParseError, PrattParser},
-        token::{Delimiter, Identifier, Token, TokenKind, TypeKeyword},
+        token::{Delimiter, Identifier, Keyword, Token, TokenKind, TypeKeyword},
         Parse, ParseContext, ParseError, ParseResult, TryParse,
     },
 };
@@ -36,6 +39,10 @@ impl pratt_parser::Handlers<Type, BindingPower> for TypeHandlers {
             TokenKind::Identifier(Identifier("".to_owned())),
             |_, parser| parse_ident_type(parser),
         );
+
+        nud(TokenKind::Keyword(Keyword::Struct), |_, parser| {
+            parse_struct_type(parser)
+        });
 
         for kw in TypeKeyword::iter() {
             nud(TokenKind::TypeKeyword(kw), |_, parser| {
@@ -91,6 +98,32 @@ fn parse_ident_type(parser: &mut ParseContext) -> ParseResult<Type> {
     };
 
     Some(Type::Ident(Located(ident, loc)))
+}
+
+fn parse_struct_type(parser: &mut ParseContext) -> ParseResult<Type> {
+    let struct_tok = match_keyword!(parser, Keyword::Struct =>);
+    let brace_open_tok = match_delimiter!(parser, Delimiter::BraceOpen =>);
+    let fields = Punctuated::parse(
+        parser,
+        Delimiter::Comma,
+        Delimiter::BraceClose,
+        Field::parse,
+    )?;
+    let brace_close_tok = match_delimiter!(parser, Delimiter::BraceClose =>);
+    Some(Type::Struct(Struct {
+        struct_tok,
+        brace_open_tok,
+        fields,
+        brace_close_tok,
+    }))
+}
+
+impl Parse for Field {
+    fn parse(ctx: &mut ParseContext) -> ParseResult<Self> {
+        let name = match_identifier!(ctx, "field's name".to_owned() =>)?;
+        let ty = Type::parse(ctx)?;
+        Some(Field { name, ty })
+    }
 }
 
 static PARSER: Lazy<PrattParser<Type, BindingPower>> =

@@ -17,6 +17,7 @@ pub fn resolve(ast: &AST) -> Result<ResolvedAST, Vec<ResolveError>> {
         match item {
             Item::Function(function) => function.sig.resolve(&mut ctx),
             Item::ExternFunction(function) => function.sig.resolve(&mut ctx),
+            _ => todo!(),
         };
     }
 
@@ -28,6 +29,7 @@ pub fn resolve(ast: &AST) -> Result<ResolvedAST, Vec<ResolveError>> {
             match item {
                 Item::Function(function) => function.resolve(&mut ctx).map(|v| v.into()),
                 Item::ExternFunction(function) => function.resolve(&mut ctx).map(|v| v.into()),
+                _ => todo!(),
             }
         }) else {
             continue;

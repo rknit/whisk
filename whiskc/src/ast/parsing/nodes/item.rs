@@ -4,6 +4,7 @@ use crate::ast::{
         attributes::Attributes,
         func::{ExternFunction, Function},
         item::Item,
+        ty::TypeDecl,
     },
     parsing::{
         token::{Keyword, TokenKind},
@@ -28,6 +29,11 @@ impl Parse for Item {
                     let mut func = Function::parse(ctx)?;
                     func.sig.attributes = attributes;
                     Some(Item::Function(func))
+                }
+                Keyword::Type => {
+                    let mut ty_decl = TypeDecl::parse(ctx)?;
+                    ty_decl.attributes = attributes;
+                    Some(Item::TypeDecl(ty_decl))
                 }
                 _ => None,
             },
