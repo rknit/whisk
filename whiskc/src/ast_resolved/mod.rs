@@ -51,12 +51,12 @@ impl<'a> ResolveContext<'a> {
     }
 
     pub fn unset_func_symbol_id(&mut self) {
+        self.pop_local();
         assert!(
             self.local_tables.is_empty(),
             "all local tables must be popped before unsetting the function"
         );
         self.func_sym_id = SymbolID::nil();
-        self.pop_local();
     }
 
     pub fn get_func_symbol_id(&self) -> SymbolID {
