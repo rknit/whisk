@@ -75,6 +75,10 @@ impl SymbolTable {
         }
     }
 
+    macro_utils::decl_get_symbol!(var, Variable, VarSymbol);
+    macro_utils::decl_get_symbol!(func, Function, FuncSymbol);
+    macro_utils::decl_get_symbol!(type, Type, TypeSymbol);
+
     pub fn get_symbol(&self, id: SymbolID) -> Option<&Symbol> {
         match self.get_entry(id) {
             Some(SymbolTableEntry::Symbol(symbol)) => Some(symbol),
@@ -97,16 +101,16 @@ impl SymbolTable {
         self.get_symbol_mut(self.get_symbol_id_by_name(name)?)
     }
 
+    pub fn get_symbol_id_by_name(&self, name: &str) -> Option<SymbolID> {
+        self.interned_id.get(name).copied()
+    }
+
     pub fn exists(&self, id: SymbolID) -> bool {
         self.entries.contains_key(&id)
     }
 
     pub fn name_exists(&self, name: &str) -> bool {
         self.interned_id.contains_key(name)
-    }
-
-    pub fn get_symbol_id_by_name(&self, name: &str) -> Option<SymbolID> {
-        self.interned_id.get(name).copied()
     }
 
     fn new_id(&mut self) -> SymbolID {
@@ -276,7 +280,6 @@ impl TypeSymbol {
             id: SymbolID::nil(),
             name,
             ty,
-            //value: None,
             refs: vec![],
         }
     }
@@ -466,4 +469,29 @@ impl FuncSymbol {
     pub fn get_refs(&self) -> &Vec<Span> {
         &self.refs
     }
+}
+
+mod macro_utils {
+    #[macro_export]
+    macro_rules! decl_get_symbol {
+        ($name:ident, $kind:ident, $ty:ty) => {
+            paste::item! {
+                pub fn [< get_ $name _symbol>](&self, id: SymbolID) -> Option<&$ty> {
+                    match self.get_symbol(id) {
+                        Some(Symbol::$kind(v)) => Some(v),
+                        _ => None,
+                    }
+                }
+
+                pub fn [< get_ $name _symbol_mut >](&mut self, id: SymbolID) -> Option<&mut $ty> {
+                    match self.get_symbol_mut(id) {
+                        Some(Symbol::$kind(v)) => Some(v),
+                        _ => None,
+                    }
+                }
+            }
+        };
+    }
+
+    pub use decl_get_symbol;
 }
