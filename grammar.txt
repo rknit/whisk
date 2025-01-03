@@ -1,13 +1,19 @@
 <program> ::= <item>*
 
-<item> ::= <attribute>* <func>
+<item> ::= <attribute>* ( <func> | <type_decl> )
 
 <func> ::= func <ident> \( <param_list> \) <type>? <block>
 <param_list> ::= <param> | <param> , <param_list> | <epsilon>
 <param> ::= <ident> <type>
 
-<type> ::= <primitive>
+<type_decl> ::= type <ident> = <type> ;
+
+<type> ::= <primitive> | <ident> | <struct>
 <primitive> ::= int | bool | \(\)
+
+<struct> ::= struct { <field_list> }
+<field_list> ::= <field> | <field> , <field_list> | <epsilon>
+<field> ::= <ident> <type>
 
 <stmt> ::= <expr_stmt> | <let>
 <expr_stmt> ::= <f_expr> ; | <cf_expr> ;?
@@ -35,11 +41,3 @@
 <ident> ::= (a..z | A..Z | _) (a..z | A..Z | _ | 0..9)*
 <integer> ::= (0..9)+
 <boolean> ::= true | false
-
-/* TODO */
-
-<type> ::= type <ident> = <struct> ;
-
-<struct> ::= struct { <field_list> }
-<field_list> ::= <field> | <field> , <field_list> | <epsilon>
-<field> ::= <ident> <type>
