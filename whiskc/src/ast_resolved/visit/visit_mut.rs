@@ -4,7 +4,7 @@ use super::super::{
             BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr,
             UnaryExpr,
         },
-        func::{ExternFunction, Function, FunctionSig, Param},
+        func::{ExternFunction, Function},
         item::Item,
         stmt::{ExprStmt, LetStmt, Stmt},
     },
@@ -40,16 +40,12 @@ pub trait VisitMut: Sized {
         visit_expr_stmt_mut(self, node);
     }
 
-    fn visit_extern_func_mut(&mut self, node: &mut ExternFunction) {
-        visit_extern_func_mut(self, node);
+    fn visit_extern_func_mut(&mut self, _node: &mut ExternFunction) {
+        /* terminal */
     }
 
     fn visit_func_mut(&mut self, node: &mut Function) {
         visit_func_mut(self, node);
-    }
-
-    fn visit_func_sig_mut(&mut self, node: &mut FunctionSig) {
-        visit_func_sig_mut(self, node);
     }
 
     fn visit_ident_expr_mut(&mut self, _node: &mut IdentExpr) {
@@ -74,10 +70,6 @@ pub trait VisitMut: Sized {
 
     fn visit_loop_expr_mut(&mut self, node: &mut LoopExpr) {
         visit_loop_expr_mut(self, node);
-    }
-
-    fn visit_param_mut(&mut self, _node: &mut Param) {
-        /* terminal */
     }
 
     fn visit_return_expr_mut(&mut self, node: &mut ReturnExpr) {
@@ -144,19 +136,8 @@ pub fn visit_expr_stmt_mut(v: &mut impl VisitMut, node: &mut ExprStmt) {
     v.visit_expr_mut(&mut node.expr);
 }
 
-pub fn visit_extern_func_mut(v: &mut impl VisitMut, node: &mut ExternFunction) {
-    v.visit_func_sig_mut(&mut node.0);
-}
-
 pub fn visit_func_mut(v: &mut impl VisitMut, node: &mut Function) {
-    v.visit_func_sig_mut(&mut node.sig);
     v.visit_block_expr_mut(&mut node.body);
-}
-
-pub fn visit_func_sig_mut(v: &mut impl VisitMut, node: &mut FunctionSig) {
-    for param in &mut node.params {
-        v.visit_param_mut(param);
-    }
 }
 
 pub fn visit_if_expr_mut(v: &mut impl VisitMut, node: &mut IfExpr) {

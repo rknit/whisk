@@ -44,6 +44,10 @@ impl<'a> ResolveContext<'a> {
             "no function set before setting the function"
         );
         self.func_sym_id = id;
+        let Some(Symbol::Function(func_sym)) = self.get_symbol(id) else {
+            panic!("provided id is not a function symbol");
+        };
+        self.local_tables.push(func_sym.get_table_id());
     }
 
     pub fn unset_func_symbol_id(&mut self) {
@@ -52,6 +56,7 @@ impl<'a> ResolveContext<'a> {
             "all local tables must be popped before unsetting the function"
         );
         self.func_sym_id = SymbolID::nil();
+        self.pop_local();
     }
 
     pub fn get_func_symbol_id(&self) -> SymbolID {
@@ -72,7 +77,7 @@ impl<'a> ResolveContext<'a> {
     pub fn pop_local(&mut self) {
         self.local_tables
             .pop()
-            .expect("not pop empty local scope stack");
+            .expect("popping an empty local scope stack");
     }
 
     pub fn new_symbol(&mut self, name: &str, symbol: Symbol) -> Option<SymbolID> {

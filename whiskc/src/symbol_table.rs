@@ -390,22 +390,33 @@ pub enum SymbolAttribute {
 #[derive(Debug, Clone)]
 pub struct FuncSymbol {
     id: SymbolID,
+    table_id: SymbolID,
     name: Located<String>,
-    params: Vec<(Located<String>, Type)>,
+    params: Vec<SymbolID>,
     ret_ty: Type,
     attributes: HashSet<SymbolAttribute>,
     refs: Vec<Span>,
 }
 impl FuncSymbol {
-    pub fn new(name: Located<String>, params: Vec<(Located<String>, Type)>, ret_ty: Type) -> Self {
+    pub fn new(
+        table_id: SymbolID,
+        name: Located<String>,
+        params: Vec<SymbolID>,
+        ret_ty: Type,
+    ) -> Self {
         Self {
             id: SymbolID::nil(),
+            table_id,
             name,
             params,
             ret_ty,
             attributes: HashSet::new(),
             refs: vec![],
         }
+    }
+
+    pub fn get_table_id(&self) -> SymbolID {
+        self.table_id
     }
 
     pub fn get_name(&self) -> &str {
@@ -424,7 +435,7 @@ impl FuncSymbol {
         self.attributes.extend(attributes);
     }
 
-    pub fn get_params(&self) -> &Vec<(Located<String>, Type)> {
+    pub fn get_param_ids(&self) -> &Vec<SymbolID> {
         &self.params
     }
 

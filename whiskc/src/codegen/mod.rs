@@ -10,7 +10,7 @@ use crate::{
         nodes::{item::Item, ty::Type},
         ResolvedAST,
     },
-    symbol_table::SymbolID,
+    symbol_table::{Symbol, SymbolID, SymbolTable},
 };
 
 mod expr;
@@ -18,7 +18,7 @@ mod func;
 mod stmt;
 
 pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
-    let mut ctx = Context::new();
+    let mut ctx = Context::new(&ast.sym_table);
     let mut has_entry = false;
 
     for item in &ast.items {
@@ -26,13 +26,16 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
             return Err(CodegenError::UnsupportedItem);
         };
         let fi = ctx.prog.add_func(Function::new());
-        ctx.add_fi(func.sig.sym_id, fi);
+        ctx.add_fi(func.sym_id, fi);
 
-        if func.sig.name.0 == "main" {
+        let Symbol::Function(func_sym) = ast.sym_table.get_symbol(func.sym_id).unwrap() else {
+            unreachable!();
+        };
+        if func_sym.get_name() == "main" {
             ctx.prog.set_entry_point(fi);
             has_entry = true;
 
-            if !func.sig.params.is_empty() || func.sig.ret_ty != Type::Int {
+            if !func_sym.get_param_ids().is_empty() || func_sym.get_return_type() != Type::Int {
                 return Err(CodegenError::UnsupportedMainFunctionSig);
             }
         }
@@ -58,7 +61,8 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
     }
 }
 
-struct Context {
+struct Context<'a> {
+    pub sym_table: &'a SymbolTable,
     pub prog: Program,
     fis: HashMap<SymbolID, usize>,
     cur_fi: Option<usize>,
@@ -66,9 +70,10 @@ struct Context {
     local_cnts: Vec<usize>,
     active_local_cnt: usize,
 }
-impl Context {
-    pub fn new() -> Self {
+impl<'a> Context<'a> {
+    pub fn new(sym_table: &'a SymbolTable) -> Self {
         Self {
+            sym_table,
             prog: Program::new(),
             fis: HashMap::new(),
             cur_fi: None,

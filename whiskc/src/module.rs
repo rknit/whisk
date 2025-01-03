@@ -8,7 +8,6 @@ use crate::{
     ast::{self, AST},
     ast_resolved::{self, passes::run_passes, ResolvedAST},
     codegen::codegen_wsk_vm,
-    symbol_table::SymbolTable,
 };
 
 #[derive(Debug)]
@@ -17,7 +16,6 @@ pub struct Module {
     path: PathBuf,
     ast: Option<AST>,
     resolved_ast: Option<ResolvedAST>,
-    symbol_table: Option<SymbolTable>,
     //cfg: Option<CFG>,
 }
 impl Module {
@@ -32,7 +30,6 @@ impl Module {
             path,
             ast: None,
             resolved_ast: None,
-            symbol_table: None,
             //cfg: None,
         }
     }
@@ -52,8 +49,8 @@ impl Module {
         let Some(ast) = &self.ast else {
             return None;
         };
-        (self.resolved_ast, self.symbol_table) = match ast_resolved::resolve(ast) {
-            Ok((ast, sym_table)) => (Some(ast), Some(sym_table)),
+        self.resolved_ast = match ast_resolved::resolve(ast) {
+            Ok(ast) => Some(ast),
             Err(errs) => {
                 dbg!(&errs);
                 return None;

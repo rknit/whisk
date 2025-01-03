@@ -8,7 +8,7 @@ use crate::{
     symbol_table::SymbolTable,
 };
 
-pub fn resolve(ast: &AST) -> Result<(ResolvedAST, SymbolTable), Vec<ResolveError>> {
+pub fn resolve(ast: &AST) -> Result<ResolvedAST, Vec<ResolveError>> {
     let mut global_table = SymbolTable::default();
     let mut ctx = ResolveContext::new(&mut global_table);
 
@@ -36,5 +36,8 @@ pub fn resolve(ast: &AST) -> Result<(ResolvedAST, SymbolTable), Vec<ResolveError
     }
 
     ctx.finalize()?;
-    Ok((ResolvedAST { items }, global_table))
+    Ok(ResolvedAST {
+        sym_table: global_table,
+        items,
+    })
 }

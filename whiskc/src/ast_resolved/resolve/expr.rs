@@ -282,14 +282,15 @@ impl ExprResolve for ast_expr::CallExpr {
             return ExprFlow::flow_none();
         };
 
-        let (expect_params, ret_ty) = {
+        let (func_table, expect_params, ret_ty) = {
             let Symbol::Function(func) = ctx.get_symbol(func_sym_id).expect("valid function id")
             else {
                 panic!("symbol is not a function");
             };
 
             (
-                func.get_params().clone(), /* :( */
+                func.get_table_id(),
+                func.get_param_ids().clone(), /* :( */
                 func.get_return_type(),
             )
         };
@@ -307,7 +308,9 @@ impl ExprResolve for ast_expr::CallExpr {
 
         let mut args = Vec::new();
 
-        for ((i, expect_param), ast_arg) in expect_params.iter().enumerate().zip(&self.args.items) {
+        for ((i, expect_param_id), ast_arg) in
+            expect_params.iter().enumerate().zip(&self.args.items)
+        {
             let ExprFlow(arg, flow) = ast_arg.resolve(ctx);
             if flow == ControlFlow::Return {
                 return ExprFlow(arg, flow);
@@ -316,7 +319,14 @@ impl ExprResolve for ast_expr::CallExpr {
                 continue;
             };
 
-            if expect_param.1 == arg.get_type() {
+            let expect_param_ty = ctx
+                .get_table(func_table)
+                .unwrap()
+                .get_symbol(*expect_param_id)
+                .unwrap()
+                .get_type();
+
+            if expect_param_ty == arg.get_type() {
                 args.push(arg);
                 continue;
             }
@@ -325,7 +335,7 @@ impl ExprResolve for ast_expr::CallExpr {
                 TypeResolveError::ArgumentTypeMismatch {
                     func_ty: Located(callee.get_type(), self.get_location()),
                     argument_index: i,
-                    expect_type: expect_param.1,
+                    expect_type: expect_param_ty,
                     actual_type: Located(arg.get_type(), ast_arg.get_location()),
                 }
                 .into(),
