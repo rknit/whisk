@@ -75,7 +75,6 @@ impl ExprResolve for Located<String> {
             ctx.push_error(IdentResolveError::UnknownIdentifier(self.clone()).into());
             return ExprFlow::flow_none();
         };
-        symbol.push_ref(self.1);
         ExprFlow::flow(IdentExpr {
             sym_id: symbol.get_id(),
             ident: self.0.clone(),

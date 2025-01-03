@@ -2,6 +2,9 @@ use core::mem::discriminant;
 
 use crate::symbol_table::{SymbolID, SymbolTable};
 
+#[derive(Debug, Clone)]
+pub struct TypeDecl(pub SymbolID);
+
 #[derive(Debug, Clone, Copy)]
 pub enum Type {
     Never,
@@ -9,6 +12,7 @@ pub enum Type {
     Int,
     Bool,
     Alias(SymbolID),
+    Struct(SymbolID),
     Func(SymbolID),
 }
 impl Type {

@@ -14,6 +14,7 @@ pub struct SymbolTable {
     id: SymbolID,
     interned_id: HashMap<String, SymbolID>,
     entries: HashMap<SymbolID, TaggedSymbolTableEntry>,
+    structs: HashMap<SymbolID, StructSymbol>,
 }
 impl Default for SymbolTable {
     fn default() -> Self {
@@ -21,10 +22,28 @@ impl Default for SymbolTable {
             id: SymbolID::nil(),
             interned_id: HashMap::new(),
             entries: HashMap::new(),
+            structs: HashMap::new(),
         }
     }
 }
 impl SymbolTable {
+    pub fn get_struct(&self, sym_id: SymbolID) -> Option<&StructSymbol> {
+        self.structs.get(&sym_id)
+    }
+
+    pub fn get_struct_id_by_fields_or_insert_new(
+        &mut self,
+        fields: HashMap<String, Type>,
+    ) -> SymbolID {
+        if let Some(struct_sym) = self.structs.iter().find(|v| *v.1.get_fields() == fields) {
+            struct_sym.1.get_id()
+        } else {
+            let id = self.new_id();
+            self.structs.insert(id, StructSymbol::new(fields));
+            id
+        }
+    }
+
     pub fn new_entry(&mut self, parent_id: SymbolID, mut entry: SymbolTableEntry) -> SymbolID {
         let id = self.new_id();
         entry.set_id(id);
@@ -172,6 +191,11 @@ impl From<FuncSymbol> for SymbolTableEntry {
         Self::Symbol(value.into())
     }
 }
+impl From<TypeSymbol> for SymbolTableEntry {
+    fn from(value: TypeSymbol) -> Self {
+        Self::Symbol(value.into())
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SymbolKind {
@@ -197,9 +221,9 @@ impl Symbol {
 
     fn set_id(&mut self, id: SymbolID) {
         match self {
-            Symbol::Variable(symbol) => symbol.set_id(id),
-            Symbol::Function(symbol) => symbol.set_id(id),
-            Symbol::Type(symbol) => symbol.set_id(id),
+            Symbol::Variable(symbol) => symbol.id = id,
+            Symbol::Function(symbol) => symbol.id = id,
+            Symbol::Type(symbol) => symbol.id = id,
         }
     }
 
@@ -234,22 +258,6 @@ impl Symbol {
             Symbol::Type(symbol) => symbol.get_origin(),
         }
     }
-
-    pub fn push_ref(&mut self, loc: Span) {
-        match self {
-            Symbol::Variable(symbol) => symbol.push_ref(loc),
-            Symbol::Function(symbol) => symbol.push_ref(loc),
-            Symbol::Type(symbol) => symbol.push_ref(loc),
-        }
-    }
-
-    pub fn get_refs(&self) -> &Vec<Span> {
-        match self {
-            Symbol::Variable(symbol) => symbol.get_refs(),
-            Symbol::Function(symbol) => symbol.get_refs(),
-            Symbol::Type(symbol) => symbol.get_refs(),
-        }
-    }
 }
 impl From<VarSymbol> for Symbol {
     fn from(value: VarSymbol) -> Self {
@@ -272,7 +280,6 @@ pub struct TypeSymbol {
     id: SymbolID,
     name: Located<String>,
     ty: Type,
-    refs: Vec<Span>,
 }
 impl TypeSymbol {
     pub fn new(name: Located<String>, ty: Type) -> Self {
@@ -280,16 +287,11 @@ impl TypeSymbol {
             id: SymbolID::nil(),
             name,
             ty,
-            refs: vec![],
         }
     }
 
     pub fn get_name(&self) -> &str {
         &self.name.0
-    }
-
-    fn set_id(&mut self, id: SymbolID) {
-        self.id = id;
     }
 
     pub fn get_id(&self) -> SymbolID {
@@ -302,22 +304,6 @@ impl TypeSymbol {
 
     pub fn get_origin(&self) -> Span {
         self.name.1
-    }
-
-    pub fn push_ref(&mut self, loc: Span) {
-        if let [.., last] = self.refs[..] {
-            if last > loc {
-                panic!("reference location out of order");
-            }
-            if last == loc {
-                panic!("duplicate reference location");
-            }
-        }
-        self.refs.push(loc);
-    }
-
-    pub fn get_refs(&self) -> &Vec<Span> {
-        &self.refs
     }
 }
 
@@ -326,8 +312,6 @@ pub struct VarSymbol {
     id: SymbolID,
     name: Located<String>,
     ty: Type,
-    //value: Option<Value>,
-    refs: Vec<Span>,
 }
 impl VarSymbol {
     pub fn new(name: Located<String>, ty: Type) -> Self {
@@ -335,17 +319,11 @@ impl VarSymbol {
             id: SymbolID::nil(),
             name,
             ty,
-            //value: None,
-            refs: vec![],
         }
     }
 
     pub fn get_name(&self) -> &str {
         &self.name.0
-    }
-
-    fn set_id(&mut self, id: SymbolID) {
-        self.id = id;
     }
 
     pub fn get_id(&self) -> SymbolID {
@@ -359,30 +337,6 @@ impl VarSymbol {
     pub fn get_origin(&self) -> Span {
         self.name.1
     }
-
-    pub fn push_ref(&mut self, loc: Span) {
-        if let [.., last] = self.refs[..] {
-            if last > loc {
-                panic!("reference location out of order");
-            }
-            if last == loc {
-                panic!("duplicate reference location");
-            }
-        }
-        self.refs.push(loc);
-    }
-
-    pub fn get_refs(&self) -> &Vec<Span> {
-        &self.refs
-    }
-
-    //pub fn set_value(&mut self, value: Value) {
-    //    self.value = Some(value);
-    //}
-    //
-    //pub fn get_value(&self) -> Option<Value> {
-    //    self.value
-    //}
 }
 
 #[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
@@ -398,7 +352,6 @@ pub struct FuncSymbol {
     params: Vec<SymbolID>,
     ret_ty: Type,
     attributes: HashSet<SymbolAttribute>,
-    refs: Vec<Span>,
 }
 impl FuncSymbol {
     pub fn new(
@@ -414,7 +367,6 @@ impl FuncSymbol {
             params,
             ret_ty,
             attributes: HashSet::new(),
-            refs: vec![],
         }
     }
 
@@ -424,10 +376,6 @@ impl FuncSymbol {
 
     pub fn get_name(&self) -> &str {
         &self.name.0
-    }
-
-    fn set_id(&mut self, id: SymbolID) {
-        self.id = id;
     }
 
     pub fn get_id(&self) -> SymbolID {
@@ -453,21 +401,43 @@ impl FuncSymbol {
     pub fn get_origin(&self) -> Span {
         self.name.1
     }
+}
 
-    pub fn push_ref(&mut self, loc: Span) {
-        if let [.., last] = self.refs[..] {
-            if last > loc {
-                panic!("reference location out of order");
-            }
-            if last == loc {
-                panic!("duplicate reference location");
-            }
+#[derive(Debug, Clone)]
+pub struct StructSymbol {
+    id: SymbolID,
+    fields: HashMap<String, Type>,
+}
+impl StructSymbol {
+    pub fn new(fields: HashMap<String, Type>) -> Self {
+        Self {
+            id: SymbolID::nil(),
+            fields,
         }
-        self.refs.push(loc);
     }
 
-    pub fn get_refs(&self) -> &Vec<Span> {
-        &self.refs
+    pub fn get_field(&self, name: &str) -> Option<Type> {
+        self.fields.get(name).copied()
+    }
+
+    pub fn get_fields(&self) -> &HashMap<String, Type> {
+        &self.fields
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.fields.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.fields.len()
+    }
+
+    pub fn get_id(&self) -> SymbolID {
+        self.id
+    }
+
+    pub fn get_type(&self) -> Type {
+        Type::Struct(self.get_id())
     }
 }
 

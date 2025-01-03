@@ -154,6 +154,10 @@ impl<'a> ResolveContext<'a> {
         self.global_table.get_table_mut(table_id)
     }
 
+    pub fn get_global_table_mut(&mut self) -> &mut SymbolTable {
+        self.global_table
+    }
+
     pub fn push_error(&mut self, e: ResolveError) {
         self.errors.push(e);
     }
