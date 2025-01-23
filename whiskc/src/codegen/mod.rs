@@ -25,7 +25,7 @@ pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
         let Item::Function(func) = item else {
             return Err(CodegenError::UnsupportedItem);
         };
-        let fi = ctx.prog.add_func(Function::new());
+        let fi = ctx.prog.add_func(Function::default());
         ctx.add_fi(func.sym_id, fi);
 
         let Symbol::Function(func_sym) = ast.sym_table.get_symbol(func.sym_id).unwrap() else {
@@ -74,7 +74,7 @@ impl<'a> Context<'a> {
     pub fn new(sym_table: &'a SymbolTable) -> Self {
         Self {
             sym_table,
-            prog: Program::new(),
+            prog: Program::default(),
             fis: HashMap::new(),
             cur_fi: None,
             locals: HashMap::new(),

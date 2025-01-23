@@ -15,7 +15,7 @@ fn main() -> Result<(), RunError> {
     let program = Program::from_bytes(&bytes)?;
     println!("{}", program);
 
-    let mut vm = VM::new();
+    let mut vm = VM::default();
     vm.execute(program).map_err(|e| {
         eprintln!("{:#?}", vm);
         e

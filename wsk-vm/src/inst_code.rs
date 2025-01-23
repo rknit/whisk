@@ -92,11 +92,11 @@ impl Inst {
             0x04 => Inst::Pop,
             0x05 => {
                 let index_bytes = Self::next_bytes::<USIZE_BYTES>(bytes)?;
-                Inst::Load(usize::from_le_bytes(index_bytes).into())
+                Inst::Load(usize::from_le_bytes(index_bytes))
             }
             0x06 => {
                 let index_bytes = Self::next_bytes::<USIZE_BYTES>(bytes)?;
-                Inst::Store(usize::from_le_bytes(index_bytes).into())
+                Inst::Store(usize::from_le_bytes(index_bytes))
             }
             0x10 => Inst::Add,
             0x11 => Inst::Sub,
@@ -111,19 +111,19 @@ impl Inst {
             0x21 => Inst::Not,
             0x30 => {
                 let index_bytes = Self::next_bytes::<ISIZE_BYTES>(bytes)?;
-                Inst::Jmp(isize::from_le_bytes(index_bytes).into())
+                Inst::Jmp(isize::from_le_bytes(index_bytes))
             }
             0x31 => {
                 let index_bytes = Self::next_bytes::<ISIZE_BYTES>(bytes)?;
-                Inst::JmpTrue(isize::from_le_bytes(index_bytes).into())
+                Inst::JmpTrue(isize::from_le_bytes(index_bytes))
             }
             0x32 => {
                 let index_bytes = Self::next_bytes::<ISIZE_BYTES>(bytes)?;
-                Inst::JmpFalse(isize::from_le_bytes(index_bytes).into())
+                Inst::JmpFalse(isize::from_le_bytes(index_bytes))
             }
             0x40 => {
                 let index_bytes = Self::next_bytes::<USIZE_BYTES>(bytes)?;
-                Inst::Call(usize::from_le_bytes(index_bytes).into())
+                Inst::Call(usize::from_le_bytes(index_bytes))
             }
             0x41 => Inst::Ret,
             _ => {

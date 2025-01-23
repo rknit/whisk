@@ -7,11 +7,16 @@ pub struct Program {
     funcs: Vec<Function>,
     entry_point: usize,
 }
+impl Default for Program {
+    fn default() -> Self {
+        Self::new(0)
+    }
+}
 impl Program {
-    pub fn new() -> Self {
+    pub fn new(entry_point: usize) -> Self {
         Self {
             funcs: vec![],
-            entry_point: 0,
+            entry_point,
         }
     }
 
@@ -78,6 +83,7 @@ impl Program {
         bytes
     }
 }
+
 impl Display for Program {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "entry: ${}\n", self.entry_point)?;
@@ -88,15 +94,11 @@ impl Display for Program {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Function {
     insts: Vec<Inst>,
 }
 impl Function {
-    pub fn new() -> Self {
-        Self { insts: vec![] }
-    }
-
     pub fn from_insts(insts: impl IntoIterator<Item = Inst>) -> Self {
         Self {
             insts: Vec::from_iter(insts),
@@ -137,6 +139,10 @@ impl Function {
 
     pub fn len(&self) -> usize {
         self.insts.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     pub fn get(&self, index: usize) -> Option<&Inst> {

@@ -6,21 +6,13 @@ use crate::{
     value::Value,
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct VM {
     stack: Vec<Value>,
     frames: Vec<Frame>,
     status: VMStatus,
 }
 impl VM {
-    pub fn new() -> Self {
-        Self {
-            stack: vec![],
-            frames: vec![],
-            status: VMStatus::default(),
-        }
-    }
-
     pub fn reset(&mut self, entry_point: usize) {
         self.stack.clear();
         self.frames.clear();

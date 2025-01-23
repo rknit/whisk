@@ -32,7 +32,7 @@ pub enum Inst {
 }
 impl RunInst for Inst {
     fn run(self, vm: &mut VM) -> Result<(), RunError> {
-        Ok(match self {
+        match self {
             Self::Halt => vm.halt(),
             Inst::Push(v) => vm.push(v),
             Inst::Pop => vm.pop().map(|_| ())?,
@@ -76,7 +76,8 @@ impl RunInst for Inst {
 
             Inst::Call(fi) => vm.call(fi),
             Inst::Ret => vm.ret()?,
-        })
+        };
+        Ok(())
     }
 }
 
@@ -88,7 +89,7 @@ pub enum Cmp {
 }
 impl RunInst for Cmp {
     fn run(self, vm: &mut VM) -> Result<(), RunError> {
-        Ok(match self {
+        match self {
             Cmp::Equal => {
                 let rhs = vm.pop()?;
                 let lhs = vm.pop()?;
@@ -108,7 +109,8 @@ impl RunInst for Cmp {
                 };
                 vm.push(yes.into());
             }
-        })
+        };
+        Ok(())
     }
 }
 
