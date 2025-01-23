@@ -21,7 +21,14 @@ impl Codegen for ast::func::Function {
 
         self.body.codegen(ctx)?;
 
-        if func_sym.get_return_type() == Type::Unit || self.body.eval_expr.is_some() {
+        if func_sym.get_return_type() == Type::Unit
+            || self
+                .body
+                .eval_expr
+                .as_ref()
+                .map(|v| v.get_type() != Type::Never)
+                .unwrap_or(false)
+        {
             let func = ctx.get_current_fi_mut();
             if !matches!(func.get_insts()[..], [.., Inst::Ret]) {
                 func.push_inst(Inst::Ret);

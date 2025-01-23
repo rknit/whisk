@@ -1,11 +1,18 @@
-type Vec2 = struct {
-  x int,
-  y int,
-};
-
 func main() int {
-  let y = 23;
-  let x = 1 + 55 - y;
-  x = 4;
-  x
+  let n = 15;
+  let x = 0;
+  let y = 1;
+  let z = 0;
+
+  loop {
+    if n <= 0 {
+      return z;    
+    }
+
+    x = y;
+    y = z;
+    z = x + y;
+
+    n = n - 1;
+  }
 }

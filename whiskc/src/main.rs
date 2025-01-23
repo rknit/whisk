@@ -16,10 +16,10 @@ fn main() {
     dbg!(&ast);
 
     module.resolve_ast();
-    let Some(_ast) = module.run_passes() else {
+    let Some(ast) = module.run_passes() else {
         return;
     };
-    // dbg!(&ast);
+    dbg!(&ast);
 
     module.codegen();
 }

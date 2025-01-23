@@ -542,6 +542,12 @@ impl ExprResolve for ast_expr::LoopExpr {
         let Expr::Block(body) = body else {
             unreachable!()
         };
-        ExprFlow::new(LoopExpr { ty: body.ty, body }, flow)
+        ExprFlow::new(
+            LoopExpr {
+                ty: Type::Never, // returning Never for now since there is no break expression
+                body,
+            },
+            flow,
+        )
     }
 }

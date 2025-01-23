@@ -1,0 +1,4 @@
+- rework SymbolTable (again)
+- type struct decl
+- type decl
+- alias type
