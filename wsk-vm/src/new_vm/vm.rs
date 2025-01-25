@@ -19,22 +19,22 @@ impl Default for VM {
         Self {
             regs: Box::new([Value::Int(0); VM_REG_COUNT]),
             stack: Box::new([Value::Int(0); VM_STACK_LEN]),
-            frames: vec![Frame::default()],
+            frames: vec![Frame::new(VMState::default())],
             halted: false,
         }
     }
 }
 impl VM {
     pub fn execute(&mut self) -> Result<(), VMError> {
-        self.reset();
+        self.reset(Frame::new(VMState::default()));
 
         while !self.is_halted() {}
 
         Ok(())
     }
 
-    pub fn reset(&mut self) {
-        self.frames.resize_with(1, Frame::default);
+    pub fn reset(&mut self, entry_frame: Frame) {
+        self.frames = vec![entry_frame];
         self.halted = false;
 
         for v in self.regs.deref_mut() {
@@ -53,15 +53,17 @@ impl VM {
         Ok(self.stack[frame.state.sp])
     }
 
-    pub fn push_frame(&mut self) {
-        self.frames.push(Frame::default());
+    pub fn push_frame(&mut self, frame: Frame) {
+        self.frames.push(frame);
     }
 
     pub fn pop_frame(&mut self) -> Result<(), VMError> {
-        self.frames
-            .pop()
-            .map(|_| ())
-            .ok_or(VMError::StackFrameUnderflow)
+        if self.frames.len() <= 1 {
+            Err(VMError::StackFrameUnderflow)
+        } else {
+            self.frames.pop();
+            Ok(())
+        }
     }
 
     pub fn get_frame(&self) -> &Frame {
@@ -97,16 +99,25 @@ pub enum VMError {
 }
 
 #[derive(Debug, Default, Clone, Copy)]
-struct VMState {
+pub struct VMState {
+    pub fi: usize,
     pub pc: usize,
     pub sp: usize,
 }
 
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Debug, Clone, Copy)]
 pub struct Frame {
     state: VMState,
 }
 impl Frame {
+    pub fn new(state: VMState) -> Self {
+        Self { state }
+    }
+
+    pub fn get_state(&self) -> &VMState {
+        &self.state
+    }
+
     pub fn advance(&mut self) {
         self.state.pc = self.state.pc.wrapping_add(1);
     }

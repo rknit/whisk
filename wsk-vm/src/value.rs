@@ -4,7 +4,7 @@ use std::{
     ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Not, Sub},
 };
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq)]
 pub enum Value {
     Int(i64),
     Bool(bool),
