@@ -193,6 +193,9 @@ dependencies = [
 [[package]]
 name = "wsk-vm"
 version = "0.1.0"
+dependencies = [
+ "paste",
+]
 
 [[package]]
 name = "zerocopy"

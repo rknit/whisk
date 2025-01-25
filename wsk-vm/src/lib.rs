@@ -1,5 +1,6 @@
 pub mod inst;
 pub mod inst_code;
+pub mod new_vm;
 pub mod program;
 pub mod value;
 pub mod vm;
