@@ -1,17 +1,19 @@
+use core::fmt;
 use std::ops::DerefMut;
 
 use crate::Value;
 
-use super::abi::Register;
+use super::{abi::Register, inst::RunError, program::Program};
 
 const VM_REG_COUNT: usize = 32;
 const VM_STACK_LEN: usize = 8192;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct VM {
     regs: Box<[Value; VM_REG_COUNT]>,
     stack: Box<[Value; VM_STACK_LEN]>,
     frames: Vec<Frame>,
+    status: Status,
     halted: bool,
 }
 impl Default for VM {
@@ -19,22 +21,41 @@ impl Default for VM {
         Self {
             regs: Box::new([Value::Int(0); VM_REG_COUNT]),
             stack: Box::new([Value::Int(0); VM_STACK_LEN]),
-            frames: vec![Frame::new(VMState::default())],
+            frames: vec![Frame::default()],
+            status: Status::default(),
             halted: false,
         }
     }
 }
 impl VM {
-    pub fn execute(&mut self) -> Result<(), VMError> {
-        self.reset(Frame::new(VMState::default()));
+    pub fn execute(&mut self, prog: &Program) -> Result<(), RunError> {
+        self.reset(Frame::new(prog.get_entry_point(), 0, 0));
+        while !self.is_halted() {
+            self.advance(prog)?;
+        }
+        Ok(())
+    }
 
-        while !self.is_halted() {}
+    pub fn advance(&mut self, prog: &Program) -> Result<(), RunError> {
+        let func = prog
+            .get(self.get_frame().get_fi())
+            .ok_or(VMError::InvalidFunctionIndex)?;
+        let inst = func
+            .get(self.get_frame().get_pc())
+            .ok_or(VMError::InstReadOutOfBound)?;
+        inst.run(self)?;
 
+        if self.status.skip {
+            self.status.skip = false;
+        } else {
+            self.get_frame_mut().advance();
+        }
         Ok(())
     }
 
     pub fn reset(&mut self, entry_frame: Frame) {
         self.frames = vec![entry_frame];
+        self.status = Status::default();
         self.halted = false;
 
         for v in self.regs.deref_mut() {
@@ -42,22 +63,37 @@ impl VM {
         }
     }
 
+    pub fn call(&mut self, fi: usize) {
+        self.push_frame(self.get_frame().new_call(fi));
+        self.status.skip = true;
+    }
+
+    pub fn ret(&mut self) -> Result<(), VMError> {
+        self.pop_frame()
+    }
+
+    pub fn jump(&mut self, offset: isize) {
+        self.get_frame_mut().jump(offset);
+        self.status.skip = true;
+    }
+
     pub fn push_value(&mut self, v: Value) -> Result<(), VMError> {
-        self.stack[self.get_frame().state.sp] = v;
-        self.get_frame_mut().inc_stack_pointer()
+        self.stack[self.get_frame().get_sp()] = v;
+        self.get_frame_mut().inc_stack_pointer()?;
+        Ok(())
     }
 
     pub fn pop_value(&mut self) -> Result<Value, VMError> {
         let frame = self.get_frame_mut();
         frame.dec_stack_pointer()?;
-        Ok(self.stack[frame.state.sp])
+        Ok(self.stack[frame.get_sp()])
     }
 
-    pub fn push_frame(&mut self, frame: Frame) {
+    fn push_frame(&mut self, frame: Frame) {
         self.frames.push(frame);
     }
 
-    pub fn pop_frame(&mut self) -> Result<(), VMError> {
+    fn pop_frame(&mut self) -> Result<(), VMError> {
         if self.frames.len() <= 1 {
             Err(VMError::StackFrameUnderflow)
         } else {
@@ -66,11 +102,11 @@ impl VM {
         }
     }
 
-    pub fn get_frame(&self) -> &Frame {
+    fn get_frame(&self) -> &Frame {
         self.frames.last().unwrap()
     }
 
-    pub fn get_frame_mut(&mut self) -> &mut Frame {
+    fn get_frame_mut(&mut self) -> &mut Frame {
         self.frames.last_mut().unwrap()
     }
 
@@ -93,50 +129,81 @@ impl VM {
 
 #[derive(Debug)]
 pub enum VMError {
+    InvalidFunctionIndex,
+    InstReadOutOfBound,
     StackFrameUnderflow,
     StackUnderflow,
     StackOverflow,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
-pub struct VMState {
-    pub fi: usize,
-    pub pc: usize,
-    pub sp: usize,
+pub struct Status {
+    pub skip: bool,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct Frame {
-    state: VMState,
+    fi: usize,
+    pc: usize,
+    sp: usize,
 }
 impl Frame {
-    pub fn new(state: VMState) -> Self {
-        Self { state }
+    pub fn new(fi: usize, pc: usize, sp: usize) -> Self {
+        Self { fi, pc, sp }
     }
 
-    pub fn get_state(&self) -> &VMState {
-        &self.state
+    pub fn new_call(&self, fi: usize) -> Self {
+        Self {
+            fi,
+            pc: 0,
+            sp: self.sp,
+        }
     }
 
     pub fn advance(&mut self) {
-        self.state.pc = self.state.pc.wrapping_add(1);
+        self.pc = self.pc.wrapping_add(1);
     }
 
     pub fn inc_stack_pointer(&mut self) -> Result<(), VMError> {
-        self.state.sp = self.state.pc.checked_add(1).ok_or(VMError::StackOverflow)?;
+        self.sp = self.sp.checked_add(1).ok_or(VMError::StackOverflow)?;
         Ok(())
     }
 
     pub fn dec_stack_pointer(&mut self) -> Result<(), VMError> {
-        self.state.sp = self
-            .state
-            .pc
-            .checked_sub(1)
-            .ok_or(VMError::StackUnderflow)?;
+        self.sp = self.sp.checked_sub(1).ok_or(VMError::StackUnderflow)?;
         Ok(())
     }
 
     pub fn jump(&mut self, offset: isize) {
-        self.state.pc = self.state.pc.wrapping_add_signed(offset);
+        self.pc = self.pc.wrapping_add_signed(offset);
+    }
+
+    pub fn get_fi(&self) -> usize {
+        self.fi
+    }
+
+    pub fn get_pc(&self) -> usize {
+        self.pc
+    }
+
+    pub fn get_sp(&self) -> usize {
+        self.sp
+    }
+}
+
+impl fmt::Debug for VM {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "VM:")?;
+        writeln!(f, "\thalted: {:?}", self.halted)?;
+        writeln!(f, "\tstatus: {:?}", self.status)?;
+        writeln!(f, "\tregs:")?;
+        for (i, reg) in self.regs.iter().enumerate() {
+            writeln!(f, "\t\tr{}: {}", i, reg)?;
+        }
+        writeln!(f, "\tframes:")?;
+        for (i, frame) in self.frames.iter().rev().enumerate() {
+            writeln!(f, "\t\t#{}: {:?}", i, frame)?;
+        }
+        Ok(())
     }
 }

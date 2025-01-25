@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Register(usize);
 impl Register {
@@ -22,4 +24,10 @@ impl Register {
 
 pub const fn reg(index: usize) -> Register {
     Register::r(index)
+}
+
+impl Display for Register {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "r{}", self.0)
+    }
 }

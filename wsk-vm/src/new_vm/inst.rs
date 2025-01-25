@@ -1,8 +1,4 @@
-use crate::{
-    new_vm::vm::{Frame, VMState},
-    value::OpError,
-    Value,
-};
+use crate::{value::OpError, Value};
 
 use super::{
     abi::Register,
@@ -19,7 +15,8 @@ macro_utils::insts!(
         vm.halt();
         Ok(())
     },
-    PUSH: 0x01 => (vm, v: Value) {
+    PUSH: 0x01 => (vm, reg: Register) {
+        let v = *vm.get_reg(reg);
         vm.push_value(v)?;
         Ok(())
     },
@@ -30,6 +27,10 @@ macro_utils::insts!(
     },
     MOV: 0x03 => (vm, dest: Register, org: Register) {
         *vm.get_reg_mut(dest) = *vm.get_reg(org);
+        Ok(())
+    },
+    MOVV: 0x04 => (vm, dest: Register, value: Value) {
+        *vm.get_reg_mut(dest) = value;
         Ok(())
     },
 
@@ -109,7 +110,7 @@ macro_utils::insts!(
     */
 
     JMP: 0x30 => (vm, offset: isize) {
-        vm.get_frame_mut().jump(offset);
+        vm.jump(offset);
         Ok(())
     },
     JTR: 0x31 => (vm, reg: Register, offset: isize) {
@@ -117,7 +118,7 @@ macro_utils::insts!(
             return Err(OpError::InvalidTypeForOp.into());
         };
         if *v {
-            vm.get_frame_mut().jump(offset);
+            vm.jump(offset);
         }
         Ok(())
     },
@@ -126,37 +127,32 @@ macro_utils::insts!(
             return Err(OpError::InvalidTypeForOp.into());
         };
         if !(*v) {
-            vm.get_frame_mut().jump(offset);
+            vm.jump(offset);
         }
         Ok(())
     },
     CALL: 0x33 => (vm, fi: usize) {
-        let prev_state = vm.get_frame().get_state();
-        vm.push_frame(Frame::new(VMState {
-            fi,
-            pc: 0,
-            sp: prev_state.sp,
-        }));
+        vm.call(fi);
         Ok(())
     },
     RET: 0x34 => (vm) {
-        vm.pop_frame()?;
+        vm.ret()?;
         Ok(())
     },
 );
 
 #[derive(Debug)]
-pub enum InstError {
+pub enum RunError {
     VMError(VMError),
     OpError(OpError),
 }
 
-impl From<VMError> for InstError {
+impl From<VMError> for RunError {
     fn from(value: VMError) -> Self {
         Self::VMError(value)
     }
 }
-impl From<OpError> for InstError {
+impl From<OpError> for RunError {
     fn from(value: OpError) -> Self {
         Self::OpError(value)
     }
@@ -175,7 +171,7 @@ mod macro_utils {
             }
 
             impl Inst {
-                pub fn run(self, vm: &mut VM) -> Result<(), InstError> {
+                pub fn run(self, vm: &mut VM) -> Result<(), RunError> {
                     paste!{
                     match self {
                         $(Inst::$name $({ $( $param_name ),+ })? => [<run_ $name:lower _inst>] (vm, $( $($param_name),+ )? ) ),+
@@ -184,8 +180,30 @@ mod macro_utils {
                 }
             }
 
+            impl std::fmt::Display for Inst {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    let inst_name;
+                    let mut inst_str = String::new();
+
+                    paste!{
+                    match self {
+                        $(Inst::$name $({ $( $param_name ),+ })? => {
+                            inst_name = stringify!($name);
+                            $($(inst_str += ", "; inst_str += $param_name.to_string().as_str() );+ )?
+                        }),+
+                    }
+                    }
+
+                    if inst_str.len() >= 2 {
+                        write!(f, "{} {}", inst_name, &inst_str[2..])
+                    } else {
+                        write!(f, "{}", inst_name)
+                    }
+                }
+            }
+
             paste!{$(
-                fn [<run_ $name:lower _inst>] ($vm: &mut VM, $( $($param_name: $param_ty),+ )? ) -> Result<(), InstError> $body
+                fn [<run_ $name:lower _inst>] ($vm: &mut VM, $( $($param_name: $param_ty),+ )? ) -> Result<(), RunError> $body
             )*}
         };
     }
