@@ -111,11 +111,11 @@ impl VM {
     }
 
     pub fn get_reg(&self, r: Reg) -> &Value {
-        &self.regs[r.get_index() as usize]
+        &self.regs[r.index() as usize]
     }
 
     pub fn get_reg_mut(&mut self, r: Reg) -> &mut Value {
-        &mut self.regs[r.get_index() as usize]
+        &mut self.regs[r.index() as usize]
     }
 
     pub fn halt(&mut self) {
