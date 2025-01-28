@@ -1,7 +1,7 @@
-use crate::{value::OpError, Value};
+use crate::{bin_op, unary_op, value::OpError, Value};
 
 use super::{
-    abi::Register,
+    abi::Reg,
     vm::{VMError, VM},
 };
 use paste::paste;
@@ -15,21 +15,25 @@ macro_utils::insts!(
         vm.halt();
         Ok(())
     },
-    PUSH: 0x01 => (vm, reg: Register) {
+    PUSH => (vm, reg: Reg) {
         let v = *vm.get_reg(reg);
         vm.push_value(v)?;
         Ok(())
     },
-    POP: 0x02 => (vm, dest: Register) {
+    PUSHV => (vm, value: Value) {
+        vm.push_value(value)?;
+        Ok(())
+    },
+    POP => (vm, dest: Reg) {
         let v = vm.pop_value()?;
         *vm.get_reg_mut(dest) = v;
         Ok(())
     },
-    MOV: 0x03 => (vm, dest: Register, org: Register) {
+    MOV => (vm, dest: Reg, org: Reg) {
         *vm.get_reg_mut(dest) = *vm.get_reg(org);
         Ok(())
     },
-    MOVV: 0x04 => (vm, dest: Register, value: Value) {
+    MOVV => (vm, dest: Reg, value: Value) {
         *vm.get_reg_mut(dest) = value;
         Ok(())
     },
@@ -38,82 +42,45 @@ macro_utils::insts!(
     *   binary operation insts
     */
 
-    ADD: 0x10 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) + *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res?;
-        Ok(())
-    },
-    SUB: 0x11 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) - *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res?;
-        Ok(())
-    },
-    MUL: 0x12 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) * *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res?;
-        Ok(())
-    },
-    DIV: 0x13 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) / *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res?;
-        Ok(())
-    },
+    ADD => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 +? p1),
+    ADDV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 +? v:p1),
+    SUB => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 -? p1),
+    SUBV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 -? v:p1),
+    MUL => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 *? p1),
+    MULV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 *? v:p1),
+    DIV => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 /? p1),
+    DIVV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 /? v:p1),
 
-    AND: 0x14 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) & *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res?;
-        Ok(())
-    },
-    OR: 0x15 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) | *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res?;
-        Ok(())
-    },
-    CMPEQ: 0x16 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) == *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res.into();
-        Ok(())
-    },
-    CMPNE: 0x17 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) != *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res.into();
-        Ok(())
-    },
-    CMPLT: 0x18 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) < *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res.into();
-        Ok(())
-    },
-    CMPGT: 0x19 => (vm, dest: Register, p0: Register, p1: Register) {
-        let res = *vm.get_reg(p0) > *vm.get_reg(p1);
-        *vm.get_reg_mut(dest) = res.into();
-        Ok(())
-    },
+    AND => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 &? p1),
+    ANDV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 &? v:p1),
+    OR => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 |? p1),
+    ORV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 |? v:p1),
+
+    CMPEQ => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 == p1),
+    CMPEQV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 == v:p1),
+    CMPNE => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 != p1),
+    CMPNEV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 != v:p1),
+    CMPLT => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 < p1),
+    CMPLTV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 < v:p1),
+    CMPGT => (vm, dest: Reg, p0: Reg, p1: Reg) bin_op!(vm, dest, p0 > p1),
+    CMPGTV => (vm, dest: Reg, p0: Reg, p1: Value) bin_op!(vm, dest, p0 > v:p1),
 
     /*
     *   unary operation insts
     */
 
-    NOT: 0x20 => (vm, dest: Register, p0: Register) {
-        let res = !(*vm.get_reg(p0));
-        *vm.get_reg_mut(dest) = res?;
-        Ok(())
-    },
-    NEG: 0x21 => (vm, dest: Register, p0: Register) {
-        let res = -(*vm.get_reg(p0));
-        *vm.get_reg_mut(dest) = res?;
-        Ok(())
-    },
+    NOT => (vm, dest: Reg, p0: Reg) unary_op!(vm, dest, !?p0),
+    NEG => (vm, dest: Reg, p0: Reg) unary_op!(vm, dest, -?p0),
 
     /*
     *   control flow insts
     */
 
-    JMP: 0x30 => (vm, offset: isize) {
+    JMP => (vm, offset: isize) {
         vm.jump(offset);
         Ok(())
     },
-    JTR: 0x31 => (vm, reg: Register, offset: isize) {
+    JTR => (vm, reg: Reg, offset: isize) {
         let Value::Bool(v) = vm.get_reg(reg) else {
             return Err(OpError::InvalidTypeForOp.into());
         };
@@ -122,7 +89,7 @@ macro_utils::insts!(
         }
         Ok(())
     },
-    JFL: 0x32 => (vm, reg: Register, offset: isize) {
+    JFL => (vm, reg: Reg, offset: isize) {
         let Value::Bool(v) = vm.get_reg(reg) else {
             return Err(OpError::InvalidTypeForOp.into());
         };
@@ -131,11 +98,11 @@ macro_utils::insts!(
         }
         Ok(())
     },
-    CALL: 0x33 => (vm, fi: usize) {
+    CALL => (vm, fi: usize) {
         vm.call(fi);
         Ok(())
     },
-    RET: 0x34 => (vm) {
+    RET => (vm) {
         vm.ret()?;
         Ok(())
     },
@@ -162,12 +129,12 @@ mod macro_utils {
     #[macro_export]
     macro_rules! insts {
         ($(
-            $name:ident : $code:literal => ( $vm:ident $(,)? $( $($param_name:ident: $param_ty:ty),+ )? ) $body:block
+            $name:ident $(: $code:literal)? => ( $vm:ident $(,)? $( $($param_name:ident: $param_ty:ty),+ )? ) $body:expr
         ),+ $(,)?) => {
             #[derive(Debug, Clone, Copy, PartialEq, Eq)]
             #[repr(u8)]
             pub enum Inst {
-                $($name $({ $($param_name: $param_ty),+ } )? = $code),+
+                $($name $({ $($param_name: $param_ty),+ })? $(= $code)?),+
             }
 
             impl Inst {
@@ -203,10 +170,51 @@ mod macro_utils {
             }
 
             paste!{$(
-                fn [<run_ $name:lower _inst>] ($vm: &mut VM, $( $($param_name: $param_ty),+ )? ) -> Result<(), RunError> $body
+                fn [<run_ $name:lower _inst>] ($vm: &mut VM, $( $($param_name: $param_ty),+ )? ) -> Result<(), RunError> {
+                    $body
+                }
             )*}
         };
     }
 
+    #[macro_export]
+    macro_rules! bin_op {
+        ($vm:ident, $dest:ident, $p0:ident $op:tt? $p1:ident) => {{
+            let res = *$vm.get_reg($p0) $op *$vm.get_reg($p1);
+            *$vm.get_reg_mut($dest) = (res?).into();
+            Ok(())
+        }};
+
+        ($vm:ident, $dest:ident, $p0:ident $op:tt? v: $p1:ident) => {{
+            let res = *$vm.get_reg($p0) $op ($p1);
+            *$vm.get_reg_mut($dest) = (res?).into();
+            Ok(())
+        }};
+
+        ($vm:ident, $dest:ident, $p0:ident $op:tt $p1:ident) => {{
+            let res = *$vm.get_reg($p0) $op *$vm.get_reg($p1);
+            *$vm.get_reg_mut($dest) = (res).into();
+            Ok(())
+        }};
+        ($vm:ident, $dest:ident, $p0:ident $op:tt v: $p1:ident) => {{
+            let res = *$vm.get_reg($p0) $op ($p1);
+            *$vm.get_reg_mut($dest) = (res).into();
+            Ok(())
+        }};
+    }
+
+    #[macro_export]
+    macro_rules! unary_op {
+        ($vm:ident, $dest:ident, $op:tt? $p0:ident) => {{
+            let res = $op(*$vm.get_reg($p0));
+            *$vm.get_reg_mut($dest) = (res?).into();
+            Ok(())
+        }};
+    }
+
+    #[allow(unused_imports)]
+    pub use bin_op;
     pub use insts;
+    #[allow(unused_imports)]
+    pub use unary_op;
 }

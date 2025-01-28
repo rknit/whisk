@@ -10,14 +10,12 @@ fn main() -> Result<(), RunError> {
     prog.add_func(Function::from_insts([
         Inst::MOVV {
             dest: reg(0),
-            value: 5.into(),
+            value: 17.into(),
         },
-        Inst::PUSH { reg: reg(0) },
-        Inst::POP { dest: reg(6) },
-        Inst::ADD {
-            dest: reg(1),
-            p0: reg(6),
-            p1: reg(6),
+        Inst::ADDV {
+            dest: reg(0),
+            p0: reg(0),
+            p1: 5.into(),
         },
         Inst::HLT,
     ]));

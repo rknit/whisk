@@ -3,7 +3,7 @@ use std::ops::DerefMut;
 
 use crate::Value;
 
-use super::{abi::Register, inst::RunError, program::Program};
+use super::{abi::Reg, inst::RunError, program::Program};
 
 const VM_REG_COUNT: usize = 32;
 const VM_STACK_LEN: usize = 8192;
@@ -110,12 +110,12 @@ impl VM {
         self.frames.last_mut().unwrap()
     }
 
-    pub fn get_reg(&self, r: Register) -> &Value {
-        &self.regs[r.get_index()]
+    pub fn get_reg(&self, r: Reg) -> &Value {
+        &self.regs[r.get_index() as usize]
     }
 
-    pub fn get_reg_mut(&mut self, r: Register) -> &mut Value {
-        &mut self.regs[r.get_index()]
+    pub fn get_reg_mut(&mut self, r: Reg) -> &mut Value {
+        &mut self.regs[r.get_index() as usize]
     }
 
     pub fn halt(&mut self) {
