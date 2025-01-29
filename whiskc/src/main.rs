@@ -15,7 +15,7 @@ fn main() {
     };
     // dbg!(&ast);
 
-    let Some(_ast) = compl.resolve_ast() else {
+    let Some(_ast) = compl.resolve_module() else {
         return;
     };
     // dbg!(&ast);

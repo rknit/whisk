@@ -11,7 +11,7 @@ pub struct Compilation {
     name: String,
     path: PathBuf,
     ast: Option<AST>,
-    resolved_ast: Option<Module>,
+    module: Option<Module>,
 }
 impl Compilation {
     pub fn new(path: PathBuf) -> Self {
@@ -24,7 +24,7 @@ impl Compilation {
                 .to_string(),
             path,
             ast: None,
-            resolved_ast: None,
+            module: None,
         }
     }
 
@@ -39,22 +39,22 @@ impl Compilation {
         self.ast.as_ref()
     }
 
-    pub fn resolve_ast(&mut self) -> Option<&Module> {
+    pub fn resolve_module(&mut self) -> Option<&Module> {
         let Some(ast) = &self.ast else {
             return None;
         };
-        self.resolved_ast = match lowering::resolve(ast) {
+        self.module = match lowering::resolve(ast) {
             Ok(ast) => Some(ast),
             Err(errs) => {
                 dbg!(&errs);
                 return None;
             }
         };
-        self.resolved_ast.as_ref()
+        self.module.as_ref()
     }
 
     pub fn codegen(&self) {
-        let Some(ast) = &self.resolved_ast else {
+        let Some(ast) = &self.module else {
             return;
         };
 
