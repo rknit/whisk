@@ -3,7 +3,7 @@ use crate::{
         self,
         location::{Locatable, Located},
     },
-    ast_resolved::{
+    lowering::{
         errors::{IdentResolveError, TypeResolveError, ValueResolveError},
         nodes::{
             expr::{

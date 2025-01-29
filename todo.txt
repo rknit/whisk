@@ -1,4 +1,7 @@
+IN PROGRESS:
 - rework SymbolTable (again)
+
+TODO:
 - type struct decl
 - type decl
 - alias type

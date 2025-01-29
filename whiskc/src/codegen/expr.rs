@@ -2,7 +2,7 @@ use wsk_vm::{Cmp, Inst};
 
 use crate::{
     ast::parsing::token::Operator,
-    ast_resolved::nodes::{
+    lowering::nodes::{
         expr::{
             BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr,
             UnaryExpr,

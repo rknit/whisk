@@ -1,14 +1,14 @@
 use crate::{
     ast::AST,
-    ast_resolved::{
+    lowering::{
         errors::ResolveError,
-        nodes::{ast::ResolvedAST, item::Item},
+        nodes::{item::Item, module::Module},
         Resolve, ResolveContext,
     },
     symbol_table::SymbolTable,
 };
 
-pub fn resolve(ast: &AST) -> Result<ResolvedAST, Vec<ResolveError>> {
+pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
     let mut global_table = SymbolTable::default();
     let mut ctx = ResolveContext::new(&mut global_table);
 
@@ -38,7 +38,7 @@ pub fn resolve(ast: &AST) -> Result<ResolvedAST, Vec<ResolveError>> {
     }
 
     ctx.finalize()?;
-    Ok(ResolvedAST {
+    Ok(Module {
         sym_table: global_table,
         items,
     })

@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use crate::{
     ast::location::{Located, Span},
-    ast_resolved::nodes::ty::Type,
+    lowering::nodes::ty::Type,
 };
 
 pub type SymbolID = uuid::Uuid;

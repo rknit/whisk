@@ -4,12 +4,11 @@ use crate::symbol_table::{Symbol, SymbolID, SymbolTable};
 
 pub mod errors;
 pub mod nodes;
-pub mod passes;
 mod resolve;
 pub mod visit;
 
-pub use nodes::ast::ResolvedAST;
-pub use resolve::ast::resolve;
+pub use nodes::module::Module;
+pub use resolve::module::resolve;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum ControlFlow {

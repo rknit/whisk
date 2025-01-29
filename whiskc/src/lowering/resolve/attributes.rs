@@ -1,6 +1,6 @@
 use crate::{
     ast::{location::Located, nodes::attributes::Attributes, parsing::token::Keyword},
-    ast_resolved::{errors::IdentResolveError, ResolveContext},
+    lowering::{errors::IdentResolveError, ResolveContext},
     symbol_table::SymbolAttribute,
 };
 

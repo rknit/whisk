@@ -1,6 +1,6 @@
 use std::env;
 
-use whiskc::Module;
+use whiskc::Compilation;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -9,17 +9,16 @@ fn main() {
         return;
     }
 
-    let mut module = Module::new(args[1].clone().into());
-    let Some(ast) = module.parse_ast() else {
+    let mut compl = Compilation::new(args[1].clone().into());
+    let Some(_ast) = compl.parse_ast() else {
         return;
     };
-    dbg!(&ast);
+    // dbg!(&ast);
 
-    module.resolve_ast();
-    let Some(ast) = module.run_passes() else {
+    let Some(_ast) = compl.resolve_ast() else {
         return;
     };
-    dbg!(&ast);
+    // dbg!(&ast);
 
-    module.codegen();
+    compl.codegen();
 }

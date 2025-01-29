@@ -3,7 +3,7 @@ use wsk_vm::Inst;
 use super::{expr::ExprCodegen, Codegen};
 
 use crate::{
-    ast_resolved::nodes::{self as ast, ty::Type},
+    lowering::nodes::{self as ast, ty::Type},
     symbol_table::Symbol,
 };
 

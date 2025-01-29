@@ -2,18 +2,18 @@ use std::{fs, path::PathBuf};
 
 use crate::{
     ast::{self, AST},
-    ast_resolved::{self, passes::run_passes, ResolvedAST},
     codegen::codegen_wsk_vm,
+    lowering::{self, Module},
 };
 
 #[derive(Debug)]
-pub struct Module {
+pub struct Compilation {
     name: String,
     path: PathBuf,
     ast: Option<AST>,
-    resolved_ast: Option<ResolvedAST>,
+    resolved_ast: Option<Module>,
 }
-impl Module {
+impl Compilation {
     pub fn new(path: PathBuf) -> Self {
         Self {
             name: path
@@ -39,25 +39,17 @@ impl Module {
         self.ast.as_ref()
     }
 
-    pub fn resolve_ast(&mut self) -> Option<&ResolvedAST> {
+    pub fn resolve_ast(&mut self) -> Option<&Module> {
         let Some(ast) = &self.ast else {
             return None;
         };
-        self.resolved_ast = match ast_resolved::resolve(ast) {
+        self.resolved_ast = match lowering::resolve(ast) {
             Ok(ast) => Some(ast),
             Err(errs) => {
                 dbg!(&errs);
                 return None;
             }
         };
-        self.resolved_ast.as_ref()
-    }
-
-    pub fn run_passes(&mut self) -> Option<&ResolvedAST> {
-        let Some(ast) = &mut self.resolved_ast else {
-            return None;
-        };
-        run_passes(ast);
         self.resolved_ast.as_ref()
     }
 

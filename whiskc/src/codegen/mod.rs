@@ -6,9 +6,9 @@ use wsk_vm::{
 };
 
 use crate::{
-    ast_resolved::{
+    lowering::{
         nodes::{item::Item, ty::Type},
-        ResolvedAST,
+        Module,
     },
     symbol_table::{Symbol, SymbolID, SymbolTable},
 };
@@ -17,7 +17,7 @@ mod expr;
 mod func;
 mod stmt;
 
-pub fn codegen_wsk_vm(ast: &ResolvedAST) -> Result<Program, CodegenError> {
+pub fn codegen_wsk_vm(ast: &Module) -> Result<Program, CodegenError> {
     let mut ctx = Context::new(&ast.sym_table);
     let mut has_entry = false;
 

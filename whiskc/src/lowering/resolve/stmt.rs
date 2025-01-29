@@ -1,6 +1,6 @@
 use crate::{
     ast::location::{Locatable, Located},
-    ast_resolved::{
+    lowering::{
         errors::{IdentResolveError, TypeResolveError},
         nodes::stmt::{ExprStmt, LetStmt, Stmt},
         ControlFlow, Resolve, ResolveContext,

@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::ast::location::Located;
-use crate::ast_resolved::ResolveContext;
-use crate::ast_resolved::{nodes::ty::Type, Resolve};
+use crate::lowering::ResolveContext;
+use crate::lowering::{nodes::ty::Type, Resolve};
 
 use crate::ast::nodes::ty as ast_ty;
 

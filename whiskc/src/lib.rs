@@ -1,7 +1,7 @@
 pub mod ast;
-pub mod ast_resolved;
 pub mod codegen;
-pub mod module;
+pub mod compile;
+pub mod lowering;
 pub mod symbol_table;
 
-pub use module::Module;
+pub use compile::Compilation;

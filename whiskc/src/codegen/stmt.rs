@@ -1,6 +1,6 @@
 use wsk_vm::Inst;
 
-use crate::ast_resolved::nodes::{
+use crate::lowering::nodes::{
     stmt::{ExprStmt, LetStmt, Stmt},
     ty::Type,
 };

@@ -8,12 +8,12 @@ use super::super::{
         item::Item,
         stmt::{ExprStmt, LetStmt, Stmt},
     },
-    ResolvedAST,
+    Module,
 };
 
 pub trait Visit: Sized {
-    fn visit_ast(&mut self, node: &ResolvedAST) {
-        visit_ast(self, node);
+    fn visit_module(&mut self, node: &Module) {
+        visit_module(self, node);
     }
 
     fn visit_binary_expr(&mut self, node: &BinaryExpr) {
@@ -89,7 +89,7 @@ pub trait Visit: Sized {
     }
 }
 
-pub fn visit_ast(v: &mut impl Visit, node: &ResolvedAST) {
+pub fn visit_module(v: &mut impl Visit, node: &Module) {
     for item in &node.items {
         v.visit_item(item);
     }
