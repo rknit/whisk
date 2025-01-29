@@ -5,4 +5,4 @@ pub mod lowering;
 mod symbol;
 pub mod symbol_table;
 
-pub use compile::Compilation;
+pub use compile::compile;

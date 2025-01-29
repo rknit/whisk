@@ -1,80 +1,58 @@
 use std::{fs, path::PathBuf};
 
-use crate::{
-    ast::{self, AST},
-    codegen::codegen_wsk_vm,
-    lowering::{self, Module},
-};
+use crate::{ast, codegen::codegen_wsk_vm, lowering};
 
-#[derive(Debug)]
-pub struct Compilation {
-    name: String,
-    path: PathBuf,
-    ast: Option<AST>,
-    module: Option<Module>,
+#[derive(Default)]
+pub struct CompileSwitch {
+    pub do_parse_ast: bool,
+    pub debug_ast: bool,
+    pub do_resolve_module: bool,
+    pub debug_module: bool,
+    pub do_codegen: bool,
 }
-impl Compilation {
-    pub fn new(path: PathBuf) -> Self {
-        Self {
-            name: path
-                .file_stem()
-                .expect("file name")
-                .to_str()
-                .expect("valid string")
-                .to_string(),
-            path,
-            ast: None,
-            module: None,
-        }
-    }
 
-    pub fn parse_ast(&mut self) -> Option<&AST> {
-        self.ast = match ast::parse(&self.path) {
-            Ok(ast) => Some(ast),
-            Err(errors) => {
-                dbg!(&errors);
-                return None;
-            }
-        };
-        self.ast.as_ref()
+pub fn compile(source_path: PathBuf, switches: CompileSwitch) {
+    if !switches.do_parse_ast {
+        return;
     }
-
-    pub fn resolve_module(&mut self) -> Option<&Module> {
-        let Some(ast) = &self.ast else {
-            return None;
-        };
-        self.module = match lowering::resolve(ast) {
-            Ok(ast) => Some(ast),
-            Err(errs) => {
-                dbg!(&errs);
-                return None;
-            }
-        };
-        self.module.as_ref()
-    }
-
-    pub fn codegen(&self) {
-        let Some(ast) = &self.module else {
+    let ast = match ast::parse(&source_path) {
+        Ok(ast) => ast,
+        Err(errors) => {
+            dbg!(&errors);
             return;
-        };
-
-        let prog = match codegen_wsk_vm(ast) {
-            Ok(p) => p,
-            Err(e) => {
-                eprintln!("{:?}", e);
-                return;
-            }
-        };
-
-        let mut bin_path = self.path.clone();
-        bin_path.set_extension("wc");
-
-        println!("wrote binary to {}", bin_path.display());
-        let bin = prog.to_bin();
-        fs::write(bin_path, bin).unwrap();
+        }
+    };
+    if switches.debug_ast {
+        dbg!(&ast);
     }
 
-    pub fn get_name(&self) -> &str {
-        &self.name
+    if !switches.do_resolve_module {
+        return;
     }
+    let module = match lowering::resolve(&ast) {
+        Ok(module) => module,
+        Err(errs) => {
+            dbg!(&errs);
+            return;
+        }
+    };
+    if switches.debug_module {
+        dbg!(&module);
+    }
+
+    if !switches.do_codegen {
+        return;
+    }
+    let prog = match codegen_wsk_vm(&module) {
+        Ok(prog) => prog,
+        Err(e) => {
+            eprintln!("{:?}", e);
+            return;
+        }
+    };
+
+    let mut out_path = source_path.clone();
+    out_path.set_extension("wc");
+    println!("wrote binary to {}", out_path.display());
+    fs::write(out_path, prog.to_bin()).unwrap();
 }

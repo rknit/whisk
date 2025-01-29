@@ -1,6 +1,6 @@
 #![allow(dead_code)]
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct SymbolTable<'table> {
     globals: Vec<GlobalSymbol>,
     locals: Vec<LocalSymbol<'table>>,
@@ -58,7 +58,7 @@ impl<'table> SymbolTable<'table> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum GlobalSymbol {
     Function(Function),
 }
@@ -68,13 +68,13 @@ impl From<Function> for GlobalSymbol {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum LocalSymbol<'table> {
     Block(Block<'table>),
     Variable(Variable<'table>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Function {
     name: String,
     params: Vec<Param>,
@@ -106,7 +106,7 @@ pub struct Param {
     pub name: String,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Block<'table> {
     index: usize, // added an index field to identify blocks
     func: &'table Function,
@@ -139,7 +139,7 @@ impl<'table> Block<'table> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Variable<'table> {
     block: &'table Block<'table>,
     name: String,

@@ -18,7 +18,7 @@ mod func;
 mod stmt;
 
 pub fn codegen_wsk_vm(ast: &Module) -> Result<Program, CodegenError> {
-    let mut ctx = Context::new(&ast.sym_table);
+    let mut ctx = Context::new(&ast.sym_table_old);
     let mut has_entry = false;
 
     for item in &ast.items {
@@ -28,7 +28,7 @@ pub fn codegen_wsk_vm(ast: &Module) -> Result<Program, CodegenError> {
         let fi = ctx.prog.add_func(Function::default());
         ctx.add_fi(func.sym_id, fi);
 
-        let Symbol::Function(func_sym) = ast.sym_table.get_symbol(func.sym_id).unwrap() else {
+        let Symbol::Function(func_sym) = ast.sym_table_old.get_symbol(func.sym_id).unwrap() else {
             unreachable!();
         };
         if func_sym.get_name() == "main" {

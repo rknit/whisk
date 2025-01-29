@@ -1,6 +1,6 @@
 use std::env;
 
-use whiskc::Compilation;
+use whiskc::compile::{self, CompileSwitch};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -9,16 +9,14 @@ fn main() {
         return;
     }
 
-    let mut compl = Compilation::new(args[1].clone().into());
-    let Some(_ast) = compl.parse_ast() else {
-        return;
-    };
-    // dbg!(&ast);
-
-    let Some(_ast) = compl.resolve_module() else {
-        return;
-    };
-    // dbg!(&ast);
-
-    compl.codegen();
+    compile::compile(
+        args[1].clone().into(),
+        CompileSwitch {
+            do_parse_ast: true,
+            debug_ast: false,
+            do_resolve_module: true,
+            debug_module: false,
+            do_codegen: true,
+        },
+    )
 }
