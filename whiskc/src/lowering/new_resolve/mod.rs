@@ -24,11 +24,11 @@ pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
     }
 }
 
-/// Track trait records the symbols into the symbol table, but does not resolve them immediately.
+/// Record trait records the symbols into the symbol table, but does not resolve them immediately.
 /// It is mainly for pre-declaring global items, so that they can refer to other global items that are declared later in
 /// the source code.
-trait Track<Arg = (), R = ()> {
-    fn track(&self, ctx: &mut ResolveContext, arg: Arg) -> R;
+trait Record<Arg = (), R = ()> {
+    fn record(&self, ctx: &mut ResolveContext, arg: Arg) -> R;
 }
 
 /// Resolve trait should validate the semantic of the AST and its nodes, and report errors if found
