@@ -6,22 +6,117 @@ use crate::interner::StringInterner;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FuncId(u64);
+impl<'a> FuncId {
+    pub fn sym(&self, table: &'a mut SymbolTable) -> FuncSymbol<'a> {
+        FuncSymbol { table, id: *self }
+    }
+}
 impl From<u64> for FuncId {
     fn from(value: u64) -> Self {
         Self(value)
     }
 }
 
+pub struct FuncSymbol<'a> {
+    table: &'a mut SymbolTable,
+    id: FuncId,
+}
+impl<'a> FuncSymbol<'a> {
+    fn get(&self) -> &Function {
+        self.table.funcs.get(&self.id).unwrap()
+    }
+
+    fn get_mut(&mut self) -> &mut Function {
+        self.table.funcs.get_mut(&self.id).unwrap()
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.get().name
+    }
+
+    pub fn set_param_name(&mut self, index: usize, name: String) -> Option<&mut Self> {
+        self.get_mut().params.get_mut(index)?.name = name;
+        Some(self)
+    }
+
+    pub fn get_param(&self, index: usize) -> Option<&Param> {
+        self.get().params.get(index)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BlockId(u64);
+impl<'a> BlockId {
+    pub fn sym(&self, table: &'a mut SymbolTable) -> BlockSymbol<'a> {
+        BlockSymbol { table, id: *self }
+    }
+}
 impl From<u64> for BlockId {
     fn from(value: u64) -> Self {
         Self(value)
     }
 }
 
+pub struct BlockSymbol<'a> {
+    table: &'a mut SymbolTable,
+    id: BlockId,
+}
+impl BlockSymbol<'_> {
+    fn get(&self) -> &Block {
+        self.table.blocks.get(&self.id).unwrap()
+    }
+
+    fn get_mut(&mut self) -> &mut Block {
+        self.table.blocks.get_mut(&self.id).unwrap()
+    }
+
+    pub fn set_parent_block(&mut self, block: BlockId) -> &mut Self {
+        assert!(
+            self.id == block,
+            "cannot assign the block itself as its parent block"
+        );
+        self.get_mut().parent_block = Some(block);
+        self
+    }
+
+    pub fn get_function(&self) -> FuncId {
+        self.get().func
+    }
+
+    pub fn get_id(&self) -> BlockId {
+        self.id
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct VarId(BlockId, u64);
+impl<'a> VarId {
+    pub fn sym(&self, table: &'a mut SymbolTable) -> VarSymbol<'a> {
+        VarSymbol { table, id: *self }
+    }
+}
+
+pub struct VarSymbol<'a> {
+    table: &'a mut SymbolTable,
+    id: VarId,
+}
+impl VarSymbol<'_> {
+    fn get(&self) -> &Variable {
+        self.table.vars.get(&self.id).unwrap()
+    }
+
+    fn get_mut(&mut self) -> &mut Variable {
+        self.table.vars.get_mut(&self.id).unwrap()
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.get().name
+    }
+
+    pub fn get_block(&self) -> BlockId {
+        self.get().block
+    }
+}
 
 #[derive(Debug, Default, Clone)]
 pub struct SymbolTable {
@@ -39,14 +134,27 @@ impl SymbolTable {
         if self.funcs.contains_key(&fid) {
             return None;
         }
-        self.funcs.insert(fid, Function::new(name, arity));
+        self.funcs.insert(
+            fid,
+            Function {
+                name,
+                params: vec![Param::default(); arity],
+            },
+        );
         Some(fid)
     }
 
     pub fn new_block(&mut self, parent_func: FuncId) -> BlockId {
         let bid: BlockId = self.blk_counter.into();
         self.blk_counter += 1;
-        self.blocks.insert(bid, Block::new(bid, parent_func));
+        self.blocks.insert(
+            bid,
+            Block {
+                id: bid,
+                func: parent_func,
+                parent_block: None,
+            },
+        );
         bid
     }
 
@@ -63,7 +171,13 @@ impl SymbolTable {
         if self.get_block(parent_block).is_none() || self.vars.contains_key(&vid) {
             return None;
         }
-        self.vars.insert(vid, Variable::new(name, parent_block));
+        self.vars.insert(
+            vid,
+            Variable {
+                block: parent_block,
+                name,
+            },
+        );
         Some(vid)
     }
 }
@@ -72,27 +186,6 @@ impl SymbolTable {
 pub struct Function {
     name: String,
     params: Vec<Param>,
-}
-impl Function {
-    fn new(name: String, arity: usize) -> Self {
-        Self {
-            name,
-            params: vec![Param::default(); arity],
-        }
-    }
-
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn set_param_name(&mut self, index: usize, name: String) -> Option<&mut Self> {
-        self.params.get_mut(index)?.name = name;
-        Some(self)
-    }
-
-    pub fn get_param(&self, index: usize) -> Option<&Param> {
-        self.params.get(index)
-    }
 }
 
 #[derive(Debug, Default, Clone)]
@@ -106,51 +199,9 @@ pub struct Block {
     func: FuncId,
     parent_block: Option<BlockId>,
 }
-impl Block {
-    fn new(id: BlockId, parent_func: FuncId) -> Self {
-        Self {
-            id,
-            func: parent_func,
-            parent_block: None,
-        }
-    }
-
-    pub fn set_parent_block(&mut self, block: BlockId) -> &mut Self {
-        assert!(
-            self.id == block,
-            "cannot assign the block itself as its parent block"
-        );
-        self.parent_block = Some(block);
-        self
-    }
-
-    pub fn get_function(&self) -> FuncId {
-        self.func
-    }
-
-    pub fn get_id(&self) -> BlockId {
-        self.id
-    }
-}
 
 #[derive(Debug, Clone)]
 pub struct Variable {
     block: BlockId,
     name: String,
-}
-impl Variable {
-    fn new(name: String, parent_block: BlockId) -> Self {
-        Self {
-            block: parent_block,
-            name,
-        }
-    }
-
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    pub fn get_block(&self) -> BlockId {
-        self.block
-    }
 }
