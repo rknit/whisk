@@ -1,4 +1,5 @@
 pub mod errors;
+mod new_resolve;
 pub mod nodes;
 mod resolve;
 pub mod visit;

@@ -195,7 +195,7 @@ pub struct Param {
 
 #[derive(Debug, Clone)]
 pub struct Block {
-    id: BlockId, // added an index field to identify blocks
+    id: BlockId, // added an id field to identify the block
     func: FuncId,
     parent_block: Option<BlockId>,
 }
