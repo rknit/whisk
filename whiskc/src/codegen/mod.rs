@@ -10,7 +10,7 @@ use crate::{
         nodes::{item::Item, ty::Type},
         Module,
     },
-    symbol_table::{Symbol, SymbolID, SymbolTable},
+    old_symbol_table::{Symbol, SymbolID, SymbolTable},
 };
 
 mod expr;

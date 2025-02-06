@@ -1,7 +1,7 @@
 use crate::{
     ast::{location::Located, nodes::attributes::Attributes, parsing::token::Keyword},
     lowering::errors::IdentResolveError,
-    symbol_table::SymbolAttribute,
+    old_symbol_table::SymbolAttribute,
 };
 
 use super::ResolveContext;

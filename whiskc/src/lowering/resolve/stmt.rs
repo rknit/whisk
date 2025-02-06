@@ -4,7 +4,7 @@ use crate::{
         errors::{IdentResolveError, TypeResolveError},
         nodes::stmt::{ExprStmt, LetStmt, Stmt},
     },
-    symbol_table::VarSymbol,
+    old_symbol_table::VarSymbol,
 };
 
 use crate::ast::nodes::stmt as ast_stmt;

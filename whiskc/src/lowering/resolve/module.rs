@@ -5,14 +5,14 @@ use crate::{
         nodes::{item::Item, module::Module},
         resolve::Resolve,
     },
-    symbol,
-    symbol_table::SymbolTable,
+    old_symbol_table::SymbolTable,
+    symbol_table,
 };
 
 use super::ResolveContext;
 
 pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
-    let sym_table = symbol::SymbolTable::default();
+    let sym_table = symbol_table::SymbolTable::default();
 
     let mut global_table = SymbolTable::default();
     let mut ctx = ResolveContext::new(&mut global_table);

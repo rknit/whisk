@@ -1,6 +1,6 @@
 use core::mem::discriminant;
 
-use crate::symbol_table::{SymbolID, SymbolTable};
+use crate::old_symbol_table::{SymbolID, SymbolTable};
 
 #[derive(Debug, Clone)]
 pub struct TypeDecl(pub SymbolID);

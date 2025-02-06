@@ -3,7 +3,7 @@ use crate::{
         location::{Located, Span},
         parsing::token::Operator,
     },
-    symbol_table::{SymbolAttribute, SymbolKind},
+    old_symbol_table::{SymbolAttribute, SymbolKind},
 };
 
 use super::nodes::ty::Type;

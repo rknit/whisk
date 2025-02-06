@@ -1,4 +1,4 @@
-use crate::{ast::location::Located, symbol_table::SymbolID};
+use crate::{ast::location::Located, old_symbol_table::SymbolID};
 
 use super::{expr::Expr, ty::Type};
 

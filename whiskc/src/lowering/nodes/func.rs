@@ -1,4 +1,4 @@
-use crate::symbol_table::SymbolID;
+use crate::old_symbol_table::SymbolID;
 
 use super::expr::BlockExpr;
 

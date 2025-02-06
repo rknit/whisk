@@ -11,7 +11,7 @@ use crate::{
             ty::Type,
         },
     },
-    symbol_table::{FuncSymbol, Symbol, SymbolAttribute, SymbolID, SymbolKind, VarSymbol},
+    old_symbol_table::{FuncSymbol, Symbol, SymbolAttribute, SymbolID, SymbolKind, VarSymbol},
 };
 
 use super::{

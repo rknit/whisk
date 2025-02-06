@@ -13,7 +13,7 @@ use crate::{
             ty::Type,
         },
     },
-    symbol_table::Symbol,
+    old_symbol_table::Symbol,
 };
 
 use ast::nodes::expr as ast_expr;

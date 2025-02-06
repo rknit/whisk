@@ -1,4 +1,4 @@
-use crate::{ast::parsing::token::Operator, symbol_table::SymbolID};
+use crate::{ast::parsing::token::Operator, old_symbol_table::SymbolID};
 
 use super::{stmt::Stmt, ty::Type};
 

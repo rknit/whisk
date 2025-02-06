@@ -1,4 +1,4 @@
-use crate::{ast::AST, symbol::SymbolTable};
+use crate::{ast::AST, symbol_table::SymbolTable};
 
 use super::{errors::ResolveError, Module};
 

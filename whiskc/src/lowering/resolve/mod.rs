@@ -1,4 +1,4 @@
-use crate::symbol_table::{Symbol, SymbolID, SymbolTable};
+use crate::old_symbol_table::{Symbol, SymbolID, SymbolTable};
 
 use super::errors::ResolveError;
 

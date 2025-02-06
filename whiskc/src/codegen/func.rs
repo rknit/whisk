@@ -4,7 +4,7 @@ use super::{expr::ExprCodegen, Codegen};
 
 use crate::{
     lowering::nodes::{self as ast, ty::Type},
-    symbol_table::Symbol,
+    old_symbol_table::Symbol,
 };
 
 impl Codegen for ast::func::Function {
