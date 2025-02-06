@@ -2,13 +2,16 @@
 
 use std::collections::HashMap;
 
-use crate::interner::StringInterner;
+use crate::{
+    interner::StringInterner,
+    symbol::{BlockSymbol, FuncSymbol, VarSymbol},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FuncId(u64);
 impl<'a> FuncId {
     pub fn sym(&self, table: &'a mut SymbolTable) -> FuncSymbol<'a> {
-        FuncSymbol { table, id: *self }
+        FuncSymbol::new(table, *self)
     }
 }
 impl From<u64> for FuncId {
@@ -17,38 +20,11 @@ impl From<u64> for FuncId {
     }
 }
 
-pub struct FuncSymbol<'a> {
-    table: &'a mut SymbolTable,
-    id: FuncId,
-}
-impl<'a> FuncSymbol<'a> {
-    fn get(&self) -> &Function {
-        self.table.funcs.get(&self.id).unwrap()
-    }
-
-    fn get_mut(&mut self) -> &mut Function {
-        self.table.funcs.get_mut(&self.id).unwrap()
-    }
-
-    pub fn get_name(&self) -> &str {
-        &self.get().name
-    }
-
-    pub fn set_param_name(&mut self, index: usize, name: String) -> Option<&mut Self> {
-        self.get_mut().params.get_mut(index)?.name = name;
-        Some(self)
-    }
-
-    pub fn get_param(&self, index: usize) -> Option<&Param> {
-        self.get().params.get(index)
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct BlockId(u64);
 impl<'a> BlockId {
     pub fn sym(&self, table: &'a mut SymbolTable) -> BlockSymbol<'a> {
-        BlockSymbol { table, id: *self }
+        BlockSymbol::new(table, *self)
     }
 }
 impl From<u64> for BlockId {
@@ -57,74 +33,21 @@ impl From<u64> for BlockId {
     }
 }
 
-pub struct BlockSymbol<'a> {
-    table: &'a mut SymbolTable,
-    id: BlockId,
-}
-impl BlockSymbol<'_> {
-    fn get(&self) -> &Block {
-        self.table.blocks.get(&self.id).unwrap()
-    }
-
-    fn get_mut(&mut self) -> &mut Block {
-        self.table.blocks.get_mut(&self.id).unwrap()
-    }
-
-    pub fn set_parent_block(&mut self, block: BlockId) -> &mut Self {
-        assert!(
-            self.id == block,
-            "cannot assign the block itself as its parent block"
-        );
-        self.get_mut().parent_block = Some(block);
-        self
-    }
-
-    pub fn get_function(&self) -> FuncId {
-        self.get().func
-    }
-
-    pub fn get_id(&self) -> BlockId {
-        self.id
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct VarId(BlockId, u64);
 impl<'a> VarId {
     pub fn sym(&self, table: &'a mut SymbolTable) -> VarSymbol<'a> {
-        VarSymbol { table, id: *self }
-    }
-}
-
-pub struct VarSymbol<'a> {
-    table: &'a mut SymbolTable,
-    id: VarId,
-}
-impl VarSymbol<'_> {
-    fn get(&self) -> &Variable {
-        self.table.vars.get(&self.id).unwrap()
-    }
-
-    fn get_mut(&mut self) -> &mut Variable {
-        self.table.vars.get_mut(&self.id).unwrap()
-    }
-
-    pub fn get_name(&self) -> &str {
-        &self.get().name
-    }
-
-    pub fn get_block(&self) -> BlockId {
-        self.get().block
+        VarSymbol::new(table, *self)
     }
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct SymbolTable {
-    funcs: HashMap<FuncId, Function>,
-    blocks: HashMap<BlockId, Block>,
-    vars: HashMap<VarId, Variable>,
-    interner: StringInterner,
-    blk_counter: u64,
+    pub(super) funcs: HashMap<FuncId, Function>,
+    pub(super) blocks: HashMap<BlockId, Block>,
+    pub(super) vars: HashMap<VarId, Variable>,
+    pub(super) interner: StringInterner,
+    pub(super) blk_counter: u64,
 }
 impl SymbolTable {
     /// Add the function to the function symbol table, returning its id if there is no name collision.
@@ -184,8 +107,8 @@ impl SymbolTable {
 
 #[derive(Debug, Clone)]
 pub struct Function {
-    name: String,
-    params: Vec<Param>,
+    pub(super) name: String,
+    pub(super) params: Vec<Param>,
 }
 
 #[derive(Debug, Default, Clone)]
@@ -195,13 +118,13 @@ pub struct Param {
 
 #[derive(Debug, Clone)]
 pub struct Block {
-    id: BlockId, // added an id field to identify the block
-    func: FuncId,
-    parent_block: Option<BlockId>,
+    pub(super) id: BlockId, // added an id field to identify the block
+    pub(super) func: FuncId,
+    pub(super) parent_block: Option<BlockId>,
 }
 
 #[derive(Debug, Clone)]
 pub struct Variable {
-    block: BlockId,
-    name: String,
+    pub(super) block: BlockId,
+    pub(super) name: String,
 }

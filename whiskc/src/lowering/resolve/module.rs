@@ -6,13 +6,13 @@ use crate::{
         resolve::Resolve,
     },
     old_symbol_table::SymbolTable,
-    symbol_table,
+    symbol,
 };
 
 use super::ResolveContext;
 
 pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
-    let sym_table = symbol_table::SymbolTable::default();
+    let sym_table = symbol::SymbolTable::default();
 
     let mut global_table = SymbolTable::default();
     let mut ctx = ResolveContext::new(&mut global_table);
