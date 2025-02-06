@@ -3,14 +3,16 @@ use crate::{
     lowering::{
         errors::{IdentResolveError, TypeResolveError},
         nodes::stmt::{ExprStmt, LetStmt, Stmt},
-        ControlFlow, Resolve, ResolveContext,
     },
     symbol_table::VarSymbol,
 };
 
 use crate::ast::nodes::stmt as ast_stmt;
 
-use super::expr::{ExprFlow, ExprResolve};
+use super::{
+    expr::{ExprFlow, ExprResolve},
+    ControlFlow, Resolve, ResolveContext,
+};
 
 pub trait StmtResolve<T> {
     fn resolve(&self, ctx: &mut ResolveContext) -> (Option<T>, ControlFlow);

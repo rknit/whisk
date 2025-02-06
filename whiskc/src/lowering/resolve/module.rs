@@ -3,11 +3,13 @@ use crate::{
     lowering::{
         errors::ResolveError,
         nodes::{item::Item, module::Module},
-        Resolve, ResolveContext,
+        resolve::Resolve,
     },
     symbol,
     symbol_table::SymbolTable,
 };
+
+use super::ResolveContext;
 
 pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
     let sym_table = symbol::SymbolTable::default();

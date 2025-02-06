@@ -1,8 +1,10 @@
 use crate::{
     ast::{location::Located, nodes::attributes::Attributes, parsing::token::Keyword},
-    lowering::{errors::IdentResolveError, ResolveContext},
+    lowering::errors::IdentResolveError,
     symbol_table::SymbolAttribute,
 };
+
+use super::ResolveContext;
 
 impl Attributes {
     pub(in super::super) fn resolve(

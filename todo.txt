@@ -1,5 +1,7 @@
 IN PROGRESS:
 - rework SymbolTable (again)
+  - extend visit trait to handle return value and arguments
+  - integrate into lowering using visit trait
 
 TODO:
 - type struct decl

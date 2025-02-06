@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 
 use crate::ast::location::Located;
-use crate::lowering::ResolveContext;
-use crate::lowering::{nodes::ty::Type, Resolve};
+use crate::lowering::nodes::ty::Type;
 
 use crate::ast::nodes::ty as ast_ty;
+
+use super::{Resolve, ResolveContext};
 
 impl Resolve<Type> for ast_ty::Type {
     fn resolve(&self, ctx: &mut ResolveContext) -> Option<Type> {

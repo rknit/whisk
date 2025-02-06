@@ -10,12 +10,14 @@ use crate::{
             func::{ExternFunction, Function},
             ty::Type,
         },
-        ControlFlow, Resolve, ResolveContext,
     },
     symbol_table::{FuncSymbol, Symbol, SymbolAttribute, SymbolID, SymbolKind, VarSymbol},
 };
 
-use super::expr::{ExprFlow, ExprResolve};
+use super::{
+    expr::{ExprFlow, ExprResolve},
+    ControlFlow, Resolve, ResolveContext,
+};
 
 impl Resolve<Function> for ast::nodes::func::Function {
     fn resolve(&self, ctx: &mut ResolveContext) -> Option<Function> {

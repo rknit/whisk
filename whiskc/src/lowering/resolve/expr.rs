@@ -12,14 +12,13 @@ use crate::{
             },
             ty::Type,
         },
-        ControlFlow, ResolveContext,
     },
     symbol_table::Symbol,
 };
 
 use ast::nodes::expr as ast_expr;
 
-use super::stmt::StmtResolve;
+use super::{stmt::StmtResolve, ControlFlow, ResolveContext};
 
 #[derive(Debug)]
 pub struct ExprFlow(pub Option<Expr>, pub ControlFlow);
