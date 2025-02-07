@@ -8,6 +8,11 @@ use crate::{
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ItemId {
+    Func(FuncId),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct FuncId(u64);
 impl<'a> FuncId {
     pub fn sym(&self, table: &'a mut SymbolTable) -> FuncSymbol<'a> {
@@ -65,6 +70,10 @@ impl SymbolTable {
             },
         );
         Some(fid)
+    }
+
+    pub fn get_function_by_name(&mut self, name: &str) -> Option<&Function> {
+        self.funcs.get(&self.interner.intern(name).into())
     }
 
     pub fn new_block(&mut self, parent_func: FuncId) -> BlockId {

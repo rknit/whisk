@@ -3,6 +3,7 @@ use crate::{ast::AST, symbol::SymbolTable};
 use super::{errors::ResolveError, Module};
 
 mod ast;
+mod func;
 mod item;
 
 pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {

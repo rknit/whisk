@@ -2,9 +2,9 @@
 
 mod symbol_table;
 
-pub use symbol_table::SymbolTable;
+pub use symbol_table::{BlockId, FuncId, ItemId, Param, SymbolTable, VarId};
 
-use self::symbol_table::{Block, BlockId, FuncId, Function, Param, VarId, Variable};
+use self::symbol_table::{Block, Function, Variable};
 
 pub struct FuncSymbol<'a> {
     table: &'a mut SymbolTable,

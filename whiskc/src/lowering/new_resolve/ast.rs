@@ -12,7 +12,6 @@ impl Resolve<(), Option<Vec<Item>>> for ast::AST {
         }
 
         let mut items = Vec::new();
-
         for item in &self.items {
             let Some(item) = item.resolve(ctx, ()) else {
                 continue;
