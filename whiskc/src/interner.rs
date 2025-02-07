@@ -19,4 +19,8 @@ impl StringInterner {
             hash_val
         }
     }
+
+    pub fn get(&self, s: &str) -> Option<u64> {
+        self.map.get(s).copied()
+    }
 }

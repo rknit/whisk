@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use crate::{interner::StringInterner, symbol::FuncSymbol};
 
 use super::{
-    common::{inject_symbol_table, Common},
+    common::{inject_symbol_table, Common, CommonType},
     BlockId, FuncId, TypeId, TypeSymbol, VarId,
 };
 
@@ -60,9 +60,13 @@ impl SymbolTable {
     }
 
     pub fn get_type_by_name_mut(&mut self, name: &str) -> Option<TypeSymbol> {
-        let tyid: TypeId = self.interner.intern(name).into();
+        Some(self.get_type_id(name)?.sym(self))
+    }
+
+    pub fn get_type_id(&self, name: &str) -> Option<TypeId> {
+        let tyid: TypeId = self.interner.get(name)?.into();
         if self.types.contains_key(&tyid) {
-            Some(tyid.sym(self))
+            Some(tyid)
         } else {
             None
         }
@@ -131,6 +135,10 @@ impl SymbolTable {
         // common should have been initialized when creating the table,
         // so we can use unwrap_unchecked().
         unsafe { self.common.as_ref().unwrap_unchecked() }
+    }
+
+    pub fn common_type(&self) -> &CommonType {
+        &self.common().ty
     }
 }
 

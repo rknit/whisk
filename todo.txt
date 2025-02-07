@@ -1,7 +1,6 @@
 IN PROGRESS:
 - rework SymbolTable (again)
 - rework resolve module
-- populate primitive types into symbol table
 
 TODO:
 - type decl

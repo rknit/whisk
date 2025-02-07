@@ -152,6 +152,7 @@ pub fn visit_item(v: &mut impl Visit, node: &Item) {
     match node {
         Item::Function(node) => v.visit_func(node),
         Item::ExternFunction(node) => v.visit_extern_func(node),
+        _ => todo!(),
     }
 }
 
