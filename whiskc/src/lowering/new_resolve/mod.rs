@@ -1,14 +1,15 @@
-use crate::{ast::AST, symbol::SymbolTable};
+use crate::{ast::AST, old_symbol_table, symbol::SymbolTable};
 
 use super::{errors::ResolveError, Module};
 
 mod ast;
 mod func;
 mod item;
+mod ty;
 
 pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
     let mut module = Module {
-        sym_table_old: todo!(),
+        sym_table_old: old_symbol_table::SymbolTable::default(),
         sym_table: SymbolTable::default(),
         items: vec![],
     };
@@ -17,6 +18,10 @@ pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
         table: &mut module.sym_table,
         errors: vec![],
     };
+
+    ast.resolve(&mut ctx, ());
+
+    dbg!(&ctx);
 
     if !ctx.errors.is_empty() {
         Err(ctx.errors)
@@ -44,7 +49,7 @@ struct ResolveContext<'md> {
     errors: Vec<ResolveError>,
 }
 impl ResolveContext<'_> {
-    pub fn error(&mut self, e: impl Into<ResolveError>) {
+    pub fn _error(&mut self, e: impl Into<ResolveError>) {
         self.errors.push(e.into());
     }
 }

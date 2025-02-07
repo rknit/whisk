@@ -7,13 +7,13 @@ impl Record for ast::item::Item {
         match self {
             ast::item::Item::Function(v) => v.sig.record(ctx, ()),
             ast::item::Item::ExternFunction(v) => v.sig.record(ctx, ()),
-            ast::item::Item::TypeDecl(_) => todo!(),
+            ast::item::Item::TypeDecl(v) => v.record(ctx, ()),
         }
     }
 }
 
 impl Resolve<(), Option<Item>> for ast::item::Item {
-    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> Option<Item> {
+    fn resolve(&self, _ctx: &mut ResolveContext, _: ()) -> Option<Item> {
         match self {
             ast::item::Item::Function(_) => todo!(),
             ast::item::Item::ExternFunction(_) => todo!(),

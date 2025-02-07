@@ -1,17 +1,40 @@
 #![allow(dead_code)]
 
 mod symbol_table;
+pub mod ty;
 
-pub use symbol_table::{BlockId, FuncId, ItemId, Param, SymbolTable, VarId};
+pub use symbol_table::{BlockId, FuncId, Param, SymbolTable, VarId};
 
-use self::symbol_table::{Block, Function, Variable};
+use self::symbol_table::{Block, Function, Type, TypeId, Variable};
+
+pub struct TypeSymbol<'a> {
+    table: &'a mut SymbolTable,
+    id: TypeId,
+}
+impl<'a> TypeSymbol<'a> {
+    fn new(table: &'a mut SymbolTable, id: TypeId) -> Self {
+        Self { table, id }
+    }
+
+    fn get(&self) -> &Type {
+        self.table.types.get(&self.id).unwrap()
+    }
+
+    fn get_mut(&mut self) -> &mut Type {
+        self.table.types.get_mut(&self.id).unwrap()
+    }
+
+    pub fn get_name(&self) -> &str {
+        &self.get().name
+    }
+}
 
 pub struct FuncSymbol<'a> {
     table: &'a mut SymbolTable,
     id: FuncId,
 }
 impl<'a> FuncSymbol<'a> {
-    pub fn new(table: &'a mut SymbolTable, id: FuncId) -> Self {
+    fn new(table: &'a mut SymbolTable, id: FuncId) -> Self {
         Self { table, id }
     }
 
@@ -42,7 +65,7 @@ pub struct BlockSymbol<'a> {
     id: BlockId,
 }
 impl<'a> BlockSymbol<'a> {
-    pub fn new(table: &'a mut SymbolTable, id: BlockId) -> Self {
+    fn new(table: &'a mut SymbolTable, id: BlockId) -> Self {
         Self { table, id }
     }
 
@@ -54,7 +77,7 @@ impl<'a> BlockSymbol<'a> {
         self.table.blocks.get_mut(&self.id).unwrap()
     }
 
-    pub fn set_parent_block(&mut self, block: BlockId) -> &mut Self {
+    fn set_parent_block(&mut self, block: BlockId) -> &mut Self {
         assert!(
             self.id == block,
             "cannot assign the block itself as its parent block"
@@ -77,7 +100,7 @@ pub struct VarSymbol<'a> {
     id: VarId,
 }
 impl<'a> VarSymbol<'a> {
-    pub fn new(table: &'a mut SymbolTable, id: VarId) -> Self {
+    fn new(table: &'a mut SymbolTable, id: VarId) -> Self {
         Self { table, id }
     }
 
