@@ -1,8 +1,9 @@
 IN PROGRESS:
 - rework SymbolTable (again)
 - rework resolve module
+- populate primitive types into symbol table
 
 TODO:
-- type struct decl
 - type decl
+- type struct decl
 - alias type

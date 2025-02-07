@@ -8,7 +8,7 @@ use crate::{
     symbol::{BlockSymbol, FuncSymbol, VarSymbol},
 };
 
-use super::TypeSymbol;
+use super::{inject::inject_symbol_table, TypeSymbol};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypeId(u64);
@@ -57,7 +57,7 @@ impl<'a> VarId {
     }
 }
 
-#[derive(Default, Clone)]
+#[derive(Clone)]
 pub struct SymbolTable {
     pub(super) types: HashMap<TypeId, Type>,
     pub(super) funcs: HashMap<FuncId, Function>,
@@ -65,6 +65,20 @@ pub struct SymbolTable {
     pub(super) vars: HashMap<VarId, Variable>,
     pub(super) interner: StringInterner,
     pub(super) blk_counter: u64,
+}
+impl Default for SymbolTable {
+    fn default() -> Self {
+        let mut table = Self {
+            types: Default::default(),
+            funcs: Default::default(),
+            blocks: Default::default(),
+            vars: Default::default(),
+            interner: Default::default(),
+            blk_counter: Default::default(),
+        };
+        inject_symbol_table(&mut table);
+        table
+    }
 }
 impl fmt::Debug for SymbolTable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

@@ -19,8 +19,7 @@ pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
         errors: vec![],
     };
 
-    ast.resolve(&mut ctx, ());
-
+    module.items = ast.resolve(&mut ctx, ());
     dbg!(&ctx);
 
     if !ctx.errors.is_empty() {

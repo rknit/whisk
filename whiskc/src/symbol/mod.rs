@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+mod inject;
 mod symbol_table;
 pub mod ty;
 
