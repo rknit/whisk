@@ -1,12 +1,14 @@
 #![allow(dead_code)]
 
-mod inject;
+mod common;
+mod symbol_id;
 mod symbol_table;
 pub mod ty;
 
-pub use symbol_table::{BlockId, FuncId, Param, SymbolTable, VarId};
+pub use symbol_id::*;
+pub use symbol_table::{Param, SymbolTable};
 
-use self::symbol_table::{Block, Function, Type, TypeId, Variable};
+use self::symbol_table::{Block, Function, Type, Variable};
 
 pub struct TypeSymbol<'a> {
     table: &'a mut SymbolTable,

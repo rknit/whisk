@@ -3,59 +3,12 @@
 use core::fmt;
 use std::collections::HashMap;
 
-use crate::{
-    interner::StringInterner,
-    symbol::{BlockSymbol, FuncSymbol, VarSymbol},
+use crate::{interner::StringInterner, symbol::FuncSymbol};
+
+use super::{
+    common::{inject_symbol_table, Common},
+    BlockId, FuncId, TypeId, TypeSymbol, VarId,
 };
-
-use super::{inject::inject_symbol_table, TypeSymbol};
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TypeId(u64);
-impl<'a> TypeId {
-    pub fn sym(&self, table: &'a mut SymbolTable) -> TypeSymbol<'a> {
-        TypeSymbol::new(table, *self)
-    }
-}
-impl From<u64> for TypeId {
-    fn from(value: u64) -> Self {
-        Self(value)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct FuncId(u64);
-impl<'a> FuncId {
-    pub fn sym(&self, table: &'a mut SymbolTable) -> FuncSymbol<'a> {
-        FuncSymbol::new(table, *self)
-    }
-}
-impl From<u64> for FuncId {
-    fn from(value: u64) -> Self {
-        Self(value)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct BlockId(u64);
-impl<'a> BlockId {
-    pub fn sym(&self, table: &'a mut SymbolTable) -> BlockSymbol<'a> {
-        BlockSymbol::new(table, *self)
-    }
-}
-impl From<u64> for BlockId {
-    fn from(value: u64) -> Self {
-        Self(value)
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct VarId(BlockId, u64);
-impl<'a> VarId {
-    pub fn sym(&self, table: &'a mut SymbolTable) -> VarSymbol<'a> {
-        VarSymbol::new(table, *self)
-    }
-}
 
 #[derive(Clone)]
 pub struct SymbolTable {
@@ -65,6 +18,7 @@ pub struct SymbolTable {
     pub(super) vars: HashMap<VarId, Variable>,
     pub(super) interner: StringInterner,
     pub(super) blk_counter: u64,
+    common: Option<Common>,
 }
 impl Default for SymbolTable {
     fn default() -> Self {
@@ -75,8 +29,9 @@ impl Default for SymbolTable {
             vars: Default::default(),
             interner: Default::default(),
             blk_counter: Default::default(),
+            common: None,
         };
-        inject_symbol_table(&mut table);
+        table.common = Some(inject_symbol_table(&mut table));
         table
     }
 }
@@ -170,6 +125,12 @@ impl SymbolTable {
             },
         );
         Some(vid)
+    }
+
+    pub fn common(&self) -> &Common {
+        // common should have been initialized when creating the table,
+        // so we can use unwrap_unchecked().
+        unsafe { self.common.as_ref().unwrap_unchecked() }
     }
 }
 
