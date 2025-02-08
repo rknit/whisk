@@ -11,13 +11,13 @@ impl Resolve<(), Vec<Item>> for ast::AST {
             item.record(ctx, ());
         }
 
-        // for item in &self.items {
-        //     let Some(item) = item.resolve(ctx, ()) else {
-        //         continue;
-        //     };
-        //     items.push(item);
-        // }
-
-        Vec::new()
+        let mut items = Vec::new();
+        for item in &self.items {
+            let Some(item) = item.resolve(ctx, ()) else {
+                continue;
+            };
+            items.push(item);
+        }
+        items
     }
 }

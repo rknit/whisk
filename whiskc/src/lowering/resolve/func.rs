@@ -73,6 +73,7 @@ impl Resolve<Function> for ast::nodes::func::Function {
         ctx.unset_func_symbol_id();
         Some(Function {
             sym_id: func_sym_id,
+            func_id: Default::default(),
             body,
         })
     }
@@ -83,7 +84,7 @@ impl Resolve<ExternFunction> for ast::nodes::func::ExternFunction {
         let sym_id = ctx
             .get_symbol_id_by_name(&self.sig.name.0)
             .expect("resolved function signature id");
-        Some(ExternFunction(sym_id))
+        Some(ExternFunction(sym_id, Default::default()))
     }
 }
 

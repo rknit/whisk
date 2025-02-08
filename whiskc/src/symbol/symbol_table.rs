@@ -74,7 +74,7 @@ impl SymbolTable {
 
     /// Add the function to the function symbol table, returning its id if there is no name collision.
     /// None is returned if there is a function with the same name presented in the table.
-    pub fn new_function(&mut self, name: String, arity: usize) -> Option<FuncId> {
+    pub fn new_function(&mut self, name: String) -> Option<FuncId> {
         let fid: FuncId = self.interner.intern(&name).into();
         if self.funcs.contains_key(&fid) {
             return None;
@@ -83,7 +83,8 @@ impl SymbolTable {
             fid,
             Function {
                 name,
-                params: vec![Param::default(); arity],
+                params: vec![],
+                ret_ty: TypeId::default(),
             },
         );
         Some(fid)
@@ -153,11 +154,13 @@ pub(super) struct Type {
 pub(super) struct Function {
     pub(super) name: String,
     pub(super) params: Vec<Param>,
+    pub(super) ret_ty: TypeId,
 }
 
 #[derive(Debug, Default, Clone)]
 pub struct Param {
     pub name: String,
+    pub ty: TypeId,
 }
 
 #[derive(Debug, Clone)]

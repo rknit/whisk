@@ -15,8 +15,8 @@ impl Record for ast::item::Item {
 impl Resolve<(), Option<Item>> for ast::item::Item {
     fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> Option<Item> {
         match self {
-            ast::item::Item::Function(_) => todo!(),
-            ast::item::Item::ExternFunction(_) => todo!(),
+            ast::item::Item::Function(v) => v.resolve(ctx, ()).map(Item::Function),
+            ast::item::Item::ExternFunction(v) => v.resolve(ctx, ()).map(Item::ExternFunction),
             ast::item::Item::TypeDecl(v) => v.resolve(ctx, ()).map(Item::TypeDecl),
         }
     }

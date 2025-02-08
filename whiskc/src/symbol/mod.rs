@@ -5,6 +5,8 @@ mod symbol_id;
 mod symbol_table;
 pub mod ty;
 
+use std::slice::Iter;
+
 pub use symbol_id::*;
 pub use symbol_table::{Param, SymbolTable};
 
@@ -53,13 +55,22 @@ impl<'a> FuncSymbol<'a> {
         &self.get().name
     }
 
-    pub fn set_param_name(&mut self, index: usize, name: String) -> Option<&mut Self> {
-        self.get_mut().params.get_mut(index)?.name = name;
-        Some(self)
+    pub fn params(&self) -> Iter<Param> {
+        self.get().params.iter()
     }
 
-    pub fn get_param(&self, index: usize) -> Option<&Param> {
-        self.get().params.get(index)
+    pub fn set_params(&mut self, params: impl Into<Vec<Param>>) -> &mut Self {
+        self.get_mut().params = params.into();
+        self
+    }
+
+    pub fn set_return_type(&mut self, ty: TypeId) -> &mut Self {
+        self.get_mut().ret_ty = ty;
+        self
+    }
+
+    pub fn get_id(&self) -> FuncId {
+        self.id
     }
 }
 
