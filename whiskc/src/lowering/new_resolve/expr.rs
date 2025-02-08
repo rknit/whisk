@@ -39,6 +39,10 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
 impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
     fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
         let bid = ctx.table.new_block(ctx.get_func_id());
+        {
+            let parent_block = ctx.get_block();
+            bid.sym(ctx.table).set_parent_block(parent_block);
+        }
         ctx.push_block(bid);
 
         let mut stmts = Vec::new();

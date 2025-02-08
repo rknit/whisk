@@ -59,9 +59,12 @@ impl Resolve<(), Option<Function>> for ast::func::Function {
             unreachable!()
         };
 
-        let sym = fid.sym(ctx.table);
-
-        if flow != Flow::Break && sym.get_return_type() != ctx.table.common_type().unit {
+        let ret_ty = body
+            .eval_expr
+            .as_ref()
+            .map(|v| v.ty)
+            .unwrap_or(ctx.table.common_type().unit);
+        if flow != Flow::Break && fid.sym(ctx.table).get_return_type() != ret_ty {
             todo!("report error");
         }
 

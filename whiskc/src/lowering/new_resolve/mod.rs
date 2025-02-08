@@ -86,6 +86,10 @@ impl<'a> ResolveContext<'a> {
         self.blocks.pop().unwrap();
     }
 
+    pub fn get_block(&self) -> BlockId {
+        self.blocks.last().copied().unwrap()
+    }
+
     pub fn _error(&mut self, e: impl Into<ResolveError>) {
         self.errors.push(e.into());
     }
@@ -103,12 +107,17 @@ struct FlowObj<T> {
     pub value: Option<T>,
     pub flow: Flow,
 }
+#[allow(dead_code)]
 impl<T> FlowObj<T> {
     pub fn new(t: T, flow: Flow) -> Self {
         Self {
             value: Some(t),
             flow,
         }
+    }
+
+    pub fn none(flow: Flow) -> Self {
+        Self { value: None, flow }
     }
 
     pub fn cont(t: T) -> Self {

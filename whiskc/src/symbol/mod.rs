@@ -102,9 +102,9 @@ impl<'a> BlockSymbol<'a> {
         self.table.blocks.get_mut(&self.id).unwrap()
     }
 
-    fn set_parent_block(&mut self, block: BlockId) -> &mut Self {
+    pub fn set_parent_block(&mut self, block: BlockId) -> &mut Self {
         assert!(
-            self.id == block,
+            self.id != block,
             "cannot assign the block itself as its parent block"
         );
         self.get_mut().parent_block = Some(block);
