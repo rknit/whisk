@@ -39,6 +39,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
 impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
     fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
         let bid = ctx.table.new_block(ctx.get_func_id());
+        ctx.push_block(bid);
 
         let mut stmts = Vec::new();
         let mut result_flow = Flow::Continue;
@@ -55,6 +56,8 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
         }
 
         if result_flow == Flow::Break {
+            ctx.pop_block();
+
             return FlowObj::new(
                 Expr {
                     kind: ExprKind::Block(BlockExpr {
@@ -76,6 +79,8 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
         if let Some(expr) = &eval_expr {
             result_flow = expr.flow;
         }
+
+        ctx.pop_block();
 
         FlowObj::new(
             Expr {

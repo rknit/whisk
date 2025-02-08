@@ -1,6 +1,6 @@
 use crate::{
     ast::AST,
-    symbol::{FuncId, SymbolTable},
+    symbol::{BlockId, FuncId, SymbolTable},
 };
 
 use super::{errors::ResolveError, Module};
@@ -18,12 +18,7 @@ pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
         items: vec![],
     };
 
-    let mut ctx = ResolveContext {
-        table: &mut module.sym_table,
-        errors: vec![],
-        current_fid: None,
-    };
-
+    let mut ctx = ResolveContext::new(&mut module.sym_table);
     module.items = ast.resolve(&mut ctx, ());
     dbg!(&ctx);
 
@@ -52,10 +47,43 @@ struct ResolveContext<'md> {
     table: &'md mut SymbolTable,
     errors: Vec<ResolveError>,
     current_fid: Option<FuncId>,
+    blocks: Vec<BlockId>,
 }
-impl ResolveContext<'_> {
+impl<'a> ResolveContext<'a> {
+    pub fn new(table: &'a mut SymbolTable) -> Self {
+        Self {
+            table,
+            errors: vec![],
+            current_fid: None,
+            blocks: vec![],
+        }
+    }
+
+    pub fn set_func_id(&mut self, fid: FuncId) {
+        assert!(
+            self.current_fid.is_none(),
+            "must unset func id before setting a new one"
+        );
+        self.current_fid = Some(fid);
+    }
+
+    pub fn unset_func_id(&mut self) {
+        assert!(self.current_fid.is_some(), "no func id to unset");
+        assert!(self.blocks.is_empty(), "not all blocks are popped");
+        self.current_fid = None;
+    }
+
     pub fn get_func_id(&self) -> FuncId {
         self.current_fid.unwrap()
+    }
+
+    pub fn push_block(&mut self, block: BlockId) {
+        assert!(self.current_fid.is_some(), "no func id set");
+        self.blocks.push(block);
+    }
+
+    pub fn pop_block(&mut self) {
+        self.blocks.pop().unwrap();
     }
 
     pub fn _error(&mut self, e: impl Into<ResolveError>) {

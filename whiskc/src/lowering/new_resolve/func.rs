@@ -1,12 +1,12 @@
-use super::{Record, Resolve, ResolveContext};
+use super::{Flow, FlowObj, Record, Resolve, ResolveContext};
 
 use crate::{
     ast::nodes as ast,
     lowering::nodes::{
-        expr::BlockExpr,
+        expr::ExprKind,
         func::{ExternFunction, Function},
     },
-    symbol::{FuncId, Param},
+    symbol::{BlockId, FuncId, VarId},
 };
 
 impl Record for ast::func::FunctionSig {
@@ -17,22 +17,22 @@ impl Record for ast::func::FunctionSig {
     }
 }
 
-impl Resolve<(), Option<FuncId>> for ast::func::FunctionSig {
-    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> Option<FuncId> {
-        let mut params: Vec<Param> = Vec::new();
+impl Resolve<(), Option<(FuncId, BlockId)>> for ast::func::FunctionSig {
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> Option<(FuncId, BlockId)> {
+        let fid = ctx.table.get_function_id(&self.name.0).unwrap();
+        let bid = ctx.table.new_block(fid);
+
+        let mut params: Vec<VarId> = Vec::new();
         for ast_param in &self.params.items {
-            if params.iter().any(|v| v.name == ast_param.0 .0) {
-                params.push(Param::default());
-                todo!("report error");
-            }
             let Some(param_ty) = ast_param.1.resolve(ctx, ()) else {
                 // assumed an error is reported by the resolve call.
                 continue;
             };
-            params.push(Param {
-                name: ast_param.0 .0.clone(),
-                ty: param_ty,
-            })
+            let Some(param_id) = ctx.table.new_variable(ast_param.0 .0.clone(), bid) else {
+                todo!("report error")
+            };
+            param_id.sym(ctx.table).set_type(param_ty);
+            params.push(param_id)
         }
 
         let Some(ret_ty) = self.ret_ty.resolve(ctx, ()) else {
@@ -40,30 +40,40 @@ impl Resolve<(), Option<FuncId>> for ast::func::FunctionSig {
             return None;
         };
 
-        let mut sym = ctx.table.get_function_by_name_mut(&self.name.0).unwrap();
-        sym.set_params(params).set_return_type(ret_ty);
-        Some(sym.get_id())
+        fid.sym(ctx.table)
+            .set_params(params)
+            .set_return_type(ret_ty)
+            .set_entry_block(bid);
+        Some((fid, bid))
     }
 }
 
 impl Resolve<(), Option<Function>> for ast::func::Function {
     fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> Option<Function> {
-        let fid = self.sig.resolve(ctx, ())?;
+        let (fid, bid) = self.sig.resolve(ctx, ())?;
+        ctx.set_func_id(fid);
+        ctx.push_block(bid);
 
-        Some(Function {
-            func_id: fid,
-            body: BlockExpr {
-                block_id: Default::default(),
-                stmts: vec![],
-                eval_expr: None,
-            },
-        })
+        let FlowObj { value: body, flow } = self.body.resolve(ctx, ());
+        let ExprKind::Block(body) = body?.kind else {
+            unreachable!()
+        };
+
+        let sym = fid.sym(ctx.table);
+
+        if flow != Flow::Break && sym.get_return_type() != ctx.table.common_type().unit {
+            todo!("report error");
+        }
+
+        ctx.pop_block();
+        ctx.unset_func_id();
+        Some(Function { func_id: fid, body })
     }
 }
 
 impl Resolve<(), Option<ExternFunction>> for ast::func::ExternFunction {
     fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> Option<ExternFunction> {
-        let fid = self.sig.resolve(ctx, ())?;
+        let (fid, _) = self.sig.resolve(ctx, ())?;
         Some(ExternFunction(fid))
     }
 }

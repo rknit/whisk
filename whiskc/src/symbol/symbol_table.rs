@@ -84,16 +84,21 @@ impl SymbolTable {
             Function {
                 name,
                 params: vec![],
-                ret_ty: TypeId::default(),
+                ret_ty: Default::default(),
+                entry_block: Default::default(),
             },
         );
         Some(fid)
     }
 
     pub fn get_function_by_name_mut(&mut self, name: &str) -> Option<FuncSymbol> {
-        let fid: FuncId = self.interner.intern(name).into();
+        Some(self.get_function_id(name)?.sym(self))
+    }
+
+    pub fn get_function_id(&self, name: &str) -> Option<FuncId> {
+        let fid: FuncId = self.interner.get(name)?.into();
         if self.funcs.contains_key(&fid) {
-            Some(fid.sym(self))
+            Some(fid)
         } else {
             None
         }
@@ -127,6 +132,7 @@ impl SymbolTable {
             Variable {
                 block: parent_block,
                 name,
+                ty: Default::default(),
             },
         );
         Some(vid)
@@ -153,14 +159,9 @@ pub(super) struct Type {
 #[derive(Debug, Clone)]
 pub(super) struct Function {
     pub(super) name: String,
-    pub(super) params: Vec<Param>,
+    pub(super) params: Vec<VarId>,
     pub(super) ret_ty: TypeId,
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct Param {
-    pub name: String,
-    pub ty: TypeId,
+    pub(super) entry_block: BlockId,
 }
 
 #[derive(Debug, Clone)]
@@ -174,4 +175,5 @@ pub(super) struct Block {
 pub(super) struct Variable {
     pub(super) block: BlockId,
     pub(super) name: String,
+    pub(super) ty: TypeId,
 }

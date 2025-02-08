@@ -5,10 +5,8 @@ mod symbol_id;
 mod symbol_table;
 pub mod ty;
 
-use std::slice::Iter;
-
 pub use symbol_id::*;
-pub use symbol_table::{Param, SymbolTable};
+pub use symbol_table::SymbolTable;
 
 use self::symbol_table::{Block, Function, Type, Variable};
 
@@ -55,11 +53,11 @@ impl<'a> FuncSymbol<'a> {
         &self.get().name
     }
 
-    pub fn params(&self) -> Iter<Param> {
-        self.get().params.iter()
+    pub fn params(&self) -> &Vec<VarId> {
+        &self.get().params
     }
 
-    pub fn set_params(&mut self, params: impl Into<Vec<Param>>) -> &mut Self {
+    pub fn set_params(&mut self, params: impl Into<Vec<VarId>>) -> &mut Self {
         self.get_mut().params = params.into();
         self
     }
@@ -67,6 +65,19 @@ impl<'a> FuncSymbol<'a> {
     pub fn set_return_type(&mut self, ty: TypeId) -> &mut Self {
         self.get_mut().ret_ty = ty;
         self
+    }
+
+    pub fn get_return_type(&self) -> TypeId {
+        self.get().ret_ty
+    }
+
+    pub fn set_entry_block(&mut self, block: BlockId) -> &mut Self {
+        self.get_mut().entry_block = block;
+        self
+    }
+
+    pub fn get_entry_block(&self) -> BlockId {
+        self.get().entry_block
     }
 
     pub fn get_id(&self) -> FuncId {
@@ -128,6 +139,15 @@ impl<'a> VarSymbol<'a> {
 
     pub fn get_name(&self) -> &str {
         &self.get().name
+    }
+
+    pub fn set_type(&mut self, ty: TypeId) -> &mut Self {
+        self.get_mut().ty = ty;
+        self
+    }
+
+    pub fn get_type(&self) -> TypeId {
+        self.get().ty
     }
 
     pub fn get_block(&self) -> BlockId {
