@@ -63,7 +63,7 @@ impl ResolveContext<'_> {
     }
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Flow {
     /// control flow continues to flow down the current path.
     Continue,

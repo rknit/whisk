@@ -1,5 +1,5 @@
 use crate::{
-    ast::{location::Located, nodes as ast},
+    ast::nodes as ast,
     lowering::{
         new_resolve::Flow,
         nodes::expr::{BlockExpr, Expr, ExprKind},
@@ -7,18 +7,6 @@ use crate::{
 };
 
 use super::{FlowObj, Resolve, ResolveContext};
-
-impl<T> FlowObj<T> {
-    pub fn map_expr<F>(self, f: F) -> FlowObj<Expr>
-    where
-        F: FnOnce(T) -> Expr,
-    {
-        FlowObj {
-            value: self.value.map(f),
-            flow: self.flow,
-        }
-    }
-}
 
 impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
     fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
@@ -80,6 +68,25 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
             );
         }
 
-        todo!()
+        let eval_expr = self.eval_expr.as_ref().map(|v| v.resolve(ctx, ()));
+        let eval_expr_ty = eval_expr
+            .as_ref()
+            .and_then(|v| v.value.as_ref().map(|v| v.ty))
+            .unwrap_or(ctx.table.common_type().unit);
+        if let Some(expr) = &eval_expr {
+            result_flow = expr.flow;
+        }
+
+        FlowObj::new(
+            Expr {
+                kind: ExprKind::Block(BlockExpr {
+                    block_id: bid,
+                    stmts,
+                    eval_expr: eval_expr.and_then(|v| v.value.map(Box::new)),
+                }),
+                ty: eval_expr_ty,
+            },
+            result_flow,
+        )
     }
 }
