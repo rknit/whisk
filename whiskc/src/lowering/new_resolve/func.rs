@@ -5,7 +5,6 @@ use crate::{
     lowering::nodes::{
         expr::BlockExpr,
         func::{ExternFunction, Function},
-        ty::Type,
     },
     symbol::{FuncId, Param},
 };
@@ -52,13 +51,11 @@ impl Resolve<(), Option<Function>> for ast::func::Function {
         let fid = self.sig.resolve(ctx, ())?;
 
         Some(Function {
-            sym_id: Default::default(),
             func_id: fid,
             body: BlockExpr {
-                table_id: Default::default(),
+                block_id: Default::default(),
                 stmts: vec![],
                 eval_expr: None,
-                ty: Type::Never,
             },
         })
     }
@@ -67,6 +64,6 @@ impl Resolve<(), Option<Function>> for ast::func::Function {
 impl Resolve<(), Option<ExternFunction>> for ast::func::ExternFunction {
     fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> Option<ExternFunction> {
         let fid = self.sig.resolve(ctx, ())?;
-        Some(ExternFunction(Default::default(), fid))
+        Some(ExternFunction(fid))
     }
 }

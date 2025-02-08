@@ -1,12 +1,9 @@
-use crate::{
-    ast::{
-        location::{Located, Span},
-        parsing::token::Operator,
-    },
-    old_symbol_table::{SymbolAttribute, SymbolKind},
+use crate::ast::{
+    location::{Located, Span},
+    parsing::token::Operator,
 };
 
-use super::nodes::ty::Type;
+use crate::symbol::TypeId as Type;
 
 #[derive(Debug, Clone)]
 pub enum ResolveError {
@@ -64,8 +61,8 @@ pub enum ValueResolveError {
 pub enum IdentResolveError {
     GlobalIdentAlreadyUsed {
         ident: String,
-        first_origin: (SymbolKind, Span),
-        dup_origin: (SymbolKind, Span),
+        first_origin: Span,
+        dup_origin: Span,
     },
     VarNameAlreadyUsed {
         ident: String,
@@ -74,8 +71,7 @@ pub enum IdentResolveError {
     },
     UnknownIdentifier(Located<String>),
     UnexpectedAttrib {
-        attribute: Located<SymbolAttribute>,
-        allowed_attributes: Vec<SymbolAttribute>,
+        attribute: Span,
     },
 }
 

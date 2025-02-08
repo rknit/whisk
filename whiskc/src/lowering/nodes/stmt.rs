@@ -1,6 +1,6 @@
-use crate::{ast::location::Located, old_symbol_table::SymbolID};
+use crate::symbol::VarId;
 
-use super::{expr::Expr, ty::Type};
+use super::expr::Expr;
 
 #[derive(Debug, Clone)]
 pub enum Stmt {
@@ -15,8 +15,6 @@ pub struct ExprStmt {
 
 #[derive(Debug, Clone)]
 pub struct LetStmt {
-    pub sym_id: SymbolID,
-    pub name: Located<String>,
-    pub ty: Type,
+    pub var_id: VarId,
     pub value: Expr,
 }

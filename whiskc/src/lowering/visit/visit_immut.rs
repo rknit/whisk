@@ -1,3 +1,5 @@
+use crate::lowering::nodes::expr::ExprKind;
+
 use super::super::{
     nodes::{
         expr::{
@@ -117,18 +119,18 @@ pub fn visit_call_expr(v: &mut impl Visit, node: &CallExpr) {
 }
 
 pub fn visit_expr(v: &mut impl Visit, node: &Expr) {
-    match node {
-        Expr::Unit => v.visit_unit_expr(),
-        Expr::Integer(value) => v.visit_int_expr(*value),
-        Expr::Bool(value) => v.visit_bool_expr(*value),
-        Expr::Identifier(node) => v.visit_ident_expr(node),
-        Expr::Unary(node) => v.visit_unary_expr(node),
-        Expr::Binary(node) => v.visit_binary_expr(node),
-        Expr::Call(node) => v.visit_call_expr(node),
-        Expr::Block(node) => v.visit_block_expr(node),
-        Expr::Return(node) => v.visit_return_expr(node),
-        Expr::If(node) => v.visit_if_expr(node),
-        Expr::Loop(node) => v.visit_loop_expr(node),
+    match &node.kind {
+        ExprKind::Unit => v.visit_unit_expr(),
+        ExprKind::Integer(value) => v.visit_int_expr(*value),
+        ExprKind::Bool(value) => v.visit_bool_expr(*value),
+        ExprKind::Identifier(node) => v.visit_ident_expr(node),
+        ExprKind::Unary(node) => v.visit_unary_expr(node),
+        ExprKind::Binary(node) => v.visit_binary_expr(node),
+        ExprKind::Call(node) => v.visit_call_expr(node),
+        ExprKind::Block(node) => v.visit_block_expr(node),
+        ExprKind::Return(node) => v.visit_return_expr(node),
+        ExprKind::If(node) => v.visit_if_expr(node),
+        ExprKind::Loop(node) => v.visit_loop_expr(node),
     };
 }
 

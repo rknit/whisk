@@ -1,5 +1,12 @@
 use super::{BlockSymbol, FuncSymbol, SymbolTable, TypeSymbol, VarSymbol};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum NamedId {
+    Type(TypeId),
+    Func(FuncId),
+    Var(VarId),
+}
+
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypeId(pub(super) u64);
 impl<'a> TypeId {
