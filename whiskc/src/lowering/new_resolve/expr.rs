@@ -3,7 +3,7 @@ use crate::{
     lowering::{
         new_resolve::Flow,
         nodes::expr::{
-            BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, ReturnExpr, VarIdentExpr,
+            BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, LoopExpr, ReturnExpr, VarIdentExpr,
         },
     },
 };
@@ -33,8 +33,28 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
             ast::expr::Expr::Block(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Return(v) => v.resolve(ctx, ()),
             ast::expr::Expr::If(_) => todo!(),
-            ast::expr::Expr::Loop(_) => todo!(),
+            ast::expr::Expr::Loop(v) => v.resolve(ctx, ()),
         }
+    }
+}
+
+impl Resolve<(), FlowObj<Expr>> for ast::expr::LoopExpr {
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
+        let FlowObj { value, flow } = self.body.resolve(ctx, ());
+        let Some(body) = value else {
+            return FlowObj::none(flow);
+        };
+        if flow != Flow::Continue {
+            return FlowObj::new(body, flow);
+        }
+        let ExprKind::Block(block_expr) = body.kind else {
+            unreachable!()
+        };
+        FlowObj::cont(Expr {
+            kind: ExprKind::Loop(LoopExpr { body: block_expr }),
+            // always return the Never type for now, as there is no Break/Continue expr yet.
+            ty: ctx.table.common_type().never,
+        })
     }
 }
 

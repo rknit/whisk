@@ -2,6 +2,7 @@ IN PROGRESS:
 - rework SymbolTable (again)
 - rework resolve module
   - rework expr resolve
+  - comparing type with the Never type should always result in true
 
 TODO:
 - type decl
