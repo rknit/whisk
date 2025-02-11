@@ -2,7 +2,9 @@ use crate::{
     ast::{location::Located, nodes as ast},
     lowering::{
         new_resolve::Flow,
-        nodes::expr::{BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, VarIdentExpr},
+        nodes::expr::{
+            BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, ReturnExpr, VarIdentExpr,
+        },
     },
 };
 
@@ -29,9 +31,42 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
             ast::expr::Expr::Grouped(v) => v.expr.resolve(ctx, ()),
             ast::expr::Expr::Call(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Block(v) => v.resolve(ctx, ()),
-            ast::expr::Expr::Return(_) => todo!(),
+            ast::expr::Expr::Return(v) => v.resolve(ctx, ()),
             ast::expr::Expr::If(_) => todo!(),
             ast::expr::Expr::Loop(_) => todo!(),
+        }
+    }
+}
+
+impl Resolve<(), FlowObj<Expr>> for ast::expr::ReturnExpr {
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
+        let expr = self.expr.as_ref().map(|v| v.resolve(ctx, ()));
+        if let Some(FlowObj { value, flow }) = expr {
+            let Some(value) = value else {
+                return FlowObj::none(flow);
+            };
+            if flow != Flow::Continue {
+                return FlowObj::new(value, flow);
+            }
+            let sym = ctx.get_func_id().sym(ctx.table);
+            if value.ty != sym.get_return_type() {
+                todo!("report error");
+            }
+            FlowObj::brk(Expr {
+                kind: ExprKind::Return(ReturnExpr {
+                    expr: Some(Box::new(value)),
+                }),
+                ty: ctx.table.common_type().never,
+            })
+        } else {
+            let sym = ctx.get_func_id().sym(ctx.table);
+            if sym.get_return_type() != ctx.table.common_type().unit {
+                todo!("report error");
+            }
+            FlowObj::brk(Expr {
+                kind: ExprKind::Return(ReturnExpr { expr: None }),
+                ty: ctx.table.common_type().never,
+            })
         }
     }
 }
@@ -58,14 +93,14 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::CallExpr {
         let mut args = Vec::new();
         for (ast_arg, param_id) in self.args.items.iter().zip(sym.params().clone()) {
             let FlowObj { value, flow } = ast_arg.resolve(ctx, ());
-            let Some(value) = value else {
+            let Some(arg) = value else {
                 // assumed the resolve called had already reported the error.
                 continue;
             };
-            if param_id.sym(ctx.table).get_type() != value.ty {
+            if param_id.sym(ctx.table).get_type() != arg.ty {
                 todo!("report error");
             }
-            args.push(value);
+            args.push(arg);
             result_flow = flow;
             if result_flow != Flow::Continue {
                 // stop evaluating the subsequence arguments if the control flow won't reach them.

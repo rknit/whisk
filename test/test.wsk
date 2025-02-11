@@ -1,5 +1,5 @@
 func main(n int) int {
-  main(1)
+  return
 
   /*
   let n = 15;
