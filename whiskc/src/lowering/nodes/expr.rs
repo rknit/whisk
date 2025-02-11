@@ -18,7 +18,6 @@ pub enum ExprKind {
     Bool(bool),
     VarIdent(VarIdentExpr),
     FuncIdent(FuncIdentExpr),
-    TypeIdent(TypeIdentExpr),
     Unary(UnaryExpr),
     Binary(BinaryExpr),
     Call(CallExpr),
@@ -39,11 +38,6 @@ pub struct FuncIdentExpr {
 }
 
 #[derive(Debug, Clone)]
-pub struct TypeIdentExpr {
-    pub id: TypeId,
-}
-
-#[derive(Debug, Clone)]
 pub struct UnaryExpr {
     pub op: Operator,
     pub expr: Box<Expr>,
@@ -58,7 +52,7 @@ pub struct BinaryExpr {
 
 #[derive(Debug, Clone)]
 pub struct CallExpr {
-    pub callee: Box<Expr>,
+    pub caller: Box<Expr>,
     pub args: Vec<Expr>,
 }
 

@@ -112,7 +112,7 @@ pub fn visit_block_expr_mut(v: &mut impl VisitMut, node: &mut BlockExpr) {
 }
 
 pub fn visit_call_expr_mut(v: &mut impl VisitMut, node: &mut CallExpr) {
-    v.visit_expr_mut(&mut node.callee);
+    v.visit_expr_mut(&mut node.caller);
     for arg in &mut node.args {
         v.visit_expr_mut(arg);
     }

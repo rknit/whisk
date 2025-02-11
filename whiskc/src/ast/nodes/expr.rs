@@ -96,14 +96,14 @@ impl Locatable for GroupedExpr {
 
 #[derive(Debug, Clone)]
 pub struct CallExpr {
-    pub callee: Box<Expr>,
+    pub caller: Box<Expr>,
     pub paren_open_tok: Located<Delimiter>,
     pub args: Punctuated<Expr>,
     pub paren_close_tok: Located<Delimiter>,
 }
 impl Locatable for CallExpr {
     fn get_location(&self) -> Span {
-        Span::combine(self.callee.get_location(), self.paren_close_tok.1)
+        Span::combine(self.caller.get_location(), self.paren_close_tok.1)
     }
 }
 

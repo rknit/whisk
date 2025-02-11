@@ -193,7 +193,7 @@ fn parse_call_expr(
     let args = Punctuated::parse(parser, Delimiter::Comma, Delimiter::ParenClose, Expr::parse)?;
     let paren_close_tok = match_delimiter!(parser, Delimiter::ParenClose =>);
     Some(Expr::Call(CallExpr {
-        callee: Box::new(left),
+        caller: Box::new(left),
         paren_open_tok,
         args,
         paren_close_tok,
