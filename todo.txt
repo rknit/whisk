@@ -1,8 +1,10 @@
 IN PROGRESS:
 - rework SymbolTable (again)
 - rework resolve module
+  - rework expr resolve
 
 TODO:
 - type decl
 - type struct decl
 - alias type
+- update codegen

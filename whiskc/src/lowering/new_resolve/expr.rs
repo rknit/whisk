@@ -1,8 +1,8 @@
 use crate::{
-    ast::nodes as ast,
+    ast::{location::Located, nodes as ast},
     lowering::{
         new_resolve::Flow,
-        nodes::expr::{BlockExpr, Expr, ExprKind},
+        nodes::expr::{BlockExpr, Expr, ExprKind, FuncIdentExpr, TypeIdentExpr, VarIdentExpr},
     },
 };
 
@@ -23,7 +23,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
                 kind: ExprKind::Bool(v.0),
                 ty: ctx.table.common_type().bool,
             }),
-            ast::expr::Expr::Identifier(_) => todo!(),
+            ast::expr::Expr::Identifier(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Unary(_) => todo!(),
             ast::expr::Expr::Binary(_) => todo!(),
             ast::expr::Expr::Grouped(v) => v.expr.resolve(ctx, ()),
@@ -32,6 +32,29 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
             ast::expr::Expr::Return(_) => todo!(),
             ast::expr::Expr::If(_) => todo!(),
             ast::expr::Expr::Loop(_) => todo!(),
+        }
+    }
+}
+
+impl Resolve<(), FlowObj<Expr>> for Located<String> {
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
+        if let Some(var) = ctx.table.get_variable_by_name_mut(ctx.get_block(), &self.0) {
+            FlowObj::cont(Expr {
+                kind: ExprKind::VarIdent(VarIdentExpr { id: var.get_id() }),
+                ty: var.get_type(),
+            })
+        } else if let Some(func) = ctx.table.get_function_by_name_mut(&self.0) {
+            FlowObj::cont(Expr {
+                kind: ExprKind::FuncIdent(FuncIdentExpr { id: func.get_id() }),
+                ty: func.get_return_type(),
+            })
+        } else if let Some(ty) = ctx.table.get_type_by_name_mut(&self.0) {
+            FlowObj::cont(Expr {
+                kind: ExprKind::TypeIdent(TypeIdentExpr { id: ty.get_id() }),
+                ty: ty.get_id(),
+            })
+        } else {
+            todo!("report error")
         }
     }
 }

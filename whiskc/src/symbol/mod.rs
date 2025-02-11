@@ -30,6 +30,10 @@ impl<'a> TypeSymbol<'a> {
     pub fn get_name(&self) -> &str {
         &self.get().name
     }
+
+    pub fn get_id(&self) -> TypeId {
+        self.id
+    }
 }
 
 pub struct FuncSymbol<'a> {
@@ -111,6 +115,10 @@ impl<'a> BlockSymbol<'a> {
         self
     }
 
+    pub fn get_parent_block(&self) -> Option<BlockId> {
+        self.get().parent_block
+    }
+
     pub fn get_function(&self) -> FuncId {
         self.get().func
     }
@@ -152,5 +160,9 @@ impl<'a> VarSymbol<'a> {
 
     pub fn get_block(&self) -> BlockId {
         self.get().block
+    }
+
+    pub fn get_id(&self) -> VarId {
+        self.id
     }
 }

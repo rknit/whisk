@@ -3,8 +3,8 @@ use crate::lowering::nodes::expr::ExprKind;
 use super::super::{
     nodes::{
         expr::{
-            BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr,
-            UnaryExpr,
+            BinaryExpr, BlockExpr, CallExpr, Expr, IfExpr, LoopExpr, ReturnExpr, UnaryExpr,
+            VarIdentExpr,
         },
         func::{ExternFunction, Function},
         item::Item,
@@ -50,7 +50,7 @@ pub trait VisitMut: Sized {
         visit_func_mut(self, node);
     }
 
-    fn visit_ident_expr_mut(&mut self, _node: &mut IdentExpr) {
+    fn visit_var_ident_expr_mut(&mut self, _node: &mut VarIdentExpr) {
         /* terminal */
     }
 
@@ -123,7 +123,7 @@ pub fn visit_expr_mut(v: &mut impl VisitMut, node: &mut Expr) {
         ExprKind::Unit => v.visit_unit_expr_mut(),
         ExprKind::Integer(value) => v.visit_int_expr_mut(value),
         ExprKind::Bool(value) => v.visit_bool_expr_mut(value),
-        ExprKind::Identifier(node) => v.visit_ident_expr_mut(node),
+        ExprKind::VarIdent(node) => v.visit_var_ident_expr_mut(node),
         ExprKind::Unary(node) => v.visit_unary_expr_mut(node),
         ExprKind::Binary(node) => v.visit_binary_expr_mut(node),
         ExprKind::Call(node) => v.visit_call_expr_mut(node),
@@ -131,6 +131,7 @@ pub fn visit_expr_mut(v: &mut impl VisitMut, node: &mut Expr) {
         ExprKind::Return(node) => v.visit_return_expr_mut(node),
         ExprKind::If(node) => v.visit_if_expr_mut(node),
         ExprKind::Loop(node) => v.visit_loop_expr_mut(node),
+        _ => todo!(),
     };
 }
 

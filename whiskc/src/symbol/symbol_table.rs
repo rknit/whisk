@@ -7,7 +7,7 @@ use crate::{interner::StringInterner, symbol::FuncSymbol};
 
 use super::{
     common::{inject_symbol_table, Common, CommonType},
-    BlockId, FuncId, TypeId, TypeSymbol, VarId,
+    BlockId, FuncId, TypeId, TypeSymbol, VarId, VarSymbol,
 };
 
 #[derive(Clone)]
@@ -60,7 +60,7 @@ impl SymbolTable {
     }
 
     pub fn get_type_by_name_mut(&mut self, name: &str) -> Option<TypeSymbol> {
-        Some(self.get_type_id(name)?.sym(self))
+        self.get_type_id(name).map(|v| v.sym(self))
     }
 
     pub fn get_type_id(&self, name: &str) -> Option<TypeId> {
@@ -92,7 +92,7 @@ impl SymbolTable {
     }
 
     pub fn get_function_by_name_mut(&mut self, name: &str) -> Option<FuncSymbol> {
-        Some(self.get_function_id(name)?.sym(self))
+        self.get_function_id(name).map(|v| v.sym(self))
     }
 
     pub fn get_function_id(&self, name: &str) -> Option<FuncId> {
@@ -118,6 +118,10 @@ impl SymbolTable {
         bid
     }
 
+    fn get_block(&self, block: BlockId) -> Option<&Block> {
+        self.blocks.get(&block)
+    }
+
     /// Add the variable to the variable table, returning its id if there is no name collision in
     /// its parent block.
     /// None is returned if there is a variable with the same name presented in the same block, or
@@ -136,6 +140,36 @@ impl SymbolTable {
             },
         );
         Some(vid)
+    }
+
+    pub fn get_variable_by_name_mut(
+        &mut self,
+        starting_block: BlockId,
+        name: &str,
+    ) -> Option<VarSymbol> {
+        self.get_variable_id_by_name(starting_block, name)
+            .map(|v| v.sym(self))
+    }
+
+    pub fn get_variable_id_by_name(
+        &self,
+        mut starting_block: BlockId,
+        name: &str,
+    ) -> Option<VarId> {
+        let id: u64 = self.interner.get(name)?;
+        let mut vid;
+        while let Some(block) = self.get_block(starting_block) {
+            vid = VarId(block.id, id);
+            if self.vars.contains_key(&vid) {
+                return Some(vid);
+            }
+            if let Some(parent) = block.parent_block {
+                starting_block = parent;
+            } else {
+                break;
+            }
+        }
+        None
     }
 
     pub fn common(&self) -> &Common {

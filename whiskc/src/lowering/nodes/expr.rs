@@ -1,6 +1,6 @@
 use crate::{
     ast::parsing::token::Operator,
-    symbol::{BlockId, NamedId, TypeId},
+    symbol::{BlockId, FuncId, TypeId, VarId},
 };
 
 use super::stmt::Stmt;
@@ -16,7 +16,9 @@ pub enum ExprKind {
     Unit,
     Integer(i64),
     Bool(bool),
-    Identifier(IdentExpr),
+    VarIdent(VarIdentExpr),
+    FuncIdent(FuncIdentExpr),
+    TypeIdent(TypeIdentExpr),
     Unary(UnaryExpr),
     Binary(BinaryExpr),
     Call(CallExpr),
@@ -27,8 +29,18 @@ pub enum ExprKind {
 }
 
 #[derive(Debug, Clone)]
-pub struct IdentExpr {
-    pub id: NamedId,
+pub struct VarIdentExpr {
+    pub id: VarId,
+}
+
+#[derive(Debug, Clone)]
+pub struct FuncIdentExpr {
+    pub id: FuncId,
+}
+
+#[derive(Debug, Clone)]
+pub struct TypeIdentExpr {
+    pub id: TypeId,
 }
 
 #[derive(Debug, Clone)]
@@ -84,9 +96,9 @@ impl From<bool> for ExprKind {
         Self::Bool(value)
     }
 }
-impl From<IdentExpr> for ExprKind {
-    fn from(value: IdentExpr) -> Self {
-        Self::Identifier(value)
+impl From<VarIdentExpr> for ExprKind {
+    fn from(value: VarIdentExpr) -> Self {
+        Self::VarIdent(value)
     }
 }
 impl From<UnaryExpr> for ExprKind {

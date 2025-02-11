@@ -3,8 +3,8 @@ use crate::lowering::nodes::expr::ExprKind;
 use super::super::{
     nodes::{
         expr::{
-            BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr,
-            UnaryExpr,
+            BinaryExpr, BlockExpr, CallExpr, Expr, IfExpr, LoopExpr, ReturnExpr, UnaryExpr,
+            VarIdentExpr,
         },
         func::{ExternFunction, Function},
         item::Item,
@@ -50,7 +50,7 @@ pub trait Visit: Sized {
         visit_func(self, node);
     }
 
-    fn visit_ident_expr(&mut self, _node: &IdentExpr) {
+    fn visit_var_ident_expr(&mut self, _node: &VarIdentExpr) {
         /* terminal */
     }
 
@@ -123,7 +123,7 @@ pub fn visit_expr(v: &mut impl Visit, node: &Expr) {
         ExprKind::Unit => v.visit_unit_expr(),
         ExprKind::Integer(value) => v.visit_int_expr(*value),
         ExprKind::Bool(value) => v.visit_bool_expr(*value),
-        ExprKind::Identifier(node) => v.visit_ident_expr(node),
+        ExprKind::VarIdent(node) => v.visit_var_ident_expr(node),
         ExprKind::Unary(node) => v.visit_unary_expr(node),
         ExprKind::Binary(node) => v.visit_binary_expr(node),
         ExprKind::Call(node) => v.visit_call_expr(node),
@@ -131,6 +131,7 @@ pub fn visit_expr(v: &mut impl Visit, node: &Expr) {
         ExprKind::Return(node) => v.visit_return_expr(node),
         ExprKind::If(node) => v.visit_if_expr(node),
         ExprKind::Loop(node) => v.visit_loop_expr(node),
+        _ => todo!(),
     };
 }
 
