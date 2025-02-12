@@ -3,7 +3,8 @@ use crate::{
     lowering::{
         new_resolve::Flow,
         nodes::expr::{
-            BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, LoopExpr, ReturnExpr, VarIdentExpr,
+            BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, IfExpr, LoopExpr, ReturnExpr,
+            VarIdentExpr,
         },
     },
 };
@@ -32,8 +33,85 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
             ast::expr::Expr::Call(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Block(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Return(v) => v.resolve(ctx, ()),
-            ast::expr::Expr::If(_) => todo!(),
+            ast::expr::Expr::If(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Loop(v) => v.resolve(ctx, ()),
+        }
+    }
+}
+
+impl Resolve<(), FlowObj<Expr>> for ast::expr::IfExpr {
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
+        let FlowObj { value, flow } = self.cond.resolve(ctx, ());
+        let Some(cond) = value else {
+            return FlowObj::none(flow);
+        };
+        if flow != Flow::Continue {
+            return FlowObj::new(cond, flow);
+        }
+
+        if cond.ty != ctx.table.common_type().bool {
+            todo!("report error")
+        }
+
+        let FlowObj {
+            value: then_body,
+            flow: then_flow,
+        } = self.then.resolve(ctx, ());
+
+        if let Some(else_) = &self.else_expr {
+            let FlowObj {
+                value: else_body,
+                flow: else_flow,
+            } = else_.body.resolve(ctx, ());
+
+            let merged_flow = then_flow & else_flow;
+
+            let (Some(then), Some(else_)) = (then_body, else_body) else {
+                // TODO: is this the right behavior?
+                return FlowObj::none(merged_flow);
+            };
+
+            if then.ty != else_.ty {
+                todo!("report error")
+            }
+            let if_ty = then.ty;
+            let (ExprKind::Block(then), ExprKind::Block(else_)) = (then.kind, else_.kind) else {
+                unreachable!()
+            };
+
+            FlowObj::new(
+                Expr {
+                    kind: ExprKind::If(IfExpr {
+                        cond: Box::new(cond),
+                        then,
+                        else_: Some(else_),
+                    }),
+                    ty: if_ty,
+                },
+                merged_flow,
+            )
+        } else {
+            let Some(then_body) = then_body else {
+                // TODO: is this the right behavior?
+                return FlowObj::none(then_flow);
+            };
+            if then_body.ty != ctx.table.common_type().unit {
+                todo!("report error")
+            }
+            let ExprKind::Block(then) = then_body.kind else {
+                unreachable!()
+            };
+            FlowObj::new(
+                Expr {
+                    kind: ExprKind::If(IfExpr {
+                        cond: Box::new(cond),
+                        then,
+                        else_: None,
+                    }),
+                    ty: ctx.table.common_type().unit,
+                },
+                then_flow,
+            )
         }
     }
 }

@@ -1,3 +1,5 @@
+use std::ops::BitAnd;
+
 use crate::{
     ast::AST,
     symbol::{BlockId, FuncId, SymbolTable},
@@ -101,6 +103,18 @@ enum Flow {
     Continue,
     /// control flow diverges from the current path.
     Break,
+}
+
+impl BitAnd for Flow {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        if self == Flow::Break && rhs == Flow::Break {
+            Flow::Break
+        } else {
+            Flow::Continue
+        }
+    }
 }
 
 struct FlowObj<T> {
