@@ -1,6 +1,6 @@
 use crate::{
     ast,
-    lowering::{new_resolve::Record, nodes::item::Item},
+    lowering::{nodes::item::Item, resolve::Record},
 };
 
 use super::Resolve;

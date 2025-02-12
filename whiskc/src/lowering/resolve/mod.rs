@@ -140,7 +140,7 @@ impl<T> FlowObj<T> {
         }
     }
 
-    pub fn _cont_none() -> Self {
+    pub fn cont_none() -> Self {
         Self {
             value: None,
             flow: Flow::Continue,

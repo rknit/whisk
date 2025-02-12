@@ -2,5 +2,6 @@ IN PROGRESS:
 - update codegen
 
 TODO:
+- module pretty print
 - type struct decl
 - alias type

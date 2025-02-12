@@ -1,11 +1,11 @@
 use crate::{
     ast::{location::Located, nodes as ast, parsing::token::Operator},
     lowering::{
-        new_resolve::Flow,
         nodes::expr::{
             BinaryExpr, BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, IfExpr, LoopExpr,
             ReturnExpr, UnaryExpr, VarIdentExpr,
         },
+        resolve::Flow,
     },
 };
 
@@ -227,29 +227,30 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::IfExpr {
         } else {
             let Some(then_body) = then_body else {
                 // TODO: is this the right behavior?
-                return FlowObj::none(then_flow);
+                // use continue_none since having return in the then block doesnt imply that the
+                // control flow will return entirely.
+                return FlowObj::cont_none();
             };
+
             if !ctx
                 .table
                 .is_type_coercible(then_body.ty, ctx.table.common_type().unit)
             {
                 todo!("report error")
             }
+
             let ExprKind::Block(then) = then_body.kind else {
                 unreachable!()
             };
-            FlowObj::new(
-                Expr {
-                    kind: IfExpr {
-                        cond: Box::new(cond),
-                        then,
-                        else_: None,
-                    }
-                    .into(),
-                    ty: ctx.table.common_type().unit,
-                },
-                then_flow,
-            )
+            FlowObj::cont(Expr {
+                kind: IfExpr {
+                    cond: Box::new(cond),
+                    then,
+                    else_: None,
+                }
+                .into(),
+                ty: ctx.table.common_type().unit,
+            })
         }
     }
 }
@@ -394,14 +395,16 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
         let mut result_flow = Flow::Continue;
         for stmt_ast in &self.stmts {
             let FlowObj { value: stmt, flow } = stmt_ast.resolve(ctx, ());
-            result_flow = flow;
-            if result_flow == Flow::Break {
-                break;
-            }
             let Some(stmt) = stmt else {
                 continue;
             };
+
             stmts.push(stmt);
+
+            if flow == Flow::Break {
+                result_flow = flow;
+                break;
+            }
         }
 
         if result_flow == Flow::Break {
