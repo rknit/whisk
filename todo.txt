@@ -1,8 +1,7 @@
 IN PROGRESS:
-- rework resolve module
-  - comparing type with the Never type should always result in true
+- update codegen
+- immutable symbol
 
 TODO:
 - type struct decl
 - alias type
-- update codegen

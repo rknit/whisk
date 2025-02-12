@@ -121,7 +121,6 @@ struct FlowObj<T> {
     pub value: Option<T>,
     pub flow: Flow,
 }
-#[allow(dead_code)]
 impl<T> FlowObj<T> {
     pub fn new(t: T, flow: Flow) -> Self {
         Self {
@@ -141,7 +140,7 @@ impl<T> FlowObj<T> {
         }
     }
 
-    pub fn cont_none() -> Self {
+    pub fn _cont_none() -> Self {
         Self {
             value: None,
             flow: Flow::Continue,
@@ -155,7 +154,7 @@ impl<T> FlowObj<T> {
         }
     }
 
-    pub fn brk_none() -> Self {
+    pub fn _brk_none() -> Self {
         Self {
             value: None,
             flow: Flow::Break,

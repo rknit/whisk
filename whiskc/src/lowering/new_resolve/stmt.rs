@@ -55,7 +55,7 @@ impl Resolve<(), FlowObj<LetStmt>> for ast::stmt::LetStmt {
         let Some(var_id) = ctx.table.new_variable(self.name.0.clone(), ctx.get_block()) else {
             todo!("report error");
         };
-        var_id.sym(ctx.table).set_type(var_ty);
+        var_id.sym_mut(ctx.table).ty = var_ty;
 
         FlowObj::new(LetStmt { var_id, value }, flow)
     }

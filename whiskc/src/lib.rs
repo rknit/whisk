@@ -3,6 +3,6 @@ pub mod ast;
 pub mod compile;
 mod interner;
 pub mod lowering;
-mod symbol;
+pub mod symbol;
 
 pub use compile::compile;

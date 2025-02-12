@@ -1,13 +1,11 @@
-#![allow(dead_code)]
-
 use core::fmt;
 use std::collections::HashMap;
 
-use crate::{interner::StringInterner, symbol::FuncSymbol};
+use crate::interner::StringInterner;
 
 use super::{
     common::{inject_symbol_table, Common, CommonType},
-    BlockId, FuncId, TypeId, TypeSymbol, VarId, VarSymbol,
+    BlockId, FuncId, TypeId, VarId,
 };
 
 #[derive(Clone)]
@@ -55,12 +53,12 @@ impl SymbolTable {
         if self.types.contains_key(&tyid) {
             return None;
         }
-        self.types.insert(tyid, Type { name });
+        self.types.insert(tyid, Type { id: tyid, name });
         Some(tyid)
     }
 
-    pub fn get_type_by_name_mut(&mut self, name: &str) -> Option<TypeSymbol> {
-        self.get_type_id(name).map(|v| v.sym(self))
+    pub fn get_type_by_name_mut(&mut self, name: &str) -> Option<&mut Type> {
+        self.get_type_id(name).map(|v| v.sym_mut(self))
     }
 
     pub fn get_type_id(&self, name: &str) -> Option<TypeId> {
@@ -82,6 +80,7 @@ impl SymbolTable {
         self.funcs.insert(
             fid,
             Function {
+                id: fid,
                 name,
                 params: vec![],
                 ret_ty: Default::default(),
@@ -91,8 +90,8 @@ impl SymbolTable {
         Some(fid)
     }
 
-    pub fn get_function_by_name_mut(&mut self, name: &str) -> Option<FuncSymbol> {
-        self.get_function_id(name).map(|v| v.sym(self))
+    pub fn get_function_by_name_mut(&mut self, name: &str) -> Option<&mut Function> {
+        self.get_function_id(name).map(|v| v.sym_mut(self))
     }
 
     pub fn get_function_id(&self, name: &str) -> Option<FuncId> {
@@ -134,6 +133,7 @@ impl SymbolTable {
         self.vars.insert(
             vid,
             Variable {
+                id: vid,
                 block: parent_block,
                 name,
                 ty: Default::default(),
@@ -146,9 +146,9 @@ impl SymbolTable {
         &mut self,
         starting_block: BlockId,
         name: &str,
-    ) -> Option<VarSymbol> {
+    ) -> Option<&mut Variable> {
         self.get_variable_id_by_name(starting_block, name)
-            .map(|v| v.sym(self))
+            .map(|v| v.sym_mut(self))
     }
 
     pub fn get_variable_id_by_name(
@@ -208,30 +208,51 @@ impl SymbolTable {
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct Type {
-    pub(super) name: String,
-    //   pub(super) size: usize,
-    // pub(super) kind: Option<TypeKind>,
+pub struct Type {
+    id: TypeId,
+    pub name: String,
+}
+impl Type {
+    pub fn get_id(&self) -> TypeId {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct Function {
-    pub(super) name: String,
-    pub(super) params: Vec<VarId>,
-    pub(super) ret_ty: TypeId,
-    pub(super) entry_block: BlockId,
+pub struct Function {
+    id: FuncId,
+    pub name: String,
+    pub params: Vec<VarId>,
+    pub ret_ty: TypeId,
+    pub entry_block: BlockId,
+}
+impl Function {
+    pub fn get_id(&self) -> FuncId {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct Block {
-    pub(super) id: BlockId, // added an id field to identify the block
-    pub(super) func: FuncId,
-    pub(super) parent_block: Option<BlockId>,
+pub struct Block {
+    id: BlockId, // added an id field to identify the block
+    pub func: FuncId,
+    pub parent_block: Option<BlockId>,
+}
+impl Block {
+    pub fn get_id(&self) -> BlockId {
+        self.id
+    }
 }
 
 #[derive(Debug, Clone)]
-pub(super) struct Variable {
-    pub(super) block: BlockId,
-    pub(super) name: String,
-    pub(super) ty: TypeId,
+pub struct Variable {
+    id: VarId,
+    pub block: BlockId,
+    pub name: String,
+    pub ty: TypeId,
+}
+impl Variable {
+    pub fn get_id(&self) -> VarId {
+        self.id
+    }
 }

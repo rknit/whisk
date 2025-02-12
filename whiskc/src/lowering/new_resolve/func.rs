@@ -31,7 +31,7 @@ impl Resolve<(), Option<(FuncId, BlockId)>> for ast::func::FunctionSig {
             let Some(param_id) = ctx.table.new_variable(ast_param.0 .0.clone(), bid) else {
                 todo!("report error")
             };
-            param_id.sym(ctx.table).set_type(param_ty);
+            param_id.sym_mut(ctx.table).ty = param_ty;
             params.push(param_id)
         }
 
@@ -40,10 +40,10 @@ impl Resolve<(), Option<(FuncId, BlockId)>> for ast::func::FunctionSig {
             return None;
         };
 
-        fid.sym(ctx.table)
-            .set_params(params)
-            .set_return_type(ret_ty)
-            .set_entry_block(bid);
+        let sym = fid.sym_mut(ctx.table);
+        sym.params = params;
+        sym.ret_ty = ret_ty;
+        sym.entry_block = bid;
         Some((fid, bid))
     }
 }
@@ -64,7 +64,7 @@ impl Resolve<(), Option<Function>> for ast::func::Function {
             .as_ref()
             .map(|v| v.ty)
             .unwrap_or(ctx.table.common_type().unit);
-        let expect_ret_ty = fid.sym(ctx.table).get_return_type();
+        let expect_ret_ty = fid.sym(ctx.table).ret_ty;
         if flow != Flow::Break && !ctx.table.is_type_coercible(ret_ty, expect_ret_ty) {
             todo!("report error");
         }

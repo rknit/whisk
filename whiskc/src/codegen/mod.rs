@@ -6,42 +6,39 @@ use wsk_vm::{
 };
 
 use crate::{
-    lowering::{
-        nodes::{item::Item, ty::Type},
-        Module,
-    },
-    old_symbol_table::{Symbol, SymbolID, SymbolTable},
+    lowering::{nodes::item::Item, Module},
+    symbol::{FuncId, SymbolTable, VarId},
 };
 
 mod expr;
 mod func;
 mod stmt;
 
-pub fn codegen_wsk_vm(ast: &Module) -> Result<Program, CodegenError> {
-    let mut ctx = Context::new(&ast.sym_table_old);
+pub fn codegen_wsk_vm(module: &Module) -> Result<Program, CodegenError> {
+    let mut ctx = Context::new(&module.sym_table);
     let mut has_entry = false;
 
-    for item in &ast.items {
+    for item in &module.items {
         let Item::Function(func) = item else {
             return Err(CodegenError::UnsupportedItem);
         };
         let fi = ctx.prog.add_func(Function::default());
-        ctx.add_fi(func.sym_id, fi);
+        ctx.add_fi(func.func_id, fi);
 
-        let Symbol::Function(func_sym) = ast.sym_table_old.get_symbol(func.sym_id).unwrap() else {
-            unreachable!();
-        };
+        let func_sym = func.func_id.sym(&mut module.sym_table);
         if func_sym.get_name() == "main" {
             ctx.prog.set_entry_point(fi);
             has_entry = true;
 
-            if !func_sym.get_param_ids().is_empty() || func_sym.get_return_type() != Type::Int {
+            if !func_sym.params().is_empty()
+                || func_sym.get_return_type() != ctx.sym_table.common_type().int
+            {
                 return Err(CodegenError::UnsupportedMainFunctionSig);
             }
         }
     }
 
-    for item in &ast.items {
+    for item in &module.items {
         let Item::Function(func) = item else {
             continue;
         };
@@ -64,9 +61,9 @@ pub fn codegen_wsk_vm(ast: &Module) -> Result<Program, CodegenError> {
 struct Context<'a> {
     pub sym_table: &'a SymbolTable,
     pub prog: Program,
-    fis: HashMap<SymbolID, usize>,
+    fis: HashMap<FuncId, usize>,
     cur_fi: Option<usize>,
-    locals: HashMap<SymbolID, usize>,
+    locals: HashMap<VarId, usize>,
     local_cnts: Vec<usize>,
     active_local_cnt: usize,
 }
@@ -83,8 +80,8 @@ impl<'a> Context<'a> {
         }
     }
 
-    pub fn set_current_fi(&mut self, sym_id: SymbolID) {
-        let fi = self.get_fi(sym_id).expect("set fi");
+    pub fn set_current_fi(&mut self, fid: FuncId) {
+        let fi = self.get_fi(fid).expect("set fi");
         self.cur_fi = Some(fi);
     }
 
@@ -97,13 +94,13 @@ impl<'a> Context<'a> {
         self.prog.get_mut(fi).unwrap()
     }
 
-    pub fn add_fi(&mut self, sym_id: SymbolID, fi: usize) {
-        assert!(!self.fis.contains_key(&sym_id), "duplicate symbols to fi");
-        self.fis.insert(sym_id, fi);
+    pub fn add_fi(&mut self, fid: FuncId, fi: usize) {
+        assert!(!self.fis.contains_key(&fid), "duplicate symbols to fi");
+        self.fis.insert(fid, fi);
     }
 
-    pub fn get_fi(&self, sym_id: SymbolID) -> Option<usize> {
-        self.fis.get(&sym_id).copied()
+    pub fn get_fi(&self, fid: FuncId) -> Option<usize> {
+        self.fis.get(&fid).copied()
     }
 
     pub fn clear_locals(&mut self) {
@@ -112,13 +109,13 @@ impl<'a> Context<'a> {
         self.active_local_cnt = 0;
     }
 
-    pub fn get_local(&mut self, sym_id: SymbolID) -> usize {
-        if let Some(id) = self.locals.get(&sym_id) {
+    pub fn get_local(&mut self, vid: VarId) -> usize {
+        if let Some(id) = self.locals.get(&vid) {
             return *id;
         }
         let id = self.active_local_cnt;
         self.active_local_cnt += 1;
-        self.locals.insert(sym_id, id);
+        self.locals.insert(vid, id);
         id
     }
 

@@ -1,4 +1,4 @@
-use crate::lowering::nodes::expr::ExprKind;
+use crate::lowering::nodes::expr::{ExprKind, FuncIdentExpr};
 
 use super::super::{
     nodes::{
@@ -51,6 +51,10 @@ pub trait Visit: Sized {
     }
 
     fn visit_var_ident_expr(&mut self, _node: &VarIdentExpr) {
+        /* terminal */
+    }
+
+    fn visit_func_ident_expr(&mut self, _node: &FuncIdentExpr) {
         /* terminal */
     }
 
@@ -124,6 +128,7 @@ pub fn visit_expr(v: &mut impl Visit, node: &Expr) {
         ExprKind::Integer(value) => v.visit_int_expr(*value),
         ExprKind::Bool(value) => v.visit_bool_expr(*value),
         ExprKind::VarIdent(node) => v.visit_var_ident_expr(node),
+        ExprKind::FuncIdent(node) => v.visit_func_ident_expr(node),
         ExprKind::Unary(node) => v.visit_unary_expr(node),
         ExprKind::Binary(node) => v.visit_binary_expr(node),
         ExprKind::Call(node) => v.visit_call_expr(node),
@@ -131,7 +136,6 @@ pub fn visit_expr(v: &mut impl Visit, node: &Expr) {
         ExprKind::Return(node) => v.visit_return_expr(node),
         ExprKind::If(node) => v.visit_if_expr(node),
         ExprKind::Loop(node) => v.visit_loop_expr(node),
-        _ => todo!(),
     };
 }
 

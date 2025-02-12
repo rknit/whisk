@@ -284,8 +284,10 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::ReturnExpr {
             if flow != Flow::Continue {
                 return FlowObj::new(value, flow);
             }
-            let expect_ret_ty = ctx.get_func_id().sym(ctx.table).get_return_type();
-            if !ctx.table.is_type_coercible(value.ty, expect_ret_ty) {
+            if !ctx
+                .table
+                .is_type_coercible(value.ty, ctx.get_func_id().sym(ctx.table).ret_ty)
+            {
                 todo!("report error");
             }
             FlowObj::brk(Expr {
@@ -296,8 +298,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::ReturnExpr {
                 ty: ctx.table.common_type().never,
             })
         } else {
-            let sym = ctx.get_func_id().sym(ctx.table);
-            if sym.get_return_type() != ctx.table.common_type().unit {
+            if ctx.get_func_id().sym(ctx.table).ret_ty != ctx.table.common_type().unit {
                 todo!("report error");
             }
             FlowObj::brk(Expr {
@@ -323,18 +324,18 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::CallExpr {
         };
 
         let sym = fid.sym(ctx.table);
-        if self.args.items.len() != sym.params().len() {
+        if self.args.items.len() != sym.params.len() {
             todo!("report error");
         }
 
         let mut args = Vec::new();
-        for (ast_arg, param_id) in self.args.items.iter().zip(sym.params().clone()) {
+        for (ast_arg, param_id) in self.args.items.iter().zip(sym.params.clone()) {
             let FlowObj { value, flow } = ast_arg.resolve(ctx, ());
             let Some(arg) = value else {
                 // assumed the resolve called had already reported the error.
                 continue;
             };
-            let param_ty = param_id.sym(ctx.table).get_type();
+            let param_ty = param_id.sym(ctx.table).ty;
             if !ctx.table.is_type_coercible(arg.ty, param_ty) {
                 todo!("report error");
             }
@@ -348,7 +349,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::CallExpr {
 
         FlowObj::new(
             Expr {
-                ty: fid.sym(ctx.table).get_return_type(),
+                ty: fid.sym(ctx.table).ret_ty,
                 kind: CallExpr {
                     caller: Box::new(caller),
                     args,
@@ -365,12 +366,12 @@ impl Resolve<(), FlowObj<Expr>> for Located<String> {
         if let Some(var) = ctx.table.get_variable_by_name_mut(ctx.get_block(), &self.0) {
             FlowObj::cont(Expr {
                 kind: VarIdentExpr { id: var.get_id() }.into(),
-                ty: var.get_type(),
+                ty: var.ty,
             })
         } else if let Some(func) = ctx.table.get_function_by_name_mut(&self.0) {
             FlowObj::cont(Expr {
                 kind: FuncIdentExpr { id: func.get_id() }.into(),
-                ty: func.get_return_type(),
+                ty: func.ret_ty,
             })
         } else if ctx.table.get_type_by_name_mut(&self.0).is_some() {
             todo!("report error")
@@ -385,7 +386,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
         let bid = ctx.table.new_block(ctx.get_func_id());
         {
             let parent_block = ctx.get_block();
-            bid.sym(ctx.table).set_parent_block(parent_block);
+            bid.sym_mut(ctx.table).parent_block = Some(parent_block);
         }
         ctx.push_block(bid);
 
