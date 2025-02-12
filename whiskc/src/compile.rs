@@ -1,6 +1,6 @@
-use std::path::PathBuf;
+use std::{fs, path::PathBuf};
 
-use crate::{ast, lowering};
+use crate::{ast, codegen::codegen_wsk_vm, lowering};
 
 #[derive(Default)]
 pub struct CompileSwitch {
@@ -40,23 +40,19 @@ pub fn compile(source_path: PathBuf, switches: CompileSwitch) {
         dbg!(&module);
     }
 
-    /*
-
-        if !switches.do_codegen {
+    if !switches.do_codegen {
+        return;
+    }
+    let prog = match codegen_wsk_vm(&module) {
+        Ok(prog) => prog,
+        Err(e) => {
+            eprintln!("{:?}", e);
             return;
         }
-        let prog = match codegen_wsk_vm(&module) {
-            Ok(prog) => prog,
-            Err(e) => {
-                eprintln!("{:?}", e);
-                return;
-            }
-        };
+    };
 
-        let mut out_path = source_path.clone();
-        out_path.set_extension("wc");
-        println!("wrote binary to {}", out_path.display());
-        fs::write(out_path, prog.to_bin()).unwrap();
-
-    */
+    let mut out_path = source_path.clone();
+    out_path.set_extension("wc");
+    println!("wrote binary to {}", out_path.display());
+    fs::write(out_path, prog.to_bin()).unwrap();
 }

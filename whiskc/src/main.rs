@@ -15,7 +15,7 @@ fn main() {
             do_parse_ast: true,
             debug_ast: false,
             do_resolve_module: true,
-            debug_module: false,
+            debug_module: true,
             do_codegen: true,
         },
     )

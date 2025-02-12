@@ -1,9 +1,6 @@
 use wsk_vm::Inst;
 
-use crate::lowering::nodes::{
-    stmt::{ExprStmt, LetStmt, Stmt},
-    ty::Type,
-};
+use crate::lowering::nodes::stmt::{ExprStmt, LetStmt, Stmt};
 
 use super::Codegen;
 
@@ -34,7 +31,9 @@ impl Codegen for Block {
 impl Codegen for ExprStmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
         self.expr.codegen(ctx)?;
-        if !matches!(self.expr.get_type(), Type::Unit | Type::Never) {
+        if self.expr.ty != ctx.sym_table.common_type().unit
+            && self.expr.ty != ctx.sym_table.common_type().never
+        {
             ctx.get_current_fi_mut().push_inst(Inst::Pop);
         }
         Ok(())
@@ -64,7 +63,7 @@ impl Codegen for LetStmt {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {
         self.value.codegen(ctx)?;
 
-        let id = ctx.get_local(self.sym_id);
+        let id = ctx.get_local(self.var_id);
         ctx.get_current_fi_mut().push_inst(Inst::Store(id));
 
         Ok(())

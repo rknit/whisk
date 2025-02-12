@@ -4,11 +4,10 @@ use crate::{
     ast::parsing::token::Operator,
     lowering::nodes::{
         expr::{
-            BinaryExpr, BlockExpr, CallExpr, Expr, IdentExpr, IfExpr, LoopExpr, ReturnExpr,
-            UnaryExpr,
+            BinaryExpr, BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, IfExpr, LoopExpr,
+            ReturnExpr, UnaryExpr, VarIdentExpr,
         },
         stmt::{ExprStmt, Stmt},
-        ty::Type,
     },
 };
 
@@ -16,18 +15,19 @@ use super::{Codegen, CodegenError, Context};
 
 impl Codegen for Expr {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
-        match self {
-            Expr::Unit => Ok(()),
-            Expr::Integer(v) => v.codegen(ctx),
-            Expr::Bool(v) => v.codegen(ctx),
-            Expr::Identifier(v) => v.codegen(ctx),
-            Expr::Unary(v) => v.codegen(ctx),
-            Expr::Binary(v) => v.codegen(ctx),
-            Expr::Call(v) => v.codegen(ctx),
-            Expr::Block(v) => v.codegen(ctx),
-            Expr::Return(v) => v.codegen(ctx),
-            Expr::If(v) => v.codegen(ctx),
-            Expr::Loop(v) => v.codegen(ctx),
+        match &self.kind {
+            ExprKind::Unit => Ok(()),
+            ExprKind::Integer(v) => v.codegen(ctx),
+            ExprKind::Bool(v) => v.codegen(ctx),
+            ExprKind::VarIdent(v) => v.codegen(ctx),
+            ExprKind::FuncIdent(v) => v.codegen(ctx),
+            ExprKind::Unary(v) => v.codegen(ctx),
+            ExprKind::Binary(v) => v.codegen(ctx),
+            ExprKind::Call(v) => v.codegen(ctx),
+            ExprKind::Block(v) => v.codegen(ctx),
+            ExprKind::Return(v) => v.codegen(ctx),
+            ExprKind::If(v) => v.codegen(ctx),
+            ExprKind::Loop(v) => v.codegen(ctx),
         }
     }
 }
@@ -48,14 +48,17 @@ impl ExprCodegen for bool {
     }
 }
 
-impl ExprCodegen for IdentExpr {
+impl ExprCodegen for VarIdentExpr {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
-        if ctx.get_fi(self.sym_id).is_some() {
-            unimplemented!("function ref codegen")
-        }
-        let id = ctx.get_local(self.sym_id);
+        let id = ctx.get_local(self.id);
         ctx.get_current_fi_mut().push_inst(Inst::Load(id));
         Ok(())
+    }
+}
+
+impl ExprCodegen for FuncIdentExpr {
+    fn codegen(&self, _ctx: &mut Context) -> Result<(), CodegenError> {
+        unimplemented!("function ref codegen")
     }
 }
 
@@ -82,8 +85,8 @@ impl ExprCodegen for BinaryExpr {
             // dont evaluate identifier
             // self.target.codegen(ctx)?;
 
-            return if let Expr::Identifier(IdentExpr { sym_id, .. }) = self.left.as_ref() {
-                let id = ctx.get_local(*sym_id);
+            return if let ExprKind::VarIdent(VarIdentExpr { id }) = &self.left.kind {
+                let id = ctx.get_local(*id);
                 ctx.get_current_fi_mut().push_inst(Inst::Store(id));
                 Ok(())
             } else {
@@ -115,18 +118,18 @@ impl ExprCodegen for BinaryExpr {
 
 impl ExprCodegen for CallExpr {
     fn codegen(&self, ctx: &mut Context) -> Result<(), CodegenError> {
-        self.callee.codegen(ctx)?;
+        let ExprKind::FuncIdent(FuncIdentExpr { id: fid }) = self.caller.kind else {
+            unimplemented!("unsupported function call type")
+        };
+
+        // self.caller.codegen(ctx)?;
 
         for arg in &self.args {
             arg.codegen(ctx)?;
         }
 
-        if let Type::Func(func_ty) = self.callee.get_type() {
-            let fi = ctx.get_fi(func_ty).expect("codegen fi");
-            ctx.get_current_fi_mut().push_inst(Inst::Call(fi));
-        } else {
-            unimplemented!("unsupported function call type")
-        }
+        let fi = ctx.get_fi(fid).expect("codegen fi");
+        ctx.get_current_fi_mut().push_inst(Inst::Call(fi));
 
         Ok(())
     }
@@ -181,7 +184,10 @@ impl ExprCodegen for IfExpr {
         if !matches!(
             self.then.stmts.last(),
             Some(Stmt::Expr(ExprStmt {
-                expr: Expr::Return(_)
+                expr: Expr {
+                    kind: ExprKind::Return(_),
+                    ..
+                }
             }))
         ) && self.else_.is_some()
         {

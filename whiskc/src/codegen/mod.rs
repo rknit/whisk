@@ -25,14 +25,12 @@ pub fn codegen_wsk_vm(module: &Module) -> Result<Program, CodegenError> {
         let fi = ctx.prog.add_func(Function::default());
         ctx.add_fi(func.func_id, fi);
 
-        let func_sym = func.func_id.sym(&mut module.sym_table);
-        if func_sym.get_name() == "main" {
+        let func_sym = func.func_id.sym(ctx.sym_table);
+        if func_sym.name == "main" {
             ctx.prog.set_entry_point(fi);
             has_entry = true;
 
-            if !func_sym.params().is_empty()
-                || func_sym.get_return_type() != ctx.sym_table.common_type().int
-            {
+            if !func_sym.params.is_empty() || func_sym.ret_ty != ctx.sym_table.common_type().int {
                 return Err(CodegenError::UnsupportedMainFunctionSig);
             }
         }
