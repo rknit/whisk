@@ -57,17 +57,23 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BinaryExpr {
         };
 
         let check_ty_equal = || {
-            if left.ty != right.ty {
+            if !ctx.table.is_type_symmetric(left.ty, right.ty) {
                 todo!("report error")
             }
         };
         let check_ty_num = |expr: &Expr| {
-            if expr.ty != ctx.table.common_type().int {
+            if !ctx
+                .table
+                .is_type_coercible(expr.ty, ctx.table.common_type().int)
+            {
                 todo!("report error")
             }
         };
         let check_ty_bool = |expr: &Expr| {
-            if expr.ty != ctx.table.common_type().bool {
+            if !ctx
+                .table
+                .is_type_coercible(expr.ty, ctx.table.common_type().bool)
+            {
                 todo!("report error")
             }
         };
@@ -130,13 +136,19 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::UnaryExpr {
 
         let op_ty = match self.op.0 {
             Operator::Sub => {
-                if value.ty != ctx.table.common_type().int {
+                if !ctx
+                    .table
+                    .is_type_coercible(value.ty, ctx.table.common_type().int)
+                {
                     todo!("report error")
                 }
                 ctx.table.common_type().int
             }
             Operator::Not => {
-                if value.ty != ctx.table.common_type().bool {
+                if !ctx
+                    .table
+                    .is_type_coercible(value.ty, ctx.table.common_type().bool)
+                {
                     todo!("report error")
                 }
                 ctx.table.common_type().bool
@@ -168,7 +180,10 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::IfExpr {
             return FlowObj::new(cond, flow);
         }
 
-        if cond.ty != ctx.table.common_type().bool {
+        if !ctx
+            .table
+            .is_type_coercible(cond.ty, ctx.table.common_type().bool)
+        {
             todo!("report error")
         }
 
@@ -190,10 +205,9 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::IfExpr {
                 return FlowObj::none(merged_flow);
             };
 
-            if then.ty != else_.ty {
+            let Some(if_ty) = ctx.table.compare_type_asymmetric(then.ty, else_.ty) else {
                 todo!("report error")
-            }
-            let if_ty = then.ty;
+            };
             let (ExprKind::Block(then), ExprKind::Block(else_)) = (then.kind, else_.kind) else {
                 unreachable!()
             };
@@ -215,7 +229,10 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::IfExpr {
                 // TODO: is this the right behavior?
                 return FlowObj::none(then_flow);
             };
-            if then_body.ty != ctx.table.common_type().unit {
+            if !ctx
+                .table
+                .is_type_coercible(then_body.ty, ctx.table.common_type().unit)
+            {
                 todo!("report error")
             }
             let ExprKind::Block(then) = then_body.kind else {
@@ -267,8 +284,8 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::ReturnExpr {
             if flow != Flow::Continue {
                 return FlowObj::new(value, flow);
             }
-            let sym = ctx.get_func_id().sym(ctx.table);
-            if value.ty != sym.get_return_type() {
+            let expect_ret_ty = ctx.get_func_id().sym(ctx.table).get_return_type();
+            if !ctx.table.is_type_coercible(value.ty, expect_ret_ty) {
                 todo!("report error");
             }
             FlowObj::brk(Expr {
@@ -317,7 +334,8 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::CallExpr {
                 // assumed the resolve called had already reported the error.
                 continue;
             };
-            if param_id.sym(ctx.table).get_type() != arg.ty {
+            let param_ty = param_id.sym(ctx.table).get_type();
+            if !ctx.table.is_type_coercible(arg.ty, param_ty) {
                 todo!("report error");
             }
             args.push(arg);

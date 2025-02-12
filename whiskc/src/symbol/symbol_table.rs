@@ -181,6 +181,30 @@ impl SymbolTable {
     pub fn common_type(&self) -> &CommonType {
         &self.common().ty
     }
+
+    pub fn is_type_coercible(&self, from: TypeId, to: TypeId) -> bool {
+        if from == self.common_type().never {
+            true
+        } else {
+            from == to
+        }
+    }
+
+    pub fn is_type_symmetric(&self, left: TypeId, right: TypeId) -> bool {
+        self.is_type_coercible(left, right) && self.is_type_coercible(right, left)
+    }
+
+    pub fn compare_type_asymmetric(&self, left: TypeId, right: TypeId) -> Option<TypeId> {
+        if self.is_type_symmetric(left, right) {
+            Some(left)
+        } else if self.is_type_coercible(left, right) {
+            Some(right)
+        } else if self.is_type_coercible(right, left) {
+            Some(left)
+        } else {
+            None
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

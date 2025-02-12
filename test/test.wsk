@@ -1,4 +1,4 @@
-func main(n int) int {
+func main() int {
   let n = 15;
   let x = 0;
   let y = 1;

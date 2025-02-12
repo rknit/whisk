@@ -64,7 +64,8 @@ impl Resolve<(), Option<Function>> for ast::func::Function {
             .as_ref()
             .map(|v| v.ty)
             .unwrap_or(ctx.table.common_type().unit);
-        if flow != Flow::Break && fid.sym(ctx.table).get_return_type() != ret_ty {
+        let expect_ret_ty = fid.sym(ctx.table).get_return_type();
+        if flow != Flow::Break && !ctx.table.is_type_coercible(ret_ty, expect_ret_ty) {
             todo!("report error");
         }
 
