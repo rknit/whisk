@@ -1,7 +1,4 @@
 func main(n int) int {
-  n
-
-  /*
   let n = 15;
   let x = 0;
   let y = 1;
@@ -18,5 +15,4 @@ func main(n int) int {
 
     n = n - 1;
   }
-  */
 }

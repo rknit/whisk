@@ -95,6 +95,11 @@ impl From<VarIdentExpr> for ExprKind {
         Self::VarIdent(value)
     }
 }
+impl From<FuncIdentExpr> for ExprKind {
+    fn from(value: FuncIdentExpr) -> Self {
+        Self::FuncIdent(value)
+    }
+}
 impl From<UnaryExpr> for ExprKind {
     fn from(value: UnaryExpr) -> Self {
         Self::Unary(value)

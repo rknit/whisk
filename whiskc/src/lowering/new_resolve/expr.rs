@@ -1,10 +1,10 @@
 use crate::{
-    ast::{location::Located, nodes as ast},
+    ast::{location::Located, nodes as ast, parsing::token::Operator},
     lowering::{
         new_resolve::Flow,
         nodes::expr::{
-            BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, IfExpr, LoopExpr, ReturnExpr,
-            VarIdentExpr,
+            BinaryExpr, BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, IfExpr, LoopExpr,
+            ReturnExpr, UnaryExpr, VarIdentExpr,
         },
     },
 };
@@ -27,8 +27,8 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
                 ty: ctx.table.common_type().bool,
             }),
             ast::expr::Expr::Identifier(v) => v.resolve(ctx, ()),
-            ast::expr::Expr::Unary(_) => todo!(),
-            ast::expr::Expr::Binary(_) => todo!(),
+            ast::expr::Expr::Unary(v) => v.resolve(ctx, ()),
+            ast::expr::Expr::Binary(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Grouped(v) => v.expr.resolve(ctx, ()),
             ast::expr::Expr::Call(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Block(v) => v.resolve(ctx, ()),
@@ -36,6 +36,125 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
             ast::expr::Expr::If(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Loop(v) => v.resolve(ctx, ()),
         }
+    }
+}
+
+impl Resolve<(), FlowObj<Expr>> for ast::expr::BinaryExpr {
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
+        let FlowObj {
+            value: left,
+            flow: left_flow,
+        } = self.left.resolve(ctx, ());
+
+        let FlowObj {
+            value: right,
+            flow: right_flow,
+        } = self.right.resolve(ctx, ());
+
+        let merged_flow = left_flow & right_flow;
+        let (Some(left), Some(right)) = (left, right) else {
+            return FlowObj::none(merged_flow);
+        };
+
+        let check_ty_equal = || {
+            if left.ty != right.ty {
+                todo!("report error")
+            }
+        };
+        let check_ty_num = |expr: &Expr| {
+            if expr.ty != ctx.table.common_type().int {
+                todo!("report error")
+            }
+        };
+        let check_ty_bool = |expr: &Expr| {
+            if expr.ty != ctx.table.common_type().bool {
+                todo!("report error")
+            }
+        };
+
+        let op_ty = match self.op.0 {
+            Operator::Assign => {
+                // TODO: check if expr is assignable
+                check_ty_equal();
+                ctx.table.common_type().unit
+            }
+            Operator::Add | Operator::Sub => {
+                check_ty_num(&left);
+                check_ty_num(&right);
+                check_ty_equal();
+                left.ty
+            }
+            Operator::And | Operator::Or => {
+                check_ty_bool(&left);
+                check_ty_bool(&right);
+                ctx.table.common_type().bool
+            }
+            Operator::Equal
+            | Operator::NotEqual
+            | Operator::Less
+            | Operator::LessEqual
+            | Operator::Greater
+            | Operator::GreaterEqual => {
+                check_ty_num(&left);
+                check_ty_num(&right);
+                check_ty_equal();
+                ctx.table.common_type().bool
+            }
+            _ => unimplemented!(),
+        };
+
+        FlowObj::new(
+            Expr {
+                kind: BinaryExpr {
+                    op: self.op.0,
+                    left: Box::new(left),
+                    right: Box::new(right),
+                }
+                .into(),
+                ty: op_ty,
+            },
+            merged_flow,
+        )
+    }
+}
+
+impl Resolve<(), FlowObj<Expr>> for ast::expr::UnaryExpr {
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
+        let FlowObj { value, flow } = self.expr.resolve(ctx, ());
+        let Some(value) = value else {
+            return FlowObj::none(flow);
+        };
+        if flow != Flow::Continue {
+            return FlowObj::new(value, flow);
+        };
+
+        let op_ty = match self.op.0 {
+            Operator::Sub => {
+                if value.ty != ctx.table.common_type().int {
+                    todo!("report error")
+                }
+                ctx.table.common_type().int
+            }
+            Operator::Not => {
+                if value.ty != ctx.table.common_type().bool {
+                    todo!("report error")
+                }
+                ctx.table.common_type().bool
+            }
+            _ => unimplemented!(),
+        };
+
+        FlowObj::new(
+            Expr {
+                kind: UnaryExpr {
+                    op: self.op.0,
+                    expr: Box::new(value),
+                }
+                .into(),
+                ty: op_ty,
+            },
+            flow,
+        )
     }
 }
 
@@ -81,11 +200,12 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::IfExpr {
 
             FlowObj::new(
                 Expr {
-                    kind: ExprKind::If(IfExpr {
+                    kind: IfExpr {
                         cond: Box::new(cond),
                         then,
                         else_: Some(else_),
-                    }),
+                    }
+                    .into(),
                     ty: if_ty,
                 },
                 merged_flow,
@@ -103,11 +223,12 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::IfExpr {
             };
             FlowObj::new(
                 Expr {
-                    kind: ExprKind::If(IfExpr {
+                    kind: IfExpr {
                         cond: Box::new(cond),
                         then,
                         else_: None,
-                    }),
+                    }
+                    .into(),
                     ty: ctx.table.common_type().unit,
                 },
                 then_flow,
@@ -129,7 +250,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::LoopExpr {
             unreachable!()
         };
         FlowObj::cont(Expr {
-            kind: ExprKind::Loop(LoopExpr { body: block_expr }),
+            kind: LoopExpr { body: block_expr }.into(),
             // always return the Never type for now, as there is no Break/Continue expr yet.
             ty: ctx.table.common_type().never,
         })
@@ -151,9 +272,10 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::ReturnExpr {
                 todo!("report error");
             }
             FlowObj::brk(Expr {
-                kind: ExprKind::Return(ReturnExpr {
+                kind: ReturnExpr {
                     expr: Some(Box::new(value)),
-                }),
+                }
+                .into(),
                 ty: ctx.table.common_type().never,
             })
         } else {
@@ -162,7 +284,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::ReturnExpr {
                 todo!("report error");
             }
             FlowObj::brk(Expr {
-                kind: ExprKind::Return(ReturnExpr { expr: None }),
+                kind: ReturnExpr { expr: None }.into(),
                 ty: ctx.table.common_type().never,
             })
         }
@@ -209,10 +331,11 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::CallExpr {
         FlowObj::new(
             Expr {
                 ty: fid.sym(ctx.table).get_return_type(),
-                kind: ExprKind::Call(CallExpr {
+                kind: CallExpr {
                     caller: Box::new(caller),
                     args,
-                }),
+                }
+                .into(),
             },
             result_flow,
         )
@@ -223,12 +346,12 @@ impl Resolve<(), FlowObj<Expr>> for Located<String> {
     fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
         if let Some(var) = ctx.table.get_variable_by_name_mut(ctx.get_block(), &self.0) {
             FlowObj::cont(Expr {
-                kind: ExprKind::VarIdent(VarIdentExpr { id: var.get_id() }),
+                kind: VarIdentExpr { id: var.get_id() }.into(),
                 ty: var.get_type(),
             })
         } else if let Some(func) = ctx.table.get_function_by_name_mut(&self.0) {
             FlowObj::cont(Expr {
-                kind: ExprKind::FuncIdent(FuncIdentExpr { id: func.get_id() }),
+                kind: FuncIdentExpr { id: func.get_id() }.into(),
                 ty: func.get_return_type(),
             })
         } else if ctx.table.get_type_by_name_mut(&self.0).is_some() {
@@ -267,11 +390,12 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
 
             return FlowObj::new(
                 Expr {
-                    kind: ExprKind::Block(BlockExpr {
+                    kind: BlockExpr {
                         block_id: bid,
                         stmts,
                         eval_expr: None,
-                    }),
+                    }
+                    .into(),
                     ty: ctx.table.common_type().never,
                 },
                 result_flow,
@@ -291,11 +415,12 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
 
         FlowObj::new(
             Expr {
-                kind: ExprKind::Block(BlockExpr {
+                kind: BlockExpr {
                     block_id: bid,
                     stmts,
                     eval_expr: eval_expr.and_then(|v| v.value.map(Box::new)),
-                }),
+                }
+                .into(),
                 ty: eval_expr_ty,
             },
             result_flow,
