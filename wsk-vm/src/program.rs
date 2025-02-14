@@ -167,10 +167,10 @@ impl Display for Function {
         for (i, inst) in self.insts.iter().enumerate() {
             let inst_str = match inst {
                 Inst::Halt => "halt".to_owned(),
-                Inst::Push(value) => format!("push {}", value),
+                Inst::Push(value) => format!("push\t\t{}", value),
                 Inst::Pop => "pop".to_owned(),
-                Inst::Load(offset) => format!("load :{}", offset),
-                Inst::Store(offset) => format!("store :{}", offset),
+                Inst::Load(offset) => format!("load\t\tr{}", offset),
+                Inst::Store(offset) => format!("store\t\tr{}", offset),
                 Inst::Add => "add".to_owned(),
                 Inst::Sub => "sub".to_owned(),
                 Inst::Mul => "mul".to_owned(),
@@ -179,7 +179,7 @@ impl Display for Function {
                 Inst::And => "and".to_owned(),
                 Inst::Or => "or".to_owned(),
                 Inst::Cmp(cmp) => format!(
-                    "cmp {}",
+                    "cmp\t\t{}",
                     match cmp {
                         Cmp::Equal => "equ",
                         Cmp::Less => "lt",
@@ -188,14 +188,14 @@ impl Display for Function {
                 ),
                 Inst::Neg => "neg".to_owned(),
                 Inst::Not => "not".to_owned(),
-                Inst::Jmp(offset) => format!("jmp {}", i.wrapping_add_signed(*offset)),
-                Inst::JmpTrue(offset) => format!("jtr {}", i.wrapping_add_signed(*offset)),
-                Inst::JmpFalse(offset) => format!("jfl {}", i.wrapping_add_signed(*offset)),
-                Inst::Call(fi) => format!("call ${}", fi),
+                Inst::Jmp(offset) => format!("jmp\t\t{}:", i.wrapping_add_signed(*offset)),
+                Inst::JmpTrue(offset) => format!("jtr\t\t{}:", i.wrapping_add_signed(*offset)),
+                Inst::JmpFalse(offset) => format!("jfl\t\t{}:", i.wrapping_add_signed(*offset)),
+                Inst::Call(fi) => format!("call\t\t${}", fi),
                 Inst::Ret => "ret".to_owned(),
             };
 
-            writeln!(f, "\t{}: {}", i, inst_str)?;
+            writeln!(f, "\t{:>4}:\t{}", i, inst_str)?;
         }
         Ok(())
     }
