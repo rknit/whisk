@@ -7,11 +7,18 @@ pub struct CompileSwitch {
     pub do_parse_ast: bool,
     pub debug_ast: bool,
     pub do_resolve_module: bool,
-    pub debug_module: bool,
+    pub print_module: bool,
     pub do_codegen: bool,
 }
 
 pub fn compile(source_path: PathBuf, switches: CompileSwitch) {
+    let source_name = source_path
+        .file_stem()
+        .expect("valid file name")
+        .to_str()
+        .expect("valid file name enc")
+        .to_owned();
+
     if !switches.do_parse_ast {
         return;
     }
@@ -29,15 +36,17 @@ pub fn compile(source_path: PathBuf, switches: CompileSwitch) {
     if !switches.do_resolve_module {
         return;
     }
-    let module = match lowering::resolve(&ast) {
+    let module = match lowering::resolve(&ast, source_name) {
         Ok(module) => module,
         Err(errs) => {
             dbg!(&errs);
             return;
         }
     };
-    if switches.debug_module {
-        dbg!(&module);
+    if switches.print_module {
+        let mut s = String::new();
+        module.pretty_print(&mut s);
+        println!("{}", s);
     }
 
     if !switches.do_codegen {

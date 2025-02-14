@@ -14,15 +14,16 @@ mod item;
 mod stmt;
 mod ty;
 
-pub fn resolve(ast: &AST) -> Result<Module, Vec<ResolveError>> {
+pub fn resolve(ast: &AST, module_name: String) -> Result<Module, Vec<ResolveError>> {
     let mut module = Module {
         sym_table: SymbolTable::default(),
+        name: module_name,
         items: vec![],
     };
 
     let mut ctx = ResolveContext::new(&mut module.sym_table);
     module.items = ast.resolve(&mut ctx, ());
-    dbg!(&ctx);
+    // dbg!(&ctx);
 
     if !ctx.errors.is_empty() {
         Err(ctx.errors)
