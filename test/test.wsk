@@ -3,10 +3,12 @@ func main() int {
 
   let i = 2;
   loop {
+    if i >= n {
+      return 1;
+    }
     if n % i == 0 {
       return 0;
     }
     i = i + 1;
   }
-  1
 }

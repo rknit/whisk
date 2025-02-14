@@ -175,6 +175,7 @@ impl Display for Function {
                 Inst::Sub => "sub".to_owned(),
                 Inst::Mul => "mul".to_owned(),
                 Inst::Div => "div".to_owned(),
+                Inst::Mod => "mod".to_owned(),
                 Inst::And => "and".to_owned(),
                 Inst::Or => "or".to_owned(),
                 Inst::Cmp(cmp) => format!(

@@ -1,7 +1,7 @@
 use std::{
     fmt::Display,
     mem::discriminant,
-    ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Not, Sub},
+    ops::{Add, BitAnd, BitOr, Div, Mul, Neg, Not, Rem, Sub},
 };
 
 #[derive(Debug, Clone, Copy)]
@@ -20,6 +20,7 @@ impl_macros::impl_math_bin_op!(Add, add, +);
 impl_macros::impl_math_bin_op!(Sub, sub, -);
 impl_macros::impl_math_bin_op!(Mul, mul, *);
 impl_macros::impl_math_bin_op!(Div, div, /);
+impl_macros::impl_math_bin_op!(Rem, rem, %);
 impl_macros::impl_logic_bin_op!(BitAnd, bitand, &&);
 impl_macros::impl_logic_bin_op!(BitOr, bitor, ||);
 
