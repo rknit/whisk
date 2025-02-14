@@ -29,7 +29,9 @@ enum BindingPower {
     LogicalAdditive,
     LogicalMultiplicative,
     Comparative,
+    Modulus,
     Additive,
+    Multiplicative,
     Unary,
     Call,
     Primary,
@@ -74,6 +76,11 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
     {
         let bin_ops = [
             (BindingPower::Additive, vec![Operator::Add, Operator::Sub]),
+            (
+                BindingPower::Multiplicative,
+                vec![Operator::Mul, Operator::Div],
+            ),
+            (BindingPower::Modulus, vec![Operator::Mod]),
             (BindingPower::LogicalMultiplicative, vec![Operator::And]),
             (BindingPower::LogicalAdditive, vec![Operator::Or]),
             (

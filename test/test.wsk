@@ -1,18 +1,12 @@
 func main() int {
   let n = 15;
-  let x = 0;
-  let y = 1;
-  let z = 0;
 
+  let i = 2;
   loop {
-    if n <= 0 {
-      return z;
+    if n % i == 0 {
+      return 0;
     }
-
-    x = y;
-    y = z;
-    z = x + y;
-
-    n = n - 1;
+    i = i + 1;
   }
+  1
 }

@@ -77,6 +77,14 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BinaryExpr {
                 todo!("report error")
             }
         };
+        let check_ty_int = |expr: &Expr| {
+            if !ctx
+                .table
+                .is_type_coercible(expr.ty, ctx.table.common_type().int)
+            {
+                todo!("report error")
+            }
+        };
 
         let op_ty = match self.op.0 {
             Operator::Assign => {
@@ -84,11 +92,16 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BinaryExpr {
                 check_ty_equal();
                 ctx.table.common_type().unit
             }
-            Operator::Add | Operator::Sub => {
+            Operator::Add | Operator::Sub | Operator::Mul | Operator::Div => {
                 check_ty_num(&left);
                 check_ty_num(&right);
                 check_ty_equal();
                 left.ty
+            }
+            Operator::Mod => {
+                check_ty_num(&left);
+                check_ty_int(&right);
+                ctx.table.common_type().int
             }
             Operator::And | Operator::Or => {
                 check_ty_bool(&left);
