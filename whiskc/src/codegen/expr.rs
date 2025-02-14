@@ -101,6 +101,9 @@ impl ExprCodegen for BinaryExpr {
         match self.op {
             Operator::Add => func.push_inst(Inst::Add),
             Operator::Sub => func.push_inst(Inst::Sub),
+            Operator::Mul => func.push_inst(Inst::Mul),
+            Operator::Div => func.push_inst(Inst::Div),
+            Operator::Mod => func.push_inst(Inst::Mod),
             Operator::And => func.push_inst(Inst::And),
             Operator::Or => func.push_inst(Inst::Or),
             Operator::Equal => func.push_inst(Cmp::Equal),
