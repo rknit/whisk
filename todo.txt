@@ -1,7 +1,6 @@
 IN PROGRESS:
-- mul and div binary ops
+- type struct decl
 
 TODO:
-- type struct decl
 - alias type
 - error reporting
