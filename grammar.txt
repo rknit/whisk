@@ -6,9 +6,9 @@
 <param_list> ::= <param> | <param> , <param_list> | <epsilon>
 <param> ::= <ident> <type>
 
-<type_decl> ::= type <ident> = <type> ;
+<type_decl> ::= type <ident> = (<type> | <struct>) ;
 
-<type> ::= <primitive> | <ident> | <struct>
+<type> ::= <primitive> | <ident>
 <primitive> ::= int | bool | \(\)
 
 <struct> ::= struct { <field_list> }

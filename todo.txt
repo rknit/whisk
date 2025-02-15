@@ -3,4 +3,5 @@ IN PROGRESS:
 - alias type
 
 TODO:
+- fault tolerant parsing
 - error reporting

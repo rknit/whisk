@@ -25,7 +25,6 @@ impl Resolve<(), Option<TypeId>> for ast::ty::Type {
                 ast::ty::PrimType::Bool => ctx.table.common_type().bool,
             }),
             ast::ty::Type::Ident(v) => ctx.table.get_type_id(&v.0),
-            ast::ty::Type::Struct(_) => todo!(),
         }
     }
 }

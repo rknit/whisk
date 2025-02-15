@@ -11,23 +11,40 @@ pub struct TypeDecl {
     pub ty_tok: Located<Keyword>,
     pub name: Located<String>,
     pub assign_tok: Located<Operator>,
-    pub ty: Type,
+    pub kind: TypeDeclKind,
     pub semi_tok: Located<Delimiter>,
+}
+
+#[derive(Debug, Clone)]
+pub enum TypeDeclKind {
+    Type(Type),
+    Struct(Struct),
+}
+impl Locatable for TypeDeclKind {
+    fn get_location(&self) -> Span {
+        match self {
+            TypeDeclKind::Type(v) => v.get_location(),
+            TypeDeclKind::Struct(v) => v.get_location(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
 pub enum Type {
     Primitive(Located<PrimType>),
-    Struct(Struct),
     Ident(Located<String>),
 }
 impl Locatable for Type {
     fn get_location(&self) -> Span {
         match self {
             Type::Primitive(ty) => ty.1,
-            Type::Struct(ty) => ty.get_location(),
             Type::Ident(ty) => ty.1,
         }
+    }
+}
+impl From<Type> for TypeDeclKind {
+    fn from(value: Type) -> Self {
+        Self::Type(value)
     }
 }
 
@@ -50,7 +67,7 @@ impl Locatable for Struct {
         Span::combine(self.struct_tok.1, self.brace_close_tok.1)
     }
 }
-impl From<Struct> for Type {
+impl From<Struct> for TypeDeclKind {
     fn from(value: Struct) -> Self {
         Self::Struct(value)
     }

@@ -40,10 +40,6 @@ impl pratt_parser::Handlers<Type, BindingPower> for TypeHandlers {
             |_, parser| parse_ident_type(parser),
         );
 
-        nud(TokenKind::Keyword(Keyword::Struct), |_, parser| {
-            parse_struct_type(parser)
-        });
-
         for kw in TypeKeyword::iter() {
             nud(TokenKind::TypeKeyword(kw), |_, parser| {
                 parse_keyword_type(parser)
@@ -100,7 +96,7 @@ fn parse_ident_type(parser: &mut ParseContext) -> ParseResult<Type> {
     Some(Type::Ident(Located(ident, loc)))
 }
 
-fn parse_struct_type(parser: &mut ParseContext) -> ParseResult<Type> {
+pub fn parse_struct_type(parser: &mut ParseContext) -> ParseResult<Struct> {
     let struct_tok = match_keyword!(parser, Keyword::Struct =>);
     let brace_open_tok = match_delimiter!(parser, Delimiter::BraceOpen =>);
     let fields = Punctuated::parse(
@@ -110,12 +106,12 @@ fn parse_struct_type(parser: &mut ParseContext) -> ParseResult<Type> {
         Field::parse,
     )?;
     let brace_close_tok = match_delimiter!(parser, Delimiter::BraceClose =>);
-    Some(Type::Struct(Struct {
+    Some(Struct {
         struct_tok,
         brace_open_tok,
         fields,
         brace_close_tok,
-    }))
+    })
 }
 
 impl Parse for Field {
