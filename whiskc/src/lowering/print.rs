@@ -1,6 +1,6 @@
 use std::fmt::{Display, Write};
 
-use crate::symbol::SymbolTable;
+use crate::symbol::{ty::TypeKind, SymbolTable};
 
 use super::{visit::Visit, Module};
 
@@ -197,7 +197,7 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
     }
 
     fn visit_extern_func(&mut self, node: &super::nodes::func::ExternFunction) {
-        self.start_item("extern_func");
+        self.start_item("extern_func_decl");
 
         let sym = node.0.sym(self.table);
 
@@ -217,7 +217,7 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
     }
 
     fn visit_func(&mut self, node: &super::nodes::func::Function) {
-        self.start_item("func");
+        self.start_item("func_decl");
 
         let sym = node.func_id.sym(self.table);
 
@@ -303,6 +303,35 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
     fn visit_return_expr(&mut self, node: &super::nodes::expr::ReturnExpr) {
         self.set_prefix("return: ");
         super::visit::visit_return_expr(self, node);
+    }
+
+    fn visit_type_decl(&mut self, node: &super::nodes::ty::TypeDecl) {
+        self.start_item("type_decl");
+
+        let sym = node.0.sym(self.table);
+
+        self.add_attrib("name", &sym.name);
+
+        if let Some(kind) = &sym.kind {
+            self.start_item("kind");
+            match kind {
+                TypeKind::Primitive(v) => self.add_attrib("primitive", v),
+                TypeKind::Struct(v) => {
+                    self.start_item("struct");
+                    for (name, ty) in &v.fields {
+                        self.add_attrib(name, &ty.sym(self.table).name)
+                    }
+                    self.end_item();
+                }
+                TypeKind::Ident(v) => self.add_attrib("ident", &v.sym(self.table).name),
+                TypeKind::Alias(v) => self.add_attrib("alias", &v.sym(self.table).name),
+            };
+            self.end_item();
+        } else {
+            self.add_attrib("kind", "unknown");
+        }
+
+        self.end_item();
     }
 
     fn visit_unary_expr(&mut self, node: &super::nodes::expr::UnaryExpr) {

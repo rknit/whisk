@@ -1,4 +1,7 @@
-use crate::lowering::nodes::expr::{ExprKind, FuncIdentExpr};
+use crate::lowering::nodes::{
+    expr::{ExprKind, FuncIdentExpr},
+    ty::TypeDecl,
+};
 
 use super::super::{
     nodes::{
@@ -86,6 +89,10 @@ pub trait VisitMut: Sized {
         visit_stmt_mut(self, node);
     }
 
+    fn visit_type_decl(&mut self, _node: &mut TypeDecl) {
+        /* terminal */
+    }
+
     fn visit_unary_expr_mut(&mut self, node: &mut UnaryExpr) {
         visit_unary_expr_mut(self, node);
     }
@@ -159,7 +166,7 @@ pub fn visit_item_mut(v: &mut impl VisitMut, node: &mut Item) {
     match node {
         Item::Function(node) => v.visit_func_mut(node),
         Item::ExternFunction(node) => v.visit_extern_func_mut(node),
-        _ => todo!(),
+        Item::TypeDecl(node) => v.visit_type_decl(node),
     }
 }
 

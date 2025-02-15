@@ -9,11 +9,13 @@ use crate::{
     symbol::{BlockId, FuncId, VarId},
 };
 
-impl Record for ast::func::FunctionSig {
-    fn record(&self, ctx: &mut ResolveContext, _: ()) {
+impl Record<(), bool> for ast::func::FunctionSig {
+    fn record(&self, ctx: &mut ResolveContext, _: ()) -> bool {
         if ctx.table.new_function(self.name.0.clone()).is_none() {
             todo!("report error");
-        };
+        } else {
+            true
+        }
     }
 }
 

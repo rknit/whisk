@@ -3,5 +3,6 @@ IN PROGRESS:
 - alias type
 
 TODO:
+- field access operator
 - fault tolerant parsing
 - error reporting

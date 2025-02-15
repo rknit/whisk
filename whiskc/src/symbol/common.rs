@@ -1,6 +1,7 @@
-use core::fmt;
-
-use super::{SymbolTable, TypeId};
+use super::{
+    ty::{Primitive, TypeKind},
+    SymbolTable, TypeId,
+};
 
 #[derive(Default, Debug, Clone, Copy)]
 pub struct Common {
@@ -20,35 +21,17 @@ pub fn inject_symbol_table(table: &mut SymbolTable) -> Common {
     Common { ty: common_ty }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-// TODO: move this into an appropriate module.
-pub enum PrimitiveType {
-    Never,
-    Unit,
-    Int,
-    Bool,
-}
-impl fmt::Display for PrimitiveType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Never => "never",
-                Self::Unit => "()",
-                Self::Int => "int",
-                Self::Bool => "bool",
-            }
-        )
-    }
-}
-
 fn inject_primitive_types(table: &mut SymbolTable) -> CommonType {
-    let mut f = |ty: PrimitiveType| table.new_type(ty.to_string()).unwrap();
+    let mut f = |ty: Primitive| {
+        let id = table.new_type(ty.to_string()).unwrap();
+        let sym = id.sym_mut(table);
+        sym.kind = Some(TypeKind::Primitive(ty));
+        id
+    };
     CommonType {
-        never: f(PrimitiveType::Never),
-        unit: f(PrimitiveType::Unit),
-        int: f(PrimitiveType::Int),
-        bool: f(PrimitiveType::Bool),
+        never: f(Primitive::Never),
+        unit: f(Primitive::Unit),
+        int: f(Primitive::Int),
+        bool: f(Primitive::Bool),
     }
 }

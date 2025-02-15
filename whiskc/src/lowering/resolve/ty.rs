@@ -1,18 +1,62 @@
-use crate::{ast::nodes as ast, lowering::nodes::ty::TypeDecl, symbol::TypeId};
+use crate::{
+    ast::nodes as ast,
+    lowering::nodes::ty::TypeDecl,
+    symbol::{
+        ty::{StructType, TypeKind},
+        TypeId,
+    },
+};
 
 use super::{Record, Resolve, ResolveContext};
 
-impl Record for ast::ty::TypeDecl {
-    fn record(&self, ctx: &mut ResolveContext, _: ()) {
+impl Record<(), bool> for ast::ty::TypeDecl {
+    fn record(&self, ctx: &mut ResolveContext, _: ()) -> bool {
         if ctx.table.new_type(self.name.0.clone()).is_none() {
             todo!("report error");
+        } else {
+            true
         }
     }
 }
 
 impl Resolve<(), Option<TypeDecl>> for ast::ty::TypeDecl {
-    fn resolve(&self, _ctx: &mut ResolveContext, _: ()) -> Option<TypeDecl> {
-        todo!()
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> Option<TypeDecl> {
+        match &self.kind {
+            ast::ty::TypeDeclKind::Type(ast_ty) => {
+                let ty_id = ast_ty.resolve(ctx, ())?;
+                let sym = ctx
+                    .table
+                    .get_type_by_name_mut(&self.name.0)
+                    .expect("recorded type name");
+                sym.kind = Some(TypeKind::Ident(ty_id));
+            }
+            ast::ty::TypeDeclKind::Struct(ast_struct) => {
+                let mut fields: Vec<(String, TypeId)> = Vec::new();
+                for ast_field in &ast_struct.fields.items {
+                    if fields.iter().any(|(name, _)| *name == ast_field.name.0) {
+                        todo!("report error");
+                    }
+                    let ty_id = match ast_field.ty.resolve(ctx, ()) {
+                        Some(id) => id,
+                        // TODO: maybe it should be 'unknown' type.
+                        None => ctx.table.common_type().never,
+                    };
+                    fields.push((ast_field.name.0.clone(), ty_id));
+                }
+
+                let sym = ctx
+                    .table
+                    .get_type_by_name_mut(&self.name.0)
+                    .expect("recorded type name");
+                sym.kind = Some(TypeKind::Struct(StructType { fields }));
+            }
+        };
+
+        Some(TypeDecl(
+            ctx.table
+                .get_type_id(&self.name.0)
+                .expect("recorded type name"),
+        ))
     }
 }
 

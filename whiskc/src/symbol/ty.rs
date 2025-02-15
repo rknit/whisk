@@ -1,3 +1,4 @@
+use core::fmt;
 use std::mem::size_of;
 
 use super::{SymbolTable, TypeId};
@@ -34,6 +35,20 @@ impl Primitive {
             Self::Bool => size_of::<bool>(),
             Self::Int => size_of::<i64>(),
         }
+    }
+}
+impl fmt::Display for Primitive {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Never => "never",
+                Self::Unit => "()",
+                Self::Int => "int",
+                Self::Bool => "bool",
+            }
+        )
     }
 }
 

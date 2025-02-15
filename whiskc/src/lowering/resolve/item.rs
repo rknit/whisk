@@ -2,8 +2,8 @@ use super::{Record, Resolve, ResolveContext};
 
 use crate::{ast::nodes as ast, lowering::nodes::item::Item};
 
-impl Record for ast::item::Item {
-    fn record(&self, ctx: &mut ResolveContext, _: ()) {
+impl Record<(), bool> for ast::item::Item {
+    fn record(&self, ctx: &mut ResolveContext, _: ()) -> bool {
         match self {
             ast::item::Item::Function(v) => v.sig.record(ctx, ()),
             ast::item::Item::ExternFunction(v) => v.sig.record(ctx, ()),
