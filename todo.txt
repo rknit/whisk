@@ -1,6 +1,6 @@
 IN PROGRESS:
 - type struct decl
+- alias type
 
 TODO:
-- alias type
 - error reporting

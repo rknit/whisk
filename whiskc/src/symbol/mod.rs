@@ -6,14 +6,21 @@ pub mod ty;
 pub use symbol_id::*;
 pub use symbol_table::SymbolTable;
 
+use self::ty::TypeKind;
+
 #[derive(Debug, Clone)]
 pub struct TypeSymbol {
     id: TypeId,
     pub name: String,
+    pub kind: Option<TypeKind>,
 }
 impl TypeSymbol {
     pub fn get_id(&self) -> TypeId {
         self.id
+    }
+
+    pub fn get_size(&self, table: &SymbolTable) -> Option<usize> {
+        self.kind.as_ref().and_then(|v| v.get_size(table))
     }
 }
 

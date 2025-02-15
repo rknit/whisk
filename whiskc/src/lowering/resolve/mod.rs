@@ -16,7 +16,7 @@ mod ty;
 
 pub fn resolve(ast: &AST, module_name: String) -> Result<Module, Vec<ResolveError>> {
     let mut module = Module {
-        sym_table: SymbolTable::default(),
+        sym_table: SymbolTable::new(),
         name: module_name,
         items: vec![],
     };

@@ -8,7 +8,7 @@ use super::{
     BlockId, BlockSymbol, FuncId, FuncSymbol, TypeId, TypeSymbol, VarId, VarSymbol,
 };
 
-#[derive(Clone)]
+#[derive(Default, Clone)]
 pub struct SymbolTable {
     pub(super) types: HashMap<TypeId, TypeSymbol>,
     pub(super) funcs: HashMap<FuncId, FuncSymbol>,
@@ -17,21 +17,6 @@ pub struct SymbolTable {
     pub(super) interner: StringInterner,
     pub(super) blk_counter: u64,
     common: Option<Common>,
-}
-impl Default for SymbolTable {
-    fn default() -> Self {
-        let mut table = Self {
-            types: Default::default(),
-            funcs: Default::default(),
-            blocks: Default::default(),
-            vars: Default::default(),
-            interner: Default::default(),
-            blk_counter: Default::default(),
-            common: None,
-        };
-        table.common = Some(inject_symbol_table(&mut table));
-        table
-    }
 }
 impl fmt::Debug for SymbolTable {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -46,6 +31,12 @@ impl fmt::Debug for SymbolTable {
     }
 }
 impl SymbolTable {
+    pub fn new() -> Self {
+        let mut table = Self::default();
+        table.common = Some(inject_symbol_table(&mut table));
+        table
+    }
+
     /// Add the type to the type symbol table, returning its id if there is no name collision.
     /// None is returned if there is a type with the same name presented in the table.
     pub fn new_type(&mut self, name: String) -> Option<TypeId> {
@@ -53,7 +44,14 @@ impl SymbolTable {
         if self.types.contains_key(&tyid) {
             return None;
         }
-        self.types.insert(tyid, TypeSymbol { id: tyid, name });
+        self.types.insert(
+            tyid,
+            TypeSymbol {
+                id: tyid,
+                name,
+                kind: None,
+            },
+        );
         Some(tyid)
     }
 
