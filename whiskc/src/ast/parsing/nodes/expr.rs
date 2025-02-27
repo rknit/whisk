@@ -20,6 +20,7 @@ use crate::ast::{
 pub enum ExprParseError {
     UnexpectedToken(TokenKind),
     UnexpectedInfixOperator(TokenKind),
+    ExpectedIdentForStructInit(Expr),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -34,6 +35,7 @@ enum BindingPower {
     Multiplicative,
     Unary,
     Call,
+    StructInit,
     Primary,
 }
 
@@ -107,6 +109,12 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
             BindingPower::Call,
             parse_call_expr,
         );
+
+        led(
+            TokenKind::Delimiter(Delimiter::BraceOpen),
+            BindingPower::StructInit,
+            parse_struct_init,
+        );
     }
 }
 
@@ -144,7 +152,7 @@ fn parse_primary_expr(
             LiteralKeyword::True => Expr::Bool(Located(true, tok.loc)),
             LiteralKeyword::False => Expr::Bool(Located(false, tok.loc)),
         },
-        TokenKind::Identifier(Identifier(ident)) => Expr::Identifier(Located(ident, tok.loc)),
+        TokenKind::Identifier(Identifier(ident)) => Expr::Ident(Located(ident, tok.loc)),
         _ => unimplemented!("{:#?}", tok),
     })
 }
@@ -354,6 +362,51 @@ fn parse_loop_expr(
         loop_tok,
         body: block,
     }))
+}
+
+fn parse_struct_init(
+    _pratt_parser: &PrattParser<Expr, BindingPower>,
+    parser: &mut ParseContext,
+    left: Expr,
+    _bp: BindingPower,
+) -> ParseResult<Expr> {
+    let Expr::Ident(ident) = left else {
+        let loc = left.get_location();
+        parser.push_error(Located(
+            ParseError::ExprParseError(ExprParseError::ExpectedIdentForStructInit(left)),
+            loc,
+        ));
+        return None;
+    };
+
+    let brace_open_tok = match_delimiter!(parser, Delimiter::BraceOpen =>);
+    let fields = Punctuated::parse(
+        parser,
+        Delimiter::Comma,
+        Delimiter::BraceClose,
+        FieldInit::parse,
+    )?;
+    let brace_close_tok = match_delimiter!(parser, Delimiter::BraceClose =>);
+
+    Some(Expr::StructInit(StructInit {
+        ty_name: ident,
+        brace_open_tok,
+        fields,
+        brace_close_tok,
+    }))
+}
+
+impl Parse for FieldInit {
+    fn parse(ctx: &mut ParseContext) -> ParseResult<Self> {
+        let field_name = match_identifier!(ctx, "field name".to_owned() =>)?;
+        let colon_tok = match_delimiter!(ctx, Delimiter::Colon =>);
+        let expr = Expr::parse(ctx)?;
+        Some(Self {
+            field_name,
+            colon_tok,
+            expr,
+        })
+    }
 }
 
 impl Expr {

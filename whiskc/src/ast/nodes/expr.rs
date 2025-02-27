@@ -10,7 +10,7 @@ pub enum Expr {
     Unit(Span),
     Integer(Located<i64>),
     Bool(Located<bool>),
-    Identifier(Located<String>),
+    Ident(Located<String>),
     Unary(UnaryExpr),
     Binary(BinaryExpr),
     Grouped(GroupedExpr),
@@ -19,6 +19,7 @@ pub enum Expr {
     Return(ReturnExpr),
     If(IfExpr),
     Loop(LoopExpr),
+    StructInit(StructInit),
 }
 impl Expr {
     pub fn is_block(&self) -> bool {
@@ -46,7 +47,7 @@ impl Locatable for Expr {
             Expr::Unit(loc) => *loc,
             Expr::Integer(located) => located.1,
             Expr::Bool(located) => located.1,
-            Expr::Identifier(located) => located.1,
+            Expr::Ident(located) => located.1,
             Expr::Unary(unary_expr) => unary_expr.get_location(),
             Expr::Binary(binary_expr) => binary_expr.get_location(),
             Expr::Grouped(grouped_expr) => grouped_expr.get_location(),
@@ -55,6 +56,7 @@ impl Locatable for Expr {
             Expr::Return(expr) => expr.get_location(),
             Expr::If(expr) => expr.get_location(),
             Expr::Loop(expr) => expr.get_location(),
+            Expr::StructInit(expr) => expr.get_location(),
         }
     }
 }
@@ -172,5 +174,30 @@ pub struct LoopExpr {
 impl Locatable for LoopExpr {
     fn get_location(&self) -> Span {
         Span::combine(self.loop_tok.1, self.body.get_location())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct StructInit {
+    pub ty_name: Located<String>,
+    pub brace_open_tok: Located<Delimiter>,
+    pub fields: Punctuated<FieldInit>,
+    pub brace_close_tok: Located<Delimiter>,
+}
+impl Locatable for StructInit {
+    fn get_location(&self) -> Span {
+        Span::combine(self.ty_name.1, self.brace_close_tok.1)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct FieldInit {
+    pub field_name: Located<String>,
+    pub colon_tok: Located<Delimiter>,
+    pub expr: Expr,
+}
+impl Locatable for FieldInit {
+    fn get_location(&self) -> Span {
+        Span::combine(self.field_name.1, self.expr.get_location())
     }
 }

@@ -26,7 +26,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
                 kind: ExprKind::Bool(v.0),
                 ty: ctx.table.common_type().bool,
             }),
-            ast::expr::Expr::Identifier(v) => v.resolve(ctx, ()),
+            ast::expr::Expr::Ident(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Unary(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Binary(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Grouped(v) => v.expr.resolve(ctx, ()),
@@ -35,6 +35,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
             ast::expr::Expr::Return(v) => v.resolve(ctx, ()),
             ast::expr::Expr::If(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Loop(v) => v.resolve(ctx, ()),
+            ast::expr::Expr::StructInit(v) => todo!("{:#?}", v),
         }
     }
 }

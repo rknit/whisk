@@ -16,12 +16,12 @@
 <field> ::= <ident> <type>
 
 <stmt> ::= <expr_stmt> | <let>
-<expr_stmt> ::= <f_expr> ; | <cf_expr> ;?
+<expr_stmt> ::= <non_block_expr> ; | <block_expr> ;?
 <let> ::= let <ident> <type>? = <expr> ;
 
-<expr> ::= <f_expr> | <cf_expr>
+<expr> ::= <non_block_expr> | <block_expr>
 
-<f_expr> ::= <constant> | <unary> | <binary> | <group> | <call> | <return>
+<non_block_expr> ::= <constant> | <unary> | <binary> | <group> | <call> | <return> | <ident> | <struct_init>
 <constant> ::= <integer> | <boolean> | \(\)
 <unary> ::= <unary_op> <expr>
 <unary_op> ::= ! | -
@@ -32,7 +32,11 @@
 <arg_list> ::= <expr> | <expr> , <arg_list> | <epsilon>
 <return> ::= return <expr>?
 
-<cf_expr> ::= <block> | <if> | <loop>
+<struct_init> ::= <ident> { <field_init_list> }
+<field_init_list> ::= <field_init> | <field_init> , <field_init_list> | <epsilon>
+<field_init> ::= <ident> : <expr>
+
+<block_expr> ::= <block> | <if> | <loop>
 <block> ::= { <stmt>* <expr>? }
 <if> ::= if <expr> <block> <else>?
 <else> ::= else <block>
