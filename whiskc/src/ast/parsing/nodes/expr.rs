@@ -388,7 +388,7 @@ fn parse_struct_init(
     )?;
     let brace_close_tok = match_delimiter!(parser, Delimiter::BraceClose =>);
 
-    Some(Expr::StructInit(StructInit {
+    Some(Expr::StructInit(StructInitExpr {
         ty_name: ident,
         brace_open_tok,
         fields,

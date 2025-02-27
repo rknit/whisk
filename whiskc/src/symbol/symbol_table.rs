@@ -55,6 +55,10 @@ impl SymbolTable {
         Some(tyid)
     }
 
+    pub fn get_type_by_name(&self, name: &str) -> Option<&TypeSymbol> {
+        self.get_type_id(name).map(|v| v.sym(self))
+    }
+
     pub fn get_type_by_name_mut(&mut self, name: &str) -> Option<&mut TypeSymbol> {
         self.get_type_id(name).map(|v| v.sym_mut(self))
     }

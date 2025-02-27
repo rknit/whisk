@@ -3,10 +3,11 @@ use crate::{
     lowering::{
         nodes::expr::{
             BinaryExpr, BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, IfExpr, LoopExpr,
-            ReturnExpr, UnaryExpr, VarIdentExpr,
+            ReturnExpr, StructInitExpr, UnaryExpr, VarIdentExpr,
         },
         resolve::Flow,
     },
+    symbol::ty::TypeKind,
 };
 
 use super::{FlowObj, Resolve, ResolveContext};
@@ -35,7 +36,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
             ast::expr::Expr::Return(v) => v.resolve(ctx, ()),
             ast::expr::Expr::If(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Loop(v) => v.resolve(ctx, ()),
-            ast::expr::Expr::StructInit(v) => todo!("{:#?}", v),
+            ast::expr::Expr::StructInit(v) => v.resolve(ctx, ()),
         }
     }
 }
@@ -458,6 +459,74 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::BlockExpr {
                 }
                 .into(),
                 ty: eval_expr_ty,
+            },
+            result_flow,
+        )
+    }
+}
+
+impl Resolve<(), FlowObj<Expr>> for ast::expr::StructInitExpr {
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
+        let (struct_id, struct_ty) = {
+            let Some(ty_sym) = ctx.table.get_type_by_name(&self.ty_name.0) else {
+                todo!("report error")
+            };
+            let Some(ty_kind) = &ty_sym.kind else {
+                todo!("report error")
+            };
+            let TypeKind::Struct(struct_ty) = ty_kind else {
+                todo!("report error")
+            };
+            (ty_sym.get_id(), struct_ty.clone() /* :( */)
+        };
+
+        if self.fields.items.len() != struct_ty.fields.len() {
+            todo!("report error")
+        }
+
+        let mut result_flow = Flow::Continue;
+        let mut fields: Vec<(String, Expr)> = Vec::new();
+
+        for ast::expr::FieldInit {
+            field_name: ast_field_name,
+            expr: ast_expr,
+            ..
+        } in &self.fields.items
+        {
+            let FlowObj { value, flow } = ast_expr.resolve(ctx, ());
+            result_flow = result_flow & flow;
+            let Some(value) = value else {
+                // assumed error had already been reported by the resolve call.
+                continue;
+            };
+
+            let Some(expect_field_ty) = struct_ty.get_field_type(&ast_field_name.0) else {
+                todo!("report error");
+            };
+
+            if fields.iter().any(|v| v.0 == ast_field_name.0) {
+                todo!("report error");
+            }
+
+            if !ctx.table.is_type_coercible(value.ty, expect_field_ty) {
+                todo!("report error");
+            }
+
+            fields.push((ast_field_name.0.clone(), value));
+
+            if result_flow != Flow::Continue {
+                break;
+            }
+        }
+
+        FlowObj::new(
+            Expr {
+                kind: StructInitExpr {
+                    struct_ty: struct_id,
+                    fields,
+                }
+                .into(),
+                ty: struct_id,
             },
             result_flow,
         )

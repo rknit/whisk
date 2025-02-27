@@ -25,6 +25,7 @@ pub enum ExprKind {
     Return(ReturnExpr),
     If(IfExpr),
     Loop(LoopExpr),
+    StructInit(StructInitExpr),
 }
 
 #[derive(Debug, Clone)]
@@ -80,6 +81,12 @@ pub struct LoopExpr {
     pub body: BlockExpr,
 }
 
+#[derive(Debug, Clone)]
+pub struct StructInitExpr {
+    pub struct_ty: TypeId,
+    pub fields: Vec<(String, Expr)>,
+}
+
 impl From<i64> for ExprKind {
     fn from(value: i64) -> Self {
         Self::Integer(value)
@@ -133,5 +140,10 @@ impl From<IfExpr> for ExprKind {
 impl From<LoopExpr> for ExprKind {
     fn from(value: LoopExpr) -> Self {
         Self::Loop(value)
+    }
+}
+impl From<StructInitExpr> for ExprKind {
+    fn from(value: StructInitExpr) -> Self {
+        Self::StructInit(value)
     }
 }

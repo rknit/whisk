@@ -55,6 +55,10 @@ pub struct StructType {
     pub fields: Vec<(String, TypeId)>,
 }
 impl StructType {
+    pub fn get_field_type(&self, name: &str) -> Option<TypeId> {
+        self.fields.iter().find(|v| v.0 == name).map(|v| v.1)
+    }
+
     pub fn get_size(&self, table: &SymbolTable) -> Option<usize> {
         let mut sz = 0;
         for field in &self.fields {

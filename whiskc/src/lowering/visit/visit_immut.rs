@@ -1,5 +1,5 @@
 use crate::lowering::nodes::{
-    expr::{ExprKind, FuncIdentExpr},
+    expr::{ExprKind, FuncIdentExpr, StructInitExpr},
     ty::TypeDecl,
 };
 
@@ -89,6 +89,10 @@ pub trait Visit: Sized {
         visit_stmt(self, node);
     }
 
+    fn visit_struct_init_expr(&mut self, _node: &StructInitExpr) {
+        /* terminal */
+    }
+
     fn visit_type_decl(&mut self, _node: &TypeDecl) {
         /* terminal */
     }
@@ -143,6 +147,7 @@ pub fn visit_expr(v: &mut impl Visit, node: &Expr) {
         ExprKind::Return(node) => v.visit_return_expr(node),
         ExprKind::If(node) => v.visit_if_expr(node),
         ExprKind::Loop(node) => v.visit_loop_expr(node),
+        ExprKind::StructInit(node) => v.visit_struct_init_expr(node),
     };
 }
 

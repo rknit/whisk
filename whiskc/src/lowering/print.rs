@@ -347,4 +347,34 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
         self.start_item("unit");
         self.end_item();
     }
+
+    fn visit_expr_stmt(&mut self, node: &super::nodes::stmt::ExprStmt) {
+        super::visit::visit_expr_stmt(self, node);
+    }
+
+    fn visit_item(&mut self, node: &super::nodes::item::Item) {
+        super::visit::visit_item(self, node);
+    }
+
+    fn visit_stmt(&mut self, node: &super::nodes::stmt::Stmt) {
+        super::visit::visit_stmt(self, node);
+    }
+
+    fn visit_struct_init_expr(&mut self, node: &super::nodes::expr::StructInitExpr) {
+        self.start_item("struct_init");
+
+        self.add_attrib("struct_name", &node.struct_ty.sym(self.table).name);
+
+        if !node.fields.is_empty() {
+            self.start_item("fields");
+            for (name, expr) in &node.fields {
+                self.start_item(name);
+                self.visit_expr(expr);
+                self.end_item();
+            }
+            self.end_item();
+        }
+
+        self.end_item();
+    }
 }

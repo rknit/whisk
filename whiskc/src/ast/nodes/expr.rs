@@ -19,7 +19,7 @@ pub enum Expr {
     Return(ReturnExpr),
     If(IfExpr),
     Loop(LoopExpr),
-    StructInit(StructInit),
+    StructInit(StructInitExpr),
 }
 impl Expr {
     pub fn is_block(&self) -> bool {
@@ -178,13 +178,13 @@ impl Locatable for LoopExpr {
 }
 
 #[derive(Debug, Clone)]
-pub struct StructInit {
+pub struct StructInitExpr {
     pub ty_name: Located<String>,
     pub brace_open_tok: Located<Delimiter>,
     pub fields: Punctuated<FieldInit>,
     pub brace_close_tok: Located<Delimiter>,
 }
-impl Locatable for StructInit {
+impl Locatable for StructInitExpr {
     fn get_location(&self) -> Span {
         Span::combine(self.ty_name.1, self.brace_close_tok.1)
     }
