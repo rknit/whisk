@@ -3,17 +3,9 @@ type Vec2 = struct {
     y int,
 };
 
-func main() int {
-  let n = 15;
-
-  let i = 2;
-  loop {
-    if i >= n {
-      return 1;
-    }
-    if n % i == 0 {
-      return 0;
-    }
-    i = i + 1;
-  }
+func main() {
+  let v = Vec2 {
+    x: 2,
+    y: 4,
+  };
 }

@@ -8,7 +8,6 @@ pub enum TypeKind {
     Primitive(Primitive),
     Struct(StructType),
     Ident(TypeId),
-    Alias(TypeId),
 }
 impl TypeKind {
     pub fn get_size(&self, table: &SymbolTable) -> Option<usize> {
@@ -16,7 +15,6 @@ impl TypeKind {
             TypeKind::Primitive(v) => Some(v.get_size()),
             TypeKind::Struct(v) => v.get_size(table),
             TypeKind::Ident(v) => v.sym(table).get_size(table),
-            TypeKind::Alias(v) => v.sym(table).get_size(table),
         }
     }
 }

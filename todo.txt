@@ -1,8 +1,0 @@
-IN PROGRESS:
-- type struct decl
-- alias type
-
-TODO:
-- field access operator
-- fault tolerant parsing
-- error reporting

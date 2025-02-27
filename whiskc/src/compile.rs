@@ -2,13 +2,23 @@ use std::{fs, path::PathBuf};
 
 use crate::{ast, codegen::codegen_wsk_vm, lowering};
 
-#[derive(Default)]
 pub struct CompileSwitch {
     pub do_parse_ast: bool,
     pub debug_ast: bool,
     pub do_resolve_module: bool,
     pub print_module: bool,
     pub do_codegen: bool,
+}
+impl Default for CompileSwitch {
+    fn default() -> Self {
+        Self {
+            do_parse_ast: true,
+            debug_ast: false,
+            do_resolve_module: true,
+            print_module: false,
+            do_codegen: true,
+        }
+    }
 }
 
 pub fn compile(source_path: PathBuf, switches: CompileSwitch) {

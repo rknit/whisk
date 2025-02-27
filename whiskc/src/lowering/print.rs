@@ -323,8 +323,7 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
                     }
                     self.end_item();
                 }
-                TypeKind::Ident(v) => self.add_attrib("ident", &v.sym(self.table).name),
-                TypeKind::Alias(v) => self.add_attrib("alias", &v.sym(self.table).name),
+                TypeKind::Ident(v) => self.add_attrib("underlying", &v.sym(self.table).name),
             };
             self.end_item();
         } else {
