@@ -20,6 +20,7 @@ pub enum Expr {
     If(IfExpr),
     Loop(LoopExpr),
     StructInit(StructInitExpr),
+    MemberAccess(MemberAccessExpr),
 }
 impl Expr {
     pub fn is_block(&self) -> bool {
@@ -57,6 +58,7 @@ impl Locatable for Expr {
             Expr::If(expr) => expr.get_location(),
             Expr::Loop(expr) => expr.get_location(),
             Expr::StructInit(expr) => expr.get_location(),
+            Expr::MemberAccess(expr) => expr.get_location(),
         }
     }
 }
@@ -199,5 +201,17 @@ pub struct FieldInit {
 impl Locatable for FieldInit {
     fn get_location(&self) -> Span {
         Span::combine(self.field_name.1, self.expr.get_location())
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct MemberAccessExpr {
+    pub expr: Box<Expr>,
+    pub mem_access_op: Located<Operator>,
+    pub field_name: Located<String>,
+}
+impl Locatable for MemberAccessExpr {
+    fn get_location(&self) -> Span {
+        Span::combine(self.expr.get_location(), self.field_name.1)
     }
 }

@@ -37,6 +37,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
             ast::expr::Expr::If(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Loop(v) => v.resolve(ctx, ()),
             ast::expr::Expr::StructInit(v) => v.resolve(ctx, ()),
+            ast::expr::Expr::MemberAccess(v) => todo!("{:#?}", v),
         }
     }
 }

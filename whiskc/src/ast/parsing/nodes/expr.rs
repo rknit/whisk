@@ -35,6 +35,7 @@ enum BindingPower {
     Multiplicative,
     Unary,
     Call,
+    MemberAccess,
     StructInit,
     Primary,
 }
@@ -113,7 +114,13 @@ impl pratt_parser::Handlers<Expr, BindingPower> for ExprHandlers {
         led(
             TokenKind::Delimiter(Delimiter::BraceOpen),
             BindingPower::StructInit,
-            parse_struct_init,
+            parse_struct_init_expr,
+        );
+
+        led(
+            TokenKind::Operator(Operator::MemberAccess),
+            BindingPower::MemberAccess,
+            parse_member_access_expr,
         );
     }
 }
@@ -364,7 +371,7 @@ fn parse_loop_expr(
     }))
 }
 
-fn parse_struct_init(
+fn parse_struct_init_expr(
     _pratt_parser: &PrattParser<Expr, BindingPower>,
     parser: &mut ParseContext,
     left: Expr,
@@ -407,6 +414,22 @@ impl Parse for FieldInit {
             expr,
         })
     }
+}
+
+fn parse_member_access_expr(
+    _pratt_parser: &PrattParser<Expr, BindingPower>,
+    parser: &mut ParseContext,
+    left: Expr,
+    _bp: BindingPower,
+) -> ParseResult<Expr> {
+    let mem_access_op = match_operator!(parser, Operator::MemberAccess =>);
+    let field_name = match_identifier!(parser, "field name or method name".to_owned() =>)?;
+
+    Some(Expr::MemberAccess(MemberAccessExpr {
+        expr: Box::new(left),
+        mem_access_op,
+        field_name,
+    }))
 }
 
 impl Expr {

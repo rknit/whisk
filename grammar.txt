@@ -22,6 +22,7 @@
 <expr> ::= <non_block_expr> | <block_expr>
 
 <non_block_expr> ::= <constant> | <unary> | <binary> | <group> | <call> | <return> | <ident> | <struct_init>
+                      | <member_access>
 <constant> ::= <integer> | <boolean> | \(\)
 <unary> ::= <unary_op> <expr>
 <unary_op> ::= ! | -
@@ -35,6 +36,8 @@
 <struct_init> ::= <ident> { <field_init_list> }
 <field_init_list> ::= <field_init> | <field_init> , <field_init_list> | <epsilon>
 <field_init> ::= <ident> : <expr>
+
+<member_access> ::= <expr> . <ident>
 
 <block_expr> ::= <block> | <if> | <loop>
 <block> ::= { <stmt>* <expr>? }

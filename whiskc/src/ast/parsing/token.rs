@@ -37,8 +37,8 @@ pub enum TokenKind {
 impl fmt::Debug for TokenKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Unknown => write!(f, "{:?}", Self::Unknown),
-            Self::EndOfFile => write!(f, "{:?}", Self::EndOfFile),
+            Self::Unknown => write!(f, "{}", self),
+            Self::EndOfFile => write!(f, "{}", self),
             Self::Literal(lit) => write!(f, "{:?}", lit),
             Self::LiteralKeyword(lit) => write!(f, "{:?}", lit),
             Self::Keyword(kw) => write!(f, "{:?}", kw),
@@ -271,6 +271,7 @@ pub enum OperatorChar {
     Exclaimation,
     Ampersand,
     Pipe,
+    Dot,
 }
 impl fmt::Display for OperatorChar {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -289,6 +290,7 @@ impl fmt::Display for OperatorChar {
                 Self::Exclaimation => '!',
                 Self::Ampersand => '&',
                 Self::Pipe => '|',
+                Self::Dot => '.',
             }
         )
     }
@@ -323,6 +325,7 @@ pub enum Operator {
     LessEqual,
     Greater,
     GreaterEqual,
+    MemberAccess,
 }
 impl fmt::Display for Operator {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -345,6 +348,7 @@ impl fmt::Display for Operator {
                 Self::LessEqual => "<=",
                 Self::Greater => ">",
                 Self::GreaterEqual => ">=",
+                Self::MemberAccess => ".",
             }
         )
     }

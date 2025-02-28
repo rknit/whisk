@@ -160,6 +160,7 @@ impl Lexer {
                 }
             }
         } else {
+            self.next_char();
             Token {
                 kind: TokenKind::Unknown,
                 loc: start.into(),
