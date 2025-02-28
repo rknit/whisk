@@ -1,5 +1,5 @@
 use crate::lowering::nodes::{
-    expr::{ExprKind, FuncIdentExpr, StructInitExpr},
+    expr::{ExprKind, FuncIdentExpr, MemberAccessExpr, StructInitExpr},
     ty::TypeDecl,
 };
 
@@ -81,6 +81,10 @@ pub trait VisitMut: Sized {
         visit_loop_expr_mut(self, node);
     }
 
+    fn visit_member_access_expr_mut(&mut self, node: &mut MemberAccessExpr) {
+        visit_member_access_expr_mut(self, node);
+    }
+
     fn visit_return_expr_mut(&mut self, node: &mut ReturnExpr) {
         visit_return_expr_mut(self, node);
     }
@@ -89,8 +93,8 @@ pub trait VisitMut: Sized {
         visit_stmt_mut(self, node);
     }
 
-    fn visit_struct_init_expr_mut(&mut self, _node: &mut StructInitExpr) {
-        /* terminal */
+    fn visit_struct_init_expr_mut(&mut self, node: &mut StructInitExpr) {
+        visit_struct_init_expr_mut(self, node);
     }
 
     fn visit_type_decl(&mut self, _node: &mut TypeDecl) {
@@ -148,6 +152,7 @@ pub fn visit_expr_mut(v: &mut impl VisitMut, node: &mut Expr) {
         ExprKind::If(node) => v.visit_if_expr_mut(node),
         ExprKind::Loop(node) => v.visit_loop_expr_mut(node),
         ExprKind::StructInit(node) => v.visit_struct_init_expr_mut(node),
+        ExprKind::MemberAccess(node) => v.visit_member_access_expr_mut(node),
     };
 }
 
@@ -183,6 +188,10 @@ pub fn visit_loop_expr_mut(v: &mut impl VisitMut, node: &mut LoopExpr) {
     v.visit_block_expr_mut(&mut node.body);
 }
 
+pub fn visit_member_access_expr_mut(v: &mut impl VisitMut, node: &mut MemberAccessExpr) {
+    v.visit_expr_mut(&mut node.expr);
+}
+
 pub fn visit_return_expr_mut(v: &mut impl VisitMut, node: &mut ReturnExpr) {
     if let Some(node) = &mut node.expr {
         v.visit_expr_mut(node);
@@ -193,6 +202,12 @@ pub fn visit_stmt_mut(v: &mut impl VisitMut, node: &mut Stmt) {
     match node {
         Stmt::Expr(node) => v.visit_expr_stmt_mut(node),
         Stmt::Let(node) => v.visit_let_stmt_mut(node),
+    }
+}
+
+pub fn visit_struct_init_expr_mut(v: &mut impl VisitMut, node: &mut StructInitExpr) {
+    for field in &mut node.fields {
+        v.visit_expr_mut(&mut field.1);
     }
 }
 

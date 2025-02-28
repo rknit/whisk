@@ -28,7 +28,7 @@ impl Codegen for Expr {
             ExprKind::Return(v) => v.codegen(ctx),
             ExprKind::If(v) => v.codegen(ctx),
             ExprKind::Loop(v) => v.codegen(ctx),
-            ExprKind::StructInit(_) => Err(CodegenError::UnsupportedItem),
+            _ => Err(CodegenError::UnsupportedItem),
         }
     }
 }

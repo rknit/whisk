@@ -196,6 +196,10 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
         self.add_attrib_to_last_pop("type", &node.ty.sym(self.table).name);
     }
 
+    fn visit_expr_stmt(&mut self, node: &super::nodes::stmt::ExprStmt) {
+        super::visit::visit_expr_stmt(self, node);
+    }
+
     fn visit_extern_func(&mut self, node: &super::nodes::func::ExternFunction) {
         self.start_item("extern_func_decl");
 
@@ -281,6 +285,10 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
         self.end_item();
     }
 
+    fn visit_item(&mut self, node: &super::nodes::item::Item) {
+        super::visit::visit_item(self, node);
+    }
+
     fn visit_let_stmt(&mut self, node: &super::nodes::stmt::LetStmt) {
         self.start_item("let_stmt");
 
@@ -300,9 +308,39 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
         super::visit::visit_loop_expr(self, node);
     }
 
+    fn visit_member_access_expr(&mut self, node: &super::nodes::expr::MemberAccessExpr) {
+        self.start_item("member_access");
+        self.add_attrib("field", &node.field_name);
+        self.set_prefix("accessor: ");
+        super::visit::visit_member_access_expr(self, node);
+        self.end_item();
+    }
+
     fn visit_return_expr(&mut self, node: &super::nodes::expr::ReturnExpr) {
         self.set_prefix("return: ");
         super::visit::visit_return_expr(self, node);
+    }
+
+    fn visit_stmt(&mut self, node: &super::nodes::stmt::Stmt) {
+        super::visit::visit_stmt(self, node);
+    }
+
+    fn visit_struct_init_expr(&mut self, node: &super::nodes::expr::StructInitExpr) {
+        self.start_item("struct_init");
+
+        self.add_attrib("struct_name", &node.struct_ty.sym(self.table).name);
+
+        if !node.fields.is_empty() {
+            self.start_item("fields");
+            for (name, expr) in &node.fields {
+                self.start_item(name);
+                self.visit_expr(expr);
+                self.end_item();
+            }
+            self.end_item();
+        }
+
+        self.end_item();
     }
 
     fn visit_type_decl(&mut self, node: &super::nodes::ty::TypeDecl) {
@@ -345,36 +383,6 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
 
     fn visit_unit_expr(&mut self) {
         self.start_item("unit");
-        self.end_item();
-    }
-
-    fn visit_expr_stmt(&mut self, node: &super::nodes::stmt::ExprStmt) {
-        super::visit::visit_expr_stmt(self, node);
-    }
-
-    fn visit_item(&mut self, node: &super::nodes::item::Item) {
-        super::visit::visit_item(self, node);
-    }
-
-    fn visit_stmt(&mut self, node: &super::nodes::stmt::Stmt) {
-        super::visit::visit_stmt(self, node);
-    }
-
-    fn visit_struct_init_expr(&mut self, node: &super::nodes::expr::StructInitExpr) {
-        self.start_item("struct_init");
-
-        self.add_attrib("struct_name", &node.struct_ty.sym(self.table).name);
-
-        if !node.fields.is_empty() {
-            self.start_item("fields");
-            for (name, expr) in &node.fields {
-                self.start_item(name);
-                self.visit_expr(expr);
-                self.end_item();
-            }
-            self.end_item();
-        }
-
         self.end_item();
     }
 }

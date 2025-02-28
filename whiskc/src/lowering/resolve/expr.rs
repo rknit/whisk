@@ -3,7 +3,7 @@ use crate::{
     lowering::{
         nodes::expr::{
             BinaryExpr, BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, IfExpr, LoopExpr,
-            ReturnExpr, StructInitExpr, UnaryExpr, VarIdentExpr,
+            MemberAccessExpr, ReturnExpr, StructInitExpr, UnaryExpr, VarIdentExpr,
         },
         resolve::Flow,
     },
@@ -37,7 +37,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::Expr {
             ast::expr::Expr::If(v) => v.resolve(ctx, ()),
             ast::expr::Expr::Loop(v) => v.resolve(ctx, ()),
             ast::expr::Expr::StructInit(v) => v.resolve(ctx, ()),
-            ast::expr::Expr::MemberAccess(v) => todo!("{:#?}", v),
+            ast::expr::Expr::MemberAccess(v) => v.resolve(ctx, ()),
         }
     }
 }
@@ -530,6 +530,42 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::StructInitExpr {
                 ty: struct_id,
             },
             result_flow,
+        )
+    }
+}
+
+impl Resolve<(), FlowObj<Expr>> for ast::expr::MemberAccessExpr {
+    fn resolve(&self, ctx: &mut ResolveContext, _: ()) -> FlowObj<Expr> {
+        let FlowObj { value, flow } = self.expr.resolve(ctx, ());
+        let Some(value) = value else {
+            return FlowObj::none(flow);
+        };
+        if flow != Flow::Continue {
+            return FlowObj::new(value, flow);
+        }
+
+        let ty_sym = value.ty.sym(ctx.table);
+        let Some(ty_kind) = &ty_sym.kind else {
+            todo!("report error");
+        };
+        let TypeKind::Struct(struct_ty) = ty_kind else {
+            todo!("report error");
+        };
+        let Some(field_ty) = struct_ty.get_field_type(&self.field_name.0) else {
+            todo!("report error");
+        };
+
+        FlowObj::new(
+            Expr {
+                kind: MemberAccessExpr {
+                    expr: Box::new(value),
+                    struct_ty: ty_sym.get_id(),
+                    field_name: self.field_name.0.clone(),
+                }
+                .into(),
+                ty: field_ty,
+            },
+            flow,
         )
     }
 }

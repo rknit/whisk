@@ -26,6 +26,7 @@ pub enum ExprKind {
     If(IfExpr),
     Loop(LoopExpr),
     StructInit(StructInitExpr),
+    MemberAccess(MemberAccessExpr),
 }
 
 #[derive(Debug, Clone)]
@@ -87,6 +88,13 @@ pub struct StructInitExpr {
     pub fields: Vec<(String, Expr)>,
 }
 
+#[derive(Debug, Clone)]
+pub struct MemberAccessExpr {
+    pub expr: Box<Expr>,
+    pub struct_ty: TypeId,
+    pub field_name: String,
+}
+
 impl From<i64> for ExprKind {
     fn from(value: i64) -> Self {
         Self::Integer(value)
@@ -145,5 +153,10 @@ impl From<LoopExpr> for ExprKind {
 impl From<StructInitExpr> for ExprKind {
     fn from(value: StructInitExpr) -> Self {
         Self::StructInit(value)
+    }
+}
+impl From<MemberAccessExpr> for ExprKind {
+    fn from(value: MemberAccessExpr) -> Self {
+        Self::MemberAccess(value)
     }
 }

@@ -1,5 +1,5 @@
 use crate::lowering::nodes::{
-    expr::{ExprKind, FuncIdentExpr, StructInitExpr},
+    expr::{ExprKind, FuncIdentExpr, MemberAccessExpr, StructInitExpr},
     ty::TypeDecl,
 };
 
@@ -81,6 +81,10 @@ pub trait Visit: Sized {
         visit_loop_expr(self, node);
     }
 
+    fn visit_member_access_expr(&mut self, node: &MemberAccessExpr) {
+        visit_member_access_expr(self, node);
+    }
+
     fn visit_return_expr(&mut self, node: &ReturnExpr) {
         visit_return_expr(self, node);
     }
@@ -89,8 +93,8 @@ pub trait Visit: Sized {
         visit_stmt(self, node);
     }
 
-    fn visit_struct_init_expr(&mut self, _node: &StructInitExpr) {
-        /* terminal */
+    fn visit_struct_init_expr(&mut self, node: &StructInitExpr) {
+        visit_struct_init_expr(self, node)
     }
 
     fn visit_type_decl(&mut self, _node: &TypeDecl) {
@@ -148,6 +152,7 @@ pub fn visit_expr(v: &mut impl Visit, node: &Expr) {
         ExprKind::If(node) => v.visit_if_expr(node),
         ExprKind::Loop(node) => v.visit_loop_expr(node),
         ExprKind::StructInit(node) => v.visit_struct_init_expr(node),
+        ExprKind::MemberAccess(node) => v.visit_member_access_expr(node),
     };
 }
 
@@ -183,6 +188,10 @@ pub fn visit_loop_expr(v: &mut impl Visit, node: &LoopExpr) {
     v.visit_block_expr(&node.body);
 }
 
+pub fn visit_member_access_expr(v: &mut impl Visit, node: &MemberAccessExpr) {
+    v.visit_expr(&node.expr);
+}
+
 pub fn visit_return_expr(v: &mut impl Visit, node: &ReturnExpr) {
     if let Some(node) = &node.expr {
         v.visit_expr(node);
@@ -193,6 +202,12 @@ pub fn visit_stmt(v: &mut impl Visit, node: &Stmt) {
     match node {
         Stmt::Expr(node) => v.visit_expr_stmt(node),
         Stmt::Let(node) => v.visit_let_stmt(node),
+    }
+}
+
+pub fn visit_struct_init_expr(v: &mut impl Visit, node: &StructInitExpr) {
+    for field in &node.fields {
+        v.visit_expr(&field.1);
     }
 }
 
