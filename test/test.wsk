@@ -3,10 +3,12 @@ type Vec2 = struct {
     y int,
 };
 
-func main() int {
+func main() Int {
   let v = Vec2 {
     x: 2,
     y: 4,
   };
-  v.x
+  Int(v.x)
 }
+
+type Int = int;
