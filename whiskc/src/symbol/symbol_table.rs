@@ -92,6 +92,10 @@ impl SymbolTable {
         Some(fid)
     }
 
+    pub fn get_function_by_name(&self, name: &str) -> Option<&FuncSymbol> {
+        self.get_function_id(name).map(|v| v.sym(self))
+    }
+
     pub fn get_function_by_name_mut(&mut self, name: &str) -> Option<&mut FuncSymbol> {
         self.get_function_id(name).map(|v| v.sym_mut(self))
     }

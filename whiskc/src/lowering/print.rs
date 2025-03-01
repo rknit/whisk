@@ -179,7 +179,7 @@ impl<W: Write> Visit for PrintVisitor<'_, W> {
     fn visit_call_expr(&mut self, node: &super::nodes::expr::CallExpr) {
         self.start_item("call");
 
-        self.set_prefix("caller");
+        self.set_prefix("caller: ");
         self.visit_expr(&node.caller);
 
         self.start_item("args");

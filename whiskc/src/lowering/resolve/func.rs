@@ -11,6 +11,9 @@ use crate::{
 
 impl Record<(), bool> for ast::func::FunctionSig {
     fn record(&self, ctx: &mut ResolveContext, _: ()) -> bool {
+        if ctx.table.get_type_by_name(&self.name.0).is_some() {
+            todo!("report error");
+        }
         if ctx.table.new_function(self.name.0.clone()).is_none() {
             todo!("report error");
         } else {

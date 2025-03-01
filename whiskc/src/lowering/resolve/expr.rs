@@ -336,6 +336,7 @@ impl Resolve<(), FlowObj<Expr>> for ast::expr::CallExpr {
             // assumed the earlier resolve call had already reported the error.
             return FlowObj::none(result_flow);
         };
+
         let ExprKind::FuncIdent(FuncIdentExpr { id: fid }) = caller.kind else {
             todo!("report error")
         };

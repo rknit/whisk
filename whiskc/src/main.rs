@@ -13,7 +13,7 @@ fn main() {
         args[1].clone().into(),
         CompileSwitch {
             do_parse_ast: true,
-            debug_ast: false,
+            debug_ast: true,
             do_resolve_module: true,
             print_module: true,
             do_codegen: true,
