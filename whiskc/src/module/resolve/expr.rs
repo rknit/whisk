@@ -1,6 +1,6 @@
 use crate::{
     ast::{location::Located, nodes as ast, parsing::token::Operator},
-    lowering::{
+    module::{
         nodes::expr::{
             BinaryExpr, BlockExpr, CallExpr, Expr, ExprKind, FuncIdentExpr, IfExpr, LoopExpr,
             MemberAccessExpr, ReturnExpr, StructInitExpr, UnaryExpr, VarIdentExpr,

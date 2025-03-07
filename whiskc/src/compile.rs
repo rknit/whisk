@@ -1,6 +1,6 @@
 use std::{fs, path::PathBuf};
 
-use crate::{ast, codegen::codegen_wsk_vm, lowering};
+use crate::{ast, codegen::codegen_wsk_vm, module};
 
 pub struct CompileSwitch {
     pub do_parse_ast: bool,
@@ -46,7 +46,7 @@ pub fn compile(source_path: PathBuf, switches: CompileSwitch) {
     if !switches.do_resolve_module {
         return;
     }
-    let module = match lowering::resolve(&ast, source_name) {
+    let module = match module::resolve(&ast, source_name) {
         Ok(module) => module,
         Err(errs) => {
             dbg!(&errs);

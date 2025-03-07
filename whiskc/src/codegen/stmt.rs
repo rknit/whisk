@@ -1,6 +1,6 @@
 use wsk_vm::Inst;
 
-use crate::lowering::nodes::stmt::{ExprStmt, LetStmt, Stmt};
+use crate::module::nodes::stmt::{ExprStmt, LetStmt, Stmt};
 
 use super::Codegen;
 

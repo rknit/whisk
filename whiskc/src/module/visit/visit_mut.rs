@@ -1,4 +1,4 @@
-use crate::lowering::nodes::{
+use crate::module::nodes::{
     expr::{ExprKind, FuncIdentExpr, MemberAccessExpr, StructInitExpr},
     ty::TypeDecl,
 };

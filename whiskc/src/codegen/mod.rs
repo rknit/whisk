@@ -6,7 +6,7 @@ use wsk_vm::{
 };
 
 use crate::{
-    lowering::{nodes::item::Item, Module},
+    module::{nodes::item::Item, Module},
     symbol::{FuncId, SymbolTable, VarId},
 };
 

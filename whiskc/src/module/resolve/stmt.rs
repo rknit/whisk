@@ -1,6 +1,6 @@
 use crate::{
     ast::nodes as ast,
-    lowering::nodes::stmt::{ExprStmt, LetStmt, Stmt},
+    module::nodes::stmt::{ExprStmt, LetStmt, Stmt},
 };
 
 use super::{FlowObj, Resolve, ResolveContext};

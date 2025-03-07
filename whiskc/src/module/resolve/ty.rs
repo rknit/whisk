@@ -1,6 +1,6 @@
 use crate::{
     ast::nodes as ast,
-    lowering::nodes::ty::TypeDecl,
+    module::nodes::ty::TypeDecl,
     symbol::{
         ty::{StructType, TypeKind},
         TypeId,

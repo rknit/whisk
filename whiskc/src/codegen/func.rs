@@ -2,7 +2,7 @@ use wsk_vm::Inst;
 
 use super::{expr::ExprCodegen, Codegen};
 
-use crate::lowering::nodes::{self as ast};
+use crate::module::nodes::{self as ast};
 
 impl Codegen for ast::func::Function {
     fn codegen(&self, ctx: &mut super::Context) -> Result<(), super::CodegenError> {

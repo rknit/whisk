@@ -2,7 +2,7 @@ use super::{Flow, FlowObj, Record, Resolve, ResolveContext};
 
 use crate::{
     ast::nodes as ast,
-    lowering::nodes::{
+    module::nodes::{
         expr::ExprKind,
         func::{ExternFunction, Function},
     },

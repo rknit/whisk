@@ -1,6 +1,6 @@
 use super::{Record, Resolve, ResolveContext};
 
-use crate::{ast::nodes as ast, lowering::nodes::item::Item};
+use crate::{ast::nodes as ast, module::nodes::item::Item};
 
 impl Record<(), bool> for ast::item::Item {
     fn record(&self, ctx: &mut ResolveContext, _: ()) -> bool {

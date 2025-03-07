@@ -1,6 +1,6 @@
 use crate::{
     ast,
-    lowering::{nodes::item::Item, resolve::Record},
+    module::{nodes::item::Item, resolve::Record},
 };
 
 use super::Resolve;
